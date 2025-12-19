@@ -7,6 +7,7 @@ export interface RepoStatus {
 	conclusion: string | null;
 	html_url: string | null;
 	workflow_name: string | null;
+	run_date: string | null;
 }
 
 interface WorkflowRun {
@@ -14,6 +15,7 @@ interface WorkflowRun {
 	conclusion: string | null;
 	html_url: string;
 	name: string;
+	updated_at: string;
 }
 
 interface WorkflowRunsResponse {
@@ -44,7 +46,8 @@ export async function getLatestWorkflowRun(
 				status: 'unknown',
 				conclusion: null,
 				html_url: `https://github.com/${owner}/${repo}/actions`,
-				workflow_name: null
+				workflow_name: null,
+				run_date: null
 			};
 		}
 
@@ -57,7 +60,8 @@ export async function getLatestWorkflowRun(
 				status: 'unknown',
 				conclusion: null,
 				html_url: `https://github.com/${owner}/${repo}/actions`,
-				workflow_name: null
+				workflow_name: null,
+				run_date: null
 			};
 		}
 
@@ -80,7 +84,8 @@ export async function getLatestWorkflowRun(
 			status,
 			conclusion: latestRun.conclusion,
 			html_url: latestRun.html_url,
-			workflow_name: latestRun.name
+			workflow_name: latestRun.name,
+			run_date: latestRun.updated_at
 		};
 	} catch (error) {
 		console.error(`Error fetching workflow for ${owner}/${repo}:`, error);
@@ -90,7 +95,8 @@ export async function getLatestWorkflowRun(
 			status: 'unknown',
 			conclusion: null,
 			html_url: `https://github.com/${owner}/${repo}/actions`,
-			workflow_name: null
+			workflow_name: null,
+			run_date: null
 		};
 	}
 }
