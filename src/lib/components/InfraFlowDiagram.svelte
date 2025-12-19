@@ -22,7 +22,7 @@
 
 	let { services, projectName, domain, animated = true }: Props = $props();
 
-	// Build nodes from services
+	// Build nodes from services - include dashboard URLs
 	let nodes = $derived(buildNodes(services, projectName, domain));
 	let edges = $derived(buildEdges(nodes));
 
@@ -54,13 +54,14 @@
 		monitoring: '#ef4444'
 	};
 
-	function buildNodes(services: InfraService[], name: string, siteDomain?: string): InfraNode[] {
-		const nodes: InfraNode[] = [];
+	interface DiagramNode extends InfraNode {
+		dashboardUrl?: string;
+	}
 
-		// Layout: horizontal flow with backend services on the right
-		// User (left) -> Hosting (center) -> Backend services (right column)
-		// CI above hosting, Monitoring below
+	function buildNodes(services: InfraService[], name: string, siteDomain?: string): DiagramNode[] {
+		const nodes: DiagramNode[] = [];
 
+		// Layout positions for larger diagram
 		const hasDb = services.some((s) => s.category === 'database');
 		const hasAuth = services.some((s) => s.category === 'auth');
 		const hasStorage = services.some((s) => s.category === 'storage');
@@ -69,8 +70,8 @@
 
 		// Count backend services for vertical centering
 		const backendCount = [hasDb, hasAuth, hasStorage].filter(Boolean).length;
-		const backendStartY = backendCount === 1 ? 100 : backendCount === 2 ? 70 : 40;
-		const backendSpacing = 60;
+		const backendStartY = backendCount === 1 ? 140 : backendCount === 2 ? 100 : 60;
+		const backendSpacing = 80;
 
 		// User node - left side
 		nodes.push({
@@ -78,8 +79,8 @@
 			type: 'user',
 			label: 'Users',
 			status: 'healthy',
-			x: 40,
-			y: 100
+			x: 60,
+			y: 140
 		});
 
 		// Hosting/Site node - center (represents the deployed app)
@@ -90,8 +91,9 @@
 			label: siteDomain || name,
 			provider: hostingService?.provider,
 			status: hostingService?.status || 'unknown',
-			x: 160,
-			y: 100
+			dashboardUrl: hostingService?.dashboardUrl,
+			x: 220,
+			y: 140
 		});
 
 		// Backend services - right column
@@ -105,7 +107,8 @@
 				label: dbService.serviceName.replace('Supabase ', ''),
 				provider: dbService.provider,
 				status: dbService.status,
-				x: 280,
+				dashboardUrl: dbService.dashboardUrl,
+				x: 380,
 				y: backendY
 			});
 			backendY += backendSpacing;
@@ -119,7 +122,8 @@
 				label: authService.serviceName.replace('Supabase ', ''),
 				provider: authService.provider,
 				status: authService.status,
-				x: 280,
+				dashboardUrl: authService.dashboardUrl,
+				x: 380,
 				y: backendY
 			});
 			backendY += backendSpacing;
@@ -133,7 +137,8 @@
 				label: storageService.serviceName.replace('Cloudflare ', ''),
 				provider: storageService.provider,
 				status: storageService.status,
-				x: 280,
+				dashboardUrl: storageService.dashboardUrl,
+				x: 380,
 				y: backendY
 			});
 		}
@@ -147,8 +152,9 @@
 				label: 'CI/CD',
 				provider: ciService.provider,
 				status: ciService.status,
-				x: 160,
-				y: 20
+				dashboardUrl: ciService.dashboardUrl,
+				x: 220,
+				y: 30
 			});
 		}
 
@@ -161,15 +167,16 @@
 				label: monitoringService.serviceName,
 				provider: monitoringService.provider,
 				status: monitoringService.status,
-				x: 160,
-				y: 180
+				dashboardUrl: monitoringService.dashboardUrl,
+				x: 220,
+				y: 250
 			});
 		}
 
 		return nodes;
 	}
 
-	function buildEdges(nodes: InfraNode[]): InfraEdge[] {
+	function buildEdges(nodes: DiagramNode[]): InfraEdge[] {
 		const edges: InfraEdge[] = [];
 		const nodeIds = new Set(nodes.map((n) => n.id));
 
@@ -246,7 +253,7 @@
 		source: { x: number; y: number },
 		target: { x: number; y: number }
 	): { x1: number; y1: number; x2: number; y2: number } {
-		const nodeRadius = 16;
+		const nodeRadius = 24;
 		const dx = target.x - source.x;
 		const dy = target.y - source.y;
 		const dist = Math.sqrt(dx * dx + dy * dy);
@@ -260,28 +267,34 @@
 		return {
 			x1: source.x + nx * nodeRadius,
 			y1: source.y + ny * nodeRadius,
-			x2: target.x - nx * (nodeRadius + 6), // Extra offset for arrowhead
-			y2: target.y - ny * (nodeRadius + 6)
+			x2: target.x - nx * (nodeRadius + 8),
+			y2: target.y - ny * (nodeRadius + 8)
 		};
+	}
+
+	function handleNodeClick(node: DiagramNode) {
+		if (node.dashboardUrl) {
+			window.open(node.dashboardUrl, '_blank', 'noopener,noreferrer');
+		}
 	}
 </script>
 
-<div class="w-full overflow-x-auto">
-	<svg viewBox="0 0 340 210" class="w-full h-auto max-h-48">
+<div class="w-full h-full min-h-[18rem]">
+	<svg viewBox="0 0 460 290" class="w-full h-full" preserveAspectRatio="xMidYMid meet">
 		<defs>
-			<!-- Arrow marker -->
+			<!-- Arrow markers -->
 			<marker
 				id="arrowhead-active"
-				markerWidth="8"
-				markerHeight="6"
-				refX="7"
-				refY="3"
+				markerWidth="10"
+				markerHeight="8"
+				refX="9"
+				refY="4"
 				orient="auto"
 			>
-				<polygon points="0 0, 8 3, 0 6" fill="#22c55e" />
+				<polygon points="0 0, 10 4, 0 8" fill="#22c55e" />
 			</marker>
-			<marker id="arrowhead-idle" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-				<polygon points="0 0, 8 3, 0 6" fill="#4b5563" />
+			<marker id="arrowhead-idle" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+				<polygon points="0 0, 10 4, 0 8" fill="#4b5563" />
 			</marker>
 
 			<!-- Animated dash pattern -->
@@ -289,11 +302,11 @@
 				<style>
 					@keyframes flowDash {
 						to {
-							stroke-dashoffset: -16;
+							stroke-dashoffset: -20;
 						}
 					}
 					.flow-animated {
-						stroke-dasharray: 4 4;
+						stroke-dasharray: 6 6;
 						animation: flowDash 0.8s linear infinite;
 					}
 				</style>
@@ -313,16 +326,16 @@
 					x2={path.x2}
 					y2={path.y2}
 					stroke={isActive ? '#22c55e' : '#4b5563'}
-					stroke-width="1.5"
+					stroke-width="2"
 					marker-end={isActive ? 'url(#arrowhead-active)' : 'url(#arrowhead-idle)'}
 					class={animated && isActive ? 'flow-animated' : ''}
 				/>
 				{#if edge.label}
 					<text
 						x={(source.x + target.x) / 2}
-						y={(source.y + target.y) / 2 - 4}
+						y={(source.y + target.y) / 2 - 6}
 						text-anchor="middle"
-						class="text-[7px] fill-gray-500"
+						class="text-[10px] fill-gray-500"
 					>
 						{edge.label}
 					</text>
@@ -336,29 +349,47 @@
 			{@const color = nodeColors[node.type] || '#6b7280'}
 			{@const nodeX = node.x ?? 0}
 			{@const nodeY = node.y ?? 0}
-			<g transform="translate({nodeX}, {nodeY})">
+			{@const isClickable = !!node.dashboardUrl}
+			<g
+				transform="translate({nodeX}, {nodeY})"
+				class={isClickable ? 'cursor-pointer' : ''}
+				onclick={() => handleNodeClick(node)}
+				onkeydown={(e) => e.key === 'Enter' && handleNodeClick(node)}
+				role={isClickable ? 'button' : undefined}
+				tabindex={isClickable ? 0 : undefined}
+			>
 				<!-- Node circle -->
 				<circle
 					cx="0"
 					cy="0"
-					r="16"
+					r="24"
 					fill="#1f2937"
 					stroke={color}
-					stroke-width="1.5"
-					class="transition-all"
+					stroke-width="2"
+					class="transition-all {isClickable ? 'hover:stroke-[3px] hover:fill-gray-800' : ''}"
 				/>
 
 				<!-- Icon (positioned in center) -->
-				<foreignObject x="-10" y="-10" width="20" height="20">
+				<foreignObject x="-14" y="-14" width="28" height="28">
 					<div class="flex items-center justify-center w-full h-full" style="color: {color}">
-						<IconComponent class="w-3 h-3" />
+						<IconComponent class="w-5 h-5" />
 					</div>
 				</foreignObject>
 
 				<!-- Label -->
-				<text x="0" y="28" text-anchor="middle" class="text-[7px] fill-gray-400">
-					{node.label.length > 10 ? node.label.slice(0, 9) + '..' : node.label}
+				<text x="0" y="40" text-anchor="middle" class="text-[11px] fill-gray-300 font-medium">
+					{node.label.length > 12 ? node.label.slice(0, 11) + '..' : node.label}
 				</text>
+
+				<!-- Clickable indicator -->
+				{#if isClickable}
+					<circle cx="18" cy="-18" r="6" fill="#374151" stroke={color} stroke-width="1" />
+					<foreignObject x="12" y="-24" width="12" height="12">
+						<div class="flex items-center justify-center w-full h-full text-gray-400">
+							<ExternalLink class="w-2.5 h-2.5" />
+						</div>
+					</foreignObject>
+				{/if}
 			</g>
 		{/each}
 	</svg>

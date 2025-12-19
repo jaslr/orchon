@@ -4,8 +4,6 @@
 	import type { InfraService, TechStack } from '$lib/types/infrastructure';
 	import { getProjectInfrastructure } from '$lib/config/infrastructure';
 	import {
-		ChevronRight,
-		ChevronDown,
 		Cloud,
 		Database,
 		Shield,
@@ -16,15 +14,15 @@
 		AlertTriangle,
 		BarChart3,
 		Server,
-		Layers
+		Layers,
+		ExternalLink
 	} from '@lucide/svelte';
 	import InfraFlowDiagram from '$lib/components/InfraFlowDiagram.svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	let showDates = $state(false);
 	let sortBy = $state<'name' | 'account' | 'recent'>('name');
-	let expandedRows = $state<Set<string>>(new Set());
+	let selectedRepo = $state<string | null>(null);
 
 	// Infrastructure data is static - loaded from config
 	function getInfra(repoName: string) {
@@ -69,28 +67,6 @@
 		return new Date(isoString).toLocaleTimeString();
 	}
 
-	function formatRunDate(isoString: string | null): { date: string; time: string } {
-		if (!isoString) return { date: '', time: '' };
-		const d = new Date(isoString);
-		const months = [
-			'JAN',
-			'FEB',
-			'MAR',
-			'APR',
-			'MAY',
-			'JUN',
-			'JUL',
-			'AUG',
-			'SEP',
-			'OCT',
-			'NOV',
-			'DEC'
-		];
-		const date = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-		const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-		return { date, time };
-	}
-
 	function sortedStatuses(statuses: RepoStatus[], sort: 'name' | 'account' | 'recent'): RepoStatus[] {
 		const sorted = [...statuses];
 		if (sort === 'name') {
@@ -108,13 +84,8 @@
 		return sorted;
 	}
 
-	function toggleRow(repoKey: string) {
-		if (expandedRows.has(repoKey)) {
-			expandedRows.delete(repoKey);
-		} else {
-			expandedRows.add(repoKey);
-		}
-		expandedRows = new Set(expandedRows);
+	function selectRepo(repoName: string) {
+		selectedRepo = selectedRepo === repoName ? null : repoName;
 	}
 
 	function groupServicesByCategory(services: InfraService[]): Map<string, InfraService[]> {
@@ -128,36 +99,30 @@
 	}
 
 	let displayStatuses = $derived(sortedStatuses(data.statuses, sortBy));
+	let selectedStatus = $derived(displayStatuses.find((s) => s.repo === selectedRepo));
+	let selectedInfra = $derived(selectedRepo ? getInfra(selectedRepo) : null);
+
+	// Auto-select first repo on load
+	$effect(() => {
+		if (!selectedRepo && displayStatuses.length > 0) {
+			selectedRepo = displayStatuses[0].repo;
+		}
+	});
 </script>
 
-<div class="min-h-screen bg-gray-900 text-white p-4">
-	<div class="max-w-4xl mx-auto">
-		<header class="mb-4 text-center">
-			<h1 class="text-2xl font-bold text-gray-100">Infrastructure Observatory</h1>
-			<p class="text-sm text-gray-500">Last updated: {formatTime(data.lastUpdated)}</p>
-		</header>
-
-		<!-- Controls -->
-		<div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
-			<!-- Show Dates Toggle -->
-			<label class="flex items-center gap-2 cursor-pointer">
-				<div class="relative">
-					<input type="checkbox" bind:checked={showDates} class="sr-only peer" />
-					<div
-						class="w-10 h-5 bg-gray-700 rounded-full peer-checked:bg-blue-600 transition-colors"
-					></div>
-					<div
-						class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"
-					></div>
-				</div>
-				<span class="text-sm text-gray-400">Show dates</span>
-			</label>
-
+<div class="min-h-screen bg-gray-900 text-white flex flex-col">
+	<!-- Header -->
+	<header class="shrink-0 px-4 py-3 border-b border-gray-800">
+		<div class="flex items-center justify-between">
+			<div>
+				<h1 class="text-lg font-semibold text-gray-100">Infrastructure Observatory</h1>
+				<p class="text-xs text-gray-500">Last updated: {formatTime(data.lastUpdated)}</p>
+			</div>
 			<!-- Sort Options -->
-			<div class="flex gap-2">
+			<div class="flex gap-1">
 				<button
 					onclick={() => (sortBy = 'name')}
-					class="px-3 py-1 text-sm rounded {sortBy === 'name'
+					class="px-2 py-1 text-xs rounded {sortBy === 'name'
 						? 'bg-blue-600'
 						: 'bg-gray-700 hover:bg-gray-600'} transition-colors"
 				>
@@ -165,7 +130,7 @@
 				</button>
 				<button
 					onclick={() => (sortBy = 'account')}
-					class="px-3 py-1 text-sm rounded {sortBy === 'account'
+					class="px-2 py-1 text-xs rounded {sortBy === 'account'
 						? 'bg-blue-600'
 						: 'bg-gray-700 hover:bg-gray-600'} transition-colors"
 				>
@@ -173,7 +138,7 @@
 				</button>
 				<button
 					onclick={() => (sortBy = 'recent')}
-					class="px-3 py-1 text-sm rounded {sortBy === 'recent'
+					class="px-2 py-1 text-xs rounded {sortBy === 'recent'
 						? 'bg-blue-600'
 						: 'bg-gray-700 hover:bg-gray-600'} transition-colors"
 				>
@@ -181,160 +146,166 @@
 				</button>
 			</div>
 		</div>
+	</header>
 
-		{#if data.statuses.length === 0}
-			<div class="text-center text-gray-500 py-12">
-				<p>No repos configured.</p>
-				<p class="text-sm mt-2">Edit src/lib/config/repos.ts to add repos.</p>
-			</div>
-		{:else}
-			<div class="space-y-2">
-				{#each displayStatuses as status (`${status.owner}/${status.repo}`)}
-					{@const runDate = formatRunDate(status.run_date)}
-					{@const repoKey = `${status.owner}/${status.repo}`}
-					{@const isExpanded = expandedRows.has(repoKey)}
-					{@const repoInfra = getInfra(status.repo)}
-
-					<div class="bg-gray-800 rounded-lg overflow-hidden">
-						<!-- Main Row -->
-						<div
-							class="flex items-center gap-4 p-4 hover:bg-gray-700 transition-colors cursor-pointer"
-							onclick={() => toggleRow(repoKey)}
-							onkeydown={(e) => e.key === 'Enter' && toggleRow(repoKey)}
-							role="button"
-							tabindex="0"
+	<!-- Main Content - Side Panel Layout -->
+	<div class="flex-1 flex min-h-0">
+		<!-- Left Sidebar - Repo List -->
+		<aside class="w-[20rem] shrink-0 border-r border-gray-800 overflow-y-auto bg-gray-900">
+			{#if data.statuses.length === 0}
+				<div class="p-4 text-center text-gray-500">
+					<p>No repos configured.</p>
+				</div>
+			{:else}
+				<div class="py-1">
+					{#each displayStatuses as status (status.repo)}
+						{@const repoInfra = getInfra(status.repo)}
+						{@const isSelected = selectedRepo === status.repo}
+						<button
+							onclick={() => selectRepo(status.repo)}
+							class="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors {isSelected
+								? 'bg-gray-800 border-l-2 border-blue-500'
+								: 'hover:bg-gray-800/50 border-l-2 border-transparent'}"
 						>
-							<!-- Expand Icon -->
-							<div class="text-gray-500 shrink-0">
-								{#if isExpanded}
-									<ChevronDown class="w-4 h-4" />
-								{:else}
-									<ChevronRight class="w-4 h-4" />
-								{/if}
-							</div>
-
 							<!-- Status Dot -->
-							<div class="w-4 h-4 rounded-full {statusColors[status.status]} shrink-0"></div>
+							<div class="w-2.5 h-2.5 rounded-full {statusColors[status.status]} shrink-0"></div>
 
 							<!-- Repo Info -->
 							<div class="flex-1 min-w-0">
-								<div class="font-medium truncate">{status.repo}</div>
+								<div class="font-medium text-sm truncate {isSelected ? 'text-white' : 'text-gray-300'}">
+									{status.repo}
+								</div>
 								<div class="text-xs text-gray-500 truncate">{status.owner}</div>
 							</div>
 
-							<!-- Service Count Badge -->
+							<!-- Service Count -->
 							{#if repoInfra}
-								<div class="flex items-center gap-1 text-xs text-gray-400 shrink-0">
+								<div class="flex items-center gap-1 text-xs text-gray-500 shrink-0">
 									<Layers class="w-3 h-3" />
 									<span>{repoInfra.services.length}</span>
 								</div>
 							{/if}
+						</button>
+					{/each}
+				</div>
+			{/if}
+		</aside>
 
-							<!-- Date -->
-							{#if showDates && status.run_date}
-								<div class="text-right shrink-0">
-									<div class="text-sm text-gray-300">{runDate.date}</div>
-									<div class="text-xs text-gray-500">{runDate.time}</div>
+		<!-- Right Panel - Infrastructure Details -->
+		<main class="flex-1 overflow-y-auto bg-gray-850 min-w-0">
+			{#if selectedStatus && selectedInfra}
+				{@const grouped = groupServicesByCategory(selectedInfra.services)}
+				<div class="h-full flex flex-col">
+					<!-- Project Header -->
+					<div class="shrink-0 px-6 py-4 border-b border-gray-700 bg-gray-800">
+						<div class="flex items-center justify-between">
+							<div>
+								<h2 class="text-xl font-semibold text-white">{selectedInfra.displayName}</h2>
+								<p class="text-sm text-gray-400">{selectedStatus.owner}/{selectedStatus.repo}</p>
+							</div>
+							<a
+								href={selectedStatus.html_url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm text-gray-300 transition-colors"
+							>
+								<GitBranch class="w-4 h-4" />
+								<span>Actions</span>
+								<ExternalLink class="w-3 h-3" />
+							</a>
+						</div>
+					</div>
+
+					<!-- Flow Diagram - Large -->
+					<div class="shrink-0 p-6 border-b border-gray-700">
+						<div class="text-xs text-gray-500 uppercase tracking-wider mb-3">Infrastructure Flow</div>
+						<div class="bg-gray-900 rounded-lg p-4 min-h-[20rem]">
+							<InfraFlowDiagram
+								services={selectedInfra.services}
+								projectName={selectedInfra.displayName}
+							/>
+						</div>
+						<p class="text-xs text-gray-600 mt-2">Click any service node to open its dashboard</p>
+					</div>
+
+					<!-- Details Grid -->
+					<div class="flex-1 p-6 overflow-y-auto">
+						<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+							<!-- Tech Stack -->
+							{#if selectedInfra.stack}
+								<div class="bg-gray-800 rounded-lg p-4">
+									<div class="text-xs text-gray-500 uppercase tracking-wider mb-3">Tech Stack</div>
+									<div class="flex flex-wrap gap-2">
+										{#if selectedInfra.stack.framework}
+											<span class="px-3 py-1.5 bg-gray-700 rounded text-sm text-blue-400">
+												{selectedInfra.stack.framework}
+											</span>
+										{/if}
+										{#each selectedInfra.stack.css || [] as css}
+											<span class="px-3 py-1.5 bg-gray-700 rounded text-sm text-cyan-400">
+												{css}
+											</span>
+										{/each}
+										{#if selectedInfra.stack.buildTool}
+											<span class="px-3 py-1.5 bg-gray-700 rounded text-sm text-yellow-400">
+												{selectedInfra.stack.buildTool}
+											</span>
+										{/if}
+										{#if selectedInfra.stack.language}
+											<span class="px-3 py-1.5 bg-gray-700 rounded text-sm text-gray-400">
+												{selectedInfra.stack.language}
+											</span>
+										{/if}
+										{#if selectedInfra.stack.packageManager}
+											<span class="px-3 py-1.5 bg-gray-700 rounded text-sm text-gray-500">
+												{selectedInfra.stack.packageManager}
+											</span>
+										{/if}
+									</div>
 								</div>
 							{/if}
 
-							<!-- External Link -->
-							<a
-								href={status.html_url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="text-gray-500 hover:text-white shrink-0"
-								onclick={(e) => e.stopPropagation()}
-							>
-								<GitBranch class="w-4 h-4" />
-							</a>
-						</div>
-
-						<!-- Expanded Infrastructure Panel -->
-						{#if isExpanded}
-							<div class="border-t border-gray-700 p-4 bg-gray-850">
-								{#if repoInfra}
-									{@const grouped = groupServicesByCategory(repoInfra.services)}
-
-									<!-- Flow Diagram -->
-									<div class="mb-4 pb-4 border-b border-gray-700">
-										<InfraFlowDiagram
-											services={repoInfra.services}
-											projectName={repoInfra.displayName}
-										/>
-									</div>
-
-									<!-- Stack Info -->
-									{#if repoInfra.stack}
-										<div class="mb-4 pb-4 border-b border-gray-700">
-											<div class="text-xs text-gray-500 uppercase tracking-wider mb-2">
-												Tech Stack
+							<!-- Services List with Links -->
+							<div class="bg-gray-800 rounded-lg p-4">
+								<div class="text-xs text-gray-500 uppercase tracking-wider mb-3">Services</div>
+								<div class="space-y-3">
+									{#each [...grouped.entries()] as [category, services]}
+										{@const IconComponent = categoryIcons[category] || Server}
+										<div>
+											<div class="flex items-center gap-2 text-xs text-gray-500 uppercase tracking-wider mb-1">
+												<IconComponent class="w-3 h-3" />
+												<span>{category}</span>
 											</div>
-											<div class="flex flex-wrap gap-2">
-												{#if repoInfra.stack.framework}
-													<span class="px-2 py-1 bg-gray-700 rounded text-xs text-blue-400">
-														{repoInfra.stack.framework}
-													</span>
-												{/if}
-												{#each repoInfra.stack.css || [] as css}
-													<span class="px-2 py-1 bg-gray-700 rounded text-xs text-cyan-400">
-														{css}
-													</span>
-												{/each}
-												{#if repoInfra.stack.buildTool}
-													<span class="px-2 py-1 bg-gray-700 rounded text-xs text-yellow-400">
-														{repoInfra.stack.buildTool}
-													</span>
-												{/if}
-												{#if repoInfra.stack.language}
-													<span class="px-2 py-1 bg-gray-700 rounded text-xs text-gray-400">
-														{repoInfra.stack.language}
-													</span>
-												{/if}
-											</div>
-										</div>
-									{/if}
-
-									<!-- Services by Category -->
-									<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-										{#each [...grouped.entries()] as [category, services]}
-											{@const IconComponent = categoryIcons[category] || Server}
-											<div class="space-y-2">
-												<div class="flex items-center gap-2 text-xs text-gray-500 uppercase tracking-wider">
-													<IconComponent class="w-3 h-3" />
-													<span>{category}</span>
-												</div>
-												{#each services as service}
-													<div
-														class="flex items-center gap-2 text-sm {providerColors[
-															service.provider
-														] || 'text-gray-300'}"
+											{#each services as service}
+												{#if service.dashboardUrl}
+													<a
+														href={service.dashboardUrl}
+														target="_blank"
+														rel="noopener noreferrer"
+														class="flex items-center gap-2 py-1 text-sm {providerColors[service.provider] || 'text-gray-300'} hover:underline"
 													>
 														<span>{service.serviceName}</span>
-														{#if service.status === 'healthy'}
-															<span class="w-2 h-2 rounded-full bg-green-500"></span>
-														{:else if service.status === 'degraded'}
-															<span class="w-2 h-2 rounded-full bg-yellow-500"></span>
-														{:else if service.status === 'down'}
-															<span class="w-2 h-2 rounded-full bg-red-500"></span>
-														{/if}
+														<ExternalLink class="w-3 h-3 opacity-50" />
+													</a>
+												{:else}
+													<div class="flex items-center gap-2 py-1 text-sm {providerColors[service.provider] || 'text-gray-300'}">
+														<span>{service.serviceName}</span>
 													</div>
-												{/each}
-											</div>
-										{/each}
-									</div>
-
-								{:else}
-									<div class="text-gray-500 text-sm">
-										No infrastructure data configured for this project.
-									</div>
-								{/if}
+												{/if}
+											{/each}
+										</div>
+									{/each}
+								</div>
 							</div>
-						{/if}
+						</div>
 					</div>
-				{/each}
-			</div>
-		{/if}
+				</div>
+			{:else}
+				<div class="h-full flex items-center justify-center text-gray-500">
+					<p>Select a repository to view infrastructure</p>
+				</div>
+			{/if}
+		</main>
 	</div>
 </div>
 

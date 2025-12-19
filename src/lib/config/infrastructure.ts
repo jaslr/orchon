@@ -15,6 +15,7 @@ export const INFRASTRUCTURE: Record<string, {
   identity: AccountIdentity;
   services: Omit<InfraService, 'id' | 'projectId' | 'lastChecked'>[];
   stack: Omit<TechStack, 'projectId'>;
+  repoOwner: string;
 }> = {
   // ==========================================================================
   // LIVNA - Full-featured SvelteKit app
@@ -22,13 +23,14 @@ export const INFRASTRUCTURE: Record<string, {
   livna: {
     displayName: 'Livna',
     identity: 'jaslr',
+    repoOwner: 'jaslr',
     services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
-      { category: 'database', provider: 'supabase', serviceName: 'Supabase Database', status: 'unknown', config: {}, discoveryMethod: 'package_json' },
-      { category: 'auth', provider: 'supabase', serviceName: 'Supabase Auth', status: 'unknown', config: {}, discoveryMethod: 'package_json' },
-      { category: 'storage', provider: 'cloudflare', serviceName: 'Cloudflare R2', status: 'unknown', config: {}, discoveryMethod: 'env_vars' },
-      { category: 'monitoring', provider: 'sentry', serviceName: 'Sentry', status: 'unknown', config: {}, discoveryMethod: 'package_json' },
-      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
+      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/livna' },
+      { category: 'database', provider: 'supabase', serviceName: 'Supabase Database', status: 'unknown', config: {}, discoveryMethod: 'package_json', dashboardUrl: 'https://supabase.com/dashboard/project/vtyfsrpupgrkkbnsiuqe' },
+      { category: 'auth', provider: 'supabase', serviceName: 'Supabase Auth', status: 'unknown', config: {}, discoveryMethod: 'package_json', dashboardUrl: 'https://supabase.com/dashboard/project/vtyfsrpupgrkkbnsiuqe/auth/users' },
+      { category: 'storage', provider: 'cloudflare', serviceName: 'Cloudflare R2', status: 'unknown', config: {}, discoveryMethod: 'env_vars', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/r2/default/buckets' },
+      { category: 'monitoring', provider: 'sentry', serviceName: 'Sentry', status: 'unknown', config: {}, discoveryMethod: 'package_json', dashboardUrl: 'https://jaslr.sentry.io/projects/livna/' },
+      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jaslr/livna/actions' },
     ],
     stack: {
       framework: 'sveltekit',
@@ -48,9 +50,10 @@ export const INFRASTRUCTURE: Record<string, {
   brontiq: {
     displayName: 'Brontiq',
     identity: 'jaslr',
+    repoOwner: 'jaslr',
     services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
-      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
+      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/brontiq' },
+      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jaslr/brontiq/actions' },
     ],
     stack: {
       framework: 'sveltekit',
@@ -68,10 +71,11 @@ export const INFRASTRUCTURE: Record<string, {
   Ladderbox: {
     displayName: 'Ladderbox',
     identity: 'jaslr',
+    repoOwner: 'jaslr',
     services: [
-      { category: 'hosting', provider: 'flyio', serviceName: 'Fly.io', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
-      { category: 'database', provider: 'supabase', serviceName: 'Supabase Database', status: 'unknown', config: {}, discoveryMethod: 'package_json' },
-      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
+      { category: 'hosting', provider: 'flyio', serviceName: 'Fly.io', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://fly.io/apps/ladderbox' },
+      { category: 'database', provider: 'supabase', serviceName: 'Supabase Database', status: 'unknown', config: {}, discoveryMethod: 'package_json', dashboardUrl: 'https://supabase.com/dashboard/project/ladderbox' },
+      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jaslr/Ladderbox/actions' },
     ],
     stack: {
       framework: 'sveltekit',
@@ -89,9 +93,10 @@ export const INFRASTRUCTURE: Record<string, {
   shippywhippy: {
     displayName: 'Shippy Whippy',
     identity: 'jaslr',
+    repoOwner: 'jaslr',
     services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
-      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
+      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/shippywhippy' },
+      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jaslr/shippywhippy/actions' },
     ],
     stack: {
       framework: 'sveltekit',
@@ -109,9 +114,10 @@ export const INFRASTRUCTURE: Record<string, {
   loadmanagement: {
     displayName: 'Load Management',
     identity: 'jaslr',
+    repoOwner: 'jaslr',
     services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
-      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
+      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/loadmanagement' },
+      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jaslr/loadmanagement/actions' },
     ],
     stack: {
       framework: 'sveltekit',
@@ -129,9 +135,10 @@ export const INFRASTRUCTURE: Record<string, {
   littlelistoflights: {
     displayName: 'Little List of Lights',
     identity: 'jaslr',
+    repoOwner: 'jaslr',
     services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
-      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
+      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/littlelistoflights' },
+      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jaslr/littlelistoflights/actions' },
     ],
     stack: {
       framework: 'sveltekit',
@@ -149,9 +156,10 @@ export const INFRASTRUCTURE: Record<string, {
   'vastpuddle.com.au': {
     displayName: 'Vast Puddle',
     identity: 'jvp-ux',
+    repoOwner: 'jvp-ux',
     services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
-      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
+      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/vastpuddle-com-au' },
+      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jvp-ux/vastpuddle.com.au/actions' },
     ],
     stack: {
       framework: 'sveltekit',
@@ -166,10 +174,11 @@ export const INFRASTRUCTURE: Record<string, {
   'junipa.com.au': {
     displayName: 'Junipa',
     identity: 'jvp-ux',
+    repoOwner: 'jvp-ux',
     services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
-      { category: 'database', provider: 'supabase', serviceName: 'Supabase Database', status: 'unknown', config: {}, discoveryMethod: 'package_json' },
-      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
+      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/junipa-com-au' },
+      { category: 'database', provider: 'supabase', serviceName: 'Supabase Database', status: 'unknown', config: {}, discoveryMethod: 'package_json', dashboardUrl: 'https://supabase.com/dashboard/project/junipa' },
+      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jvp-ux/junipa.com.au/actions' },
     ],
     stack: {
       framework: 'angular',
@@ -184,9 +193,10 @@ export const INFRASTRUCTURE: Record<string, {
   'junipa-organisations': {
     displayName: 'Junipa Organisations',
     identity: 'jvp-ux',
+    repoOwner: 'jvp-ux',
     services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
-      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
+      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/junipa-organisations' },
+      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jvp-ux/junipa-organisations/actions' },
     ],
     stack: {
       framework: 'sveltekit',
@@ -201,9 +211,10 @@ export const INFRASTRUCTURE: Record<string, {
   'support.junipa.com.au': {
     displayName: 'Junipa Support',
     identity: 'jvp-ux',
+    repoOwner: 'jvp-ux',
     services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
-      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
+      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/support-junipa-com-au' },
+      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jvp-ux/support.junipa.com.au/actions' },
     ],
     stack: {
       framework: 'sveltekit',
@@ -222,6 +233,7 @@ export const INFRASTRUCTURE: Record<string, {
 export function getProjectInfrastructure(repoName: string): {
   displayName: string;
   identity: AccountIdentity;
+  repoOwner: string;
   services: InfraService[];
   stack: TechStack;
 } | null {
@@ -233,6 +245,7 @@ export function getProjectInfrastructure(repoName: string): {
   return {
     displayName: infra.displayName,
     identity: infra.identity,
+    repoOwner: infra.repoOwner,
     services: infra.services.map((s, i) => ({
       ...s,
       id: `${repoName}-${s.provider}-${s.category}-${i}`,
