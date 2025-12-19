@@ -2,12 +2,14 @@
 // Format: { owner: [repo1, repo2, ...] }
 export const repos: Record<string, string[]> = {
 	jaslr: [
-		// Add your jaslr repos here
-		// Example: 'ci-monitor'
+		'livna',
+		'brontiq',
+		'shippywhippy',
+		'loadmanagement',
+		'Ladderbox'
 	],
 	'jvp-ux': [
-		// Add your jvp-ux repos here
-		// Example: 'vastpuddle.com.au'
+		'vastpuddle.com.au'
 	]
 };
 
