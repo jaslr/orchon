@@ -14,9 +14,7 @@ export const repos: Record<string, string[]> = {
 		'support.junipa.com.au',
 		'junipa-organisations',
 		'junipa.com.au',
-		'learnjunipa',
-		'learn-junipa-conifa',
-		'learn-junipa'
+		'learnjunipa'
 	]
 };
 
