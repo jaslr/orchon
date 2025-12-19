@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { WorkflowStatus, RepoStatus } from '$lib/github';
-	import type { Project, InfraService, DiscoveryResult } from '$lib/types/infrastructure';
+	import type { InfraService, TechStack } from '$lib/types/infrastructure';
+	import { getProjectInfrastructure } from '$lib/config/infrastructure';
 	import {
 		ChevronRight,
 		ChevronDown,
@@ -15,7 +16,6 @@
 		AlertTriangle,
 		BarChart3,
 		Server,
-		RefreshCw,
 		Layers,
 		Network
 	} from '@lucide/svelte';
@@ -27,8 +27,11 @@
 	let showDiagram = $state<Set<string>>(new Set());
 	let sortBy = $state<'name' | 'account' | 'recent'>('name');
 	let expandedRows = $state<Set<string>>(new Set());
-	let infraData = $state<Map<string, { project: Project; discovery: DiscoveryResult }>>(new Map());
-	let loadingInfra = $state<Set<string>>(new Set());
+
+	// Infrastructure data is static - loaded from config
+	function getInfra(repoName: string) {
+		return getProjectInfrastructure(repoName);
+	}
 
 	function toggleDiagram(repoKey: string) {
 		if (showDiagram.has(repoKey)) {
@@ -116,34 +119,13 @@
 		return sorted;
 	}
 
-	async function toggleRow(repoKey: string, repoName: string) {
+	function toggleRow(repoKey: string) {
 		if (expandedRows.has(repoKey)) {
 			expandedRows.delete(repoKey);
-			expandedRows = new Set(expandedRows);
 		} else {
 			expandedRows.add(repoKey);
-			expandedRows = new Set(expandedRows);
-
-			// Load infrastructure data if not already loaded
-			if (!infraData.has(repoName) && !loadingInfra.has(repoName)) {
-				loadingInfra.add(repoName);
-				loadingInfra = new Set(loadingInfra);
-
-				try {
-					const response = await fetch(`/api/scan?project=${encodeURIComponent(repoName)}`);
-					if (response.ok) {
-						const result = await response.json();
-						infraData.set(repoName, result);
-						infraData = new Map(infraData);
-					}
-				} catch (e) {
-					console.error('Failed to load infrastructure:', e);
-				} finally {
-					loadingInfra.delete(repoName);
-					loadingInfra = new Set(loadingInfra);
-				}
-			}
 		}
+		expandedRows = new Set(expandedRows);
 	}
 
 	function groupServicesByCategory(services: InfraService[]): Map<string, InfraService[]> {
@@ -222,15 +204,14 @@
 					{@const runDate = formatRunDate(status.run_date)}
 					{@const repoKey = `${status.owner}/${status.repo}`}
 					{@const isExpanded = expandedRows.has(repoKey)}
-					{@const repoInfra = infraData.get(status.repo)}
-					{@const isLoading = loadingInfra.has(status.repo)}
+					{@const repoInfra = getInfra(status.repo)}
 
 					<div class="bg-gray-800 rounded-lg overflow-hidden">
 						<!-- Main Row -->
 						<div
 							class="flex items-center gap-4 p-4 hover:bg-gray-700 transition-colors cursor-pointer"
-							onclick={() => toggleRow(repoKey, status.repo)}
-							onkeydown={(e) => e.key === 'Enter' && toggleRow(repoKey, status.repo)}
+							onclick={() => toggleRow(repoKey)}
+							onkeydown={(e) => e.key === 'Enter' && toggleRow(repoKey)}
 							role="button"
 							tabindex="0"
 						>
@@ -256,7 +237,7 @@
 							{#if repoInfra}
 								<div class="flex items-center gap-1 text-xs text-gray-400 shrink-0">
 									<Layers class="w-3 h-3" />
-									<span>{repoInfra.project.services.length}</span>
+									<span>{repoInfra.services.length}</span>
 								</div>
 							{/if}
 
@@ -283,13 +264,8 @@
 						<!-- Expanded Infrastructure Panel -->
 						{#if isExpanded}
 							<div class="border-t border-gray-700 p-4 bg-gray-850">
-								{#if isLoading}
-									<div class="flex items-center gap-2 text-gray-400 text-sm">
-										<RefreshCw class="w-4 h-4 animate-spin" />
-										<span>Scanning infrastructure...</span>
-									</div>
-								{:else if repoInfra}
-									{@const grouped = groupServicesByCategory(repoInfra.project.services)}
+								{#if repoInfra}
+									{@const grouped = groupServicesByCategory(repoInfra.services)}
 									{@const isDiagramView = showDiagram.has(repoKey)}
 
 									<!-- View Toggle -->
@@ -307,38 +283,38 @@
 									{#if isDiagramView}
 										<div class="mb-4 pb-4 border-b border-gray-700">
 											<InfraFlowDiagram
-												services={repoInfra.project.services}
-												projectName={repoInfra.project.displayName}
+												services={repoInfra.services}
+												projectName={repoInfra.displayName}
 												animated={true}
 											/>
 										</div>
 									{/if}
 
 									<!-- Stack Info -->
-									{#if repoInfra.project.stack}
+									{#if repoInfra.stack}
 										<div class="mb-4 pb-4 border-b border-gray-700">
 											<div class="text-xs text-gray-500 uppercase tracking-wider mb-2">
 												Tech Stack
 											</div>
 											<div class="flex flex-wrap gap-2">
-												{#if repoInfra.project.stack.framework}
+												{#if repoInfra.stack.framework}
 													<span class="px-2 py-1 bg-gray-700 rounded text-xs text-blue-400">
-														{repoInfra.project.stack.framework}
+														{repoInfra.stack.framework}
 													</span>
 												{/if}
-												{#each repoInfra.project.stack.css || [] as css}
+												{#each repoInfra.stack.css || [] as css}
 													<span class="px-2 py-1 bg-gray-700 rounded text-xs text-cyan-400">
 														{css}
 													</span>
 												{/each}
-												{#if repoInfra.project.stack.buildTool}
+												{#if repoInfra.stack.buildTool}
 													<span class="px-2 py-1 bg-gray-700 rounded text-xs text-yellow-400">
-														{repoInfra.project.stack.buildTool}
+														{repoInfra.stack.buildTool}
 													</span>
 												{/if}
-												{#if repoInfra.project.stack.language}
+												{#if repoInfra.stack.language}
 													<span class="px-2 py-1 bg-gray-700 rounded text-xs text-gray-400">
-														{repoInfra.project.stack.language}
+														{repoInfra.stack.language}
 													</span>
 												{/if}
 											</div>
@@ -374,35 +350,9 @@
 										{/each}
 									</div>
 
-									<!-- DNS Info -->
-									{#if repoInfra.discovery.dns}
-										<div class="mt-4 pt-4 border-t border-gray-700">
-											<div class="text-xs text-gray-500 uppercase tracking-wider mb-2">DNS</div>
-											<div class="text-sm text-gray-300">
-												<div>Domain: {repoInfra.discovery.dns.domain}</div>
-												{#if repoInfra.discovery.dns.dnsProvider}
-													<div>Provider: {repoInfra.discovery.dns.dnsProvider}</div>
-												{/if}
-											</div>
-										</div>
-									{/if}
-
-									<!-- Errors -->
-									{#if repoInfra.discovery.errors.length > 0}
-										<div class="mt-4 pt-4 border-t border-gray-700">
-											<div class="text-xs text-yellow-500 uppercase tracking-wider mb-2">
-												Discovery Notes
-											</div>
-											{#each repoInfra.discovery.errors as error}
-												<div class="text-xs text-gray-500">
-													{error.source}: {error.message}
-												</div>
-											{/each}
-										</div>
-									{/if}
 								{:else}
 									<div class="text-gray-500 text-sm">
-										No local project found for infrastructure scanning.
+										No infrastructure data configured for this project.
 									</div>
 								{/if}
 							</div>
