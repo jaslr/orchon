@@ -183,7 +183,7 @@ export interface DnsRecord {
 
 export interface InfraNode {
   id: string;
-  type: 'user' | 'cdn' | 'dns' | 'hosting' | 'api' | 'database' | 'storage' | 'auth' | 'external' | 'ci' | 'monitoring';
+  type: 'user' | 'cdn' | 'dns' | 'site' | 'hosting' | 'api' | 'database' | 'storage' | 'auth' | 'external' | 'ci' | 'monitoring';
   label: string;
   provider?: string;
   icon?: string;                  // Lucide icon name

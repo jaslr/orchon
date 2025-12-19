@@ -10,176 +10,160 @@
 		HardDrive,
 		GitBranch,
 		AlertTriangle,
-		Zap
+		ExternalLink
 	} from '@lucide/svelte';
 
 	interface Props {
 		services: InfraService[];
 		projectName: string;
+		domain?: string;
 		animated?: boolean;
 	}
 
-	let { services, projectName, animated = false }: Props = $props();
+	let { services, projectName, domain, animated = true }: Props = $props();
 
 	// Build nodes from services
-	let nodes = $derived(buildNodes(services, projectName));
+	let nodes = $derived(buildNodes(services, projectName, domain));
 	let edges = $derived(buildEdges(nodes));
 
 	const nodeIcons: Record<string, typeof Cloud> = {
 		user: User,
 		dns: Globe,
 		cdn: Cloud,
+		site: ExternalLink,
 		hosting: Cloud,
 		api: Server,
 		database: Database,
 		auth: Shield,
 		storage: HardDrive,
 		ci: GitBranch,
-		monitoring: AlertTriangle,
-		external: Zap
+		monitoring: AlertTriangle
 	};
 
 	const nodeColors: Record<string, string> = {
 		user: '#6366f1',
 		dns: '#06b6d4',
 		cdn: '#f97316',
+		site: '#10b981',
 		hosting: '#f97316',
 		api: '#8b5cf6',
 		database: '#22c55e',
 		auth: '#eab308',
 		storage: '#ec4899',
 		ci: '#64748b',
-		monitoring: '#ef4444',
-		external: '#a855f7'
+		monitoring: '#ef4444'
 	};
 
-	function buildNodes(services: InfraService[], name: string): InfraNode[] {
+	function buildNodes(services: InfraService[], name: string, siteDomain?: string): InfraNode[] {
 		const nodes: InfraNode[] = [];
-		const seen = new Set<string>();
 
-		// Always add user node
+		// Layout: horizontal flow with backend services on the right
+		// User (left) -> Hosting (center) -> Backend services (right column)
+		// CI above hosting, Monitoring below
+
+		const hasDb = services.some((s) => s.category === 'database');
+		const hasAuth = services.some((s) => s.category === 'auth');
+		const hasStorage = services.some((s) => s.category === 'storage');
+		const hasCi = services.some((s) => s.category === 'ci');
+		const hasMonitoring = services.some((s) => s.category === 'monitoring');
+
+		// Count backend services for vertical centering
+		const backendCount = [hasDb, hasAuth, hasStorage].filter(Boolean).length;
+		const backendStartY = backendCount === 1 ? 100 : backendCount === 2 ? 70 : 40;
+		const backendSpacing = 60;
+
+		// User node - left side
 		nodes.push({
 			id: 'user',
 			type: 'user',
-			label: 'User',
+			label: 'Users',
 			status: 'healthy',
-			x: 50,
-			y: 150
+			x: 40,
+			y: 100
 		});
 
-		// Add DNS if present
-		const dnsService = services.find((s) => s.category === 'dns');
-		if (dnsService) {
-			nodes.push({
-				id: 'dns',
-				type: 'dns',
-				label: dnsService.serviceName,
-				provider: dnsService.provider,
-				status: dnsService.status,
-				x: 150,
-				y: 150
-			});
-			seen.add('dns');
-		}
-
-		// Add hosting
+		// Hosting/Site node - center (represents the deployed app)
 		const hostingService = services.find((s) => s.category === 'hosting');
-		if (hostingService) {
-			nodes.push({
-				id: 'hosting',
-				type: 'hosting',
-				label: hostingService.serviceName,
-				provider: hostingService.provider,
-				status: hostingService.status,
-				x: 250,
-				y: 150
-			});
-			seen.add('hosting');
-		} else {
-			// Default hosting node
-			nodes.push({
-				id: 'hosting',
-				type: 'hosting',
-				label: name,
-				status: 'unknown',
-				x: 250,
-				y: 150
-			});
-		}
+		nodes.push({
+			id: 'site',
+			type: 'site',
+			label: siteDomain || name,
+			provider: hostingService?.provider,
+			status: hostingService?.status || 'unknown',
+			x: 160,
+			y: 100
+		});
 
-		// Add database if present
-		const dbService = services.find((s) => s.category === 'database');
-		if (dbService) {
+		// Backend services - right column
+		let backendY = backendStartY;
+
+		if (hasDb) {
+			const dbService = services.find((s) => s.category === 'database')!;
 			nodes.push({
 				id: 'database',
 				type: 'database',
-				label: dbService.serviceName,
+				label: dbService.serviceName.replace('Supabase ', ''),
 				provider: dbService.provider,
 				status: dbService.status,
-				x: 350,
-				y: 80
+				x: 280,
+				y: backendY
 			});
-			seen.add('database');
+			backendY += backendSpacing;
 		}
 
-		// Add auth if present
-		const authService = services.find((s) => s.category === 'auth');
-		if (authService) {
+		if (hasAuth) {
+			const authService = services.find((s) => s.category === 'auth')!;
 			nodes.push({
 				id: 'auth',
 				type: 'auth',
-				label: authService.serviceName,
+				label: authService.serviceName.replace('Supabase ', ''),
 				provider: authService.provider,
 				status: authService.status,
-				x: 350,
-				y: 150
+				x: 280,
+				y: backendY
 			});
-			seen.add('auth');
+			backendY += backendSpacing;
 		}
 
-		// Add storage if present
-		const storageService = services.find((s) => s.category === 'storage');
-		if (storageService) {
+		if (hasStorage) {
+			const storageService = services.find((s) => s.category === 'storage')!;
 			nodes.push({
 				id: 'storage',
 				type: 'storage',
-				label: storageService.serviceName,
+				label: storageService.serviceName.replace('Cloudflare ', ''),
 				provider: storageService.provider,
 				status: storageService.status,
-				x: 350,
-				y: 220
+				x: 280,
+				y: backendY
 			});
-			seen.add('storage');
 		}
 
-		// Add CI if present
-		const ciService = services.find((s) => s.category === 'ci');
-		if (ciService) {
+		// CI - top center (deploys to site)
+		if (hasCi) {
+			const ciService = services.find((s) => s.category === 'ci')!;
 			nodes.push({
 				id: 'ci',
 				type: 'ci',
-				label: ciService.serviceName,
+				label: 'CI/CD',
 				provider: ciService.provider,
 				status: ciService.status,
-				x: 150,
-				y: 50
+				x: 160,
+				y: 20
 			});
-			seen.add('ci');
 		}
 
-		// Add monitoring if present
-		const monitoringService = services.find((s) => s.category === 'monitoring');
-		if (monitoringService) {
+		// Monitoring - bottom center
+		if (hasMonitoring) {
+			const monitoringService = services.find((s) => s.category === 'monitoring')!;
 			nodes.push({
 				id: 'monitoring',
 				type: 'monitoring',
 				label: monitoringService.serviceName,
 				provider: monitoringService.provider,
 				status: monitoringService.status,
-				x: 150,
-				y: 250
+				x: 160,
+				y: 180
 			});
-			seen.add('monitoring');
 		}
 
 		return nodes;
@@ -189,77 +173,62 @@
 		const edges: InfraEdge[] = [];
 		const nodeIds = new Set(nodes.map((n) => n.id));
 
-		// User -> DNS or Hosting
-		if (nodeIds.has('dns')) {
+		// User -> Site (main flow)
+		if (nodeIds.has('site')) {
 			edges.push({
-				id: 'user-dns',
+				id: 'user-site',
 				source: 'user',
-				target: 'dns',
-				status: 'active'
-			});
-			edges.push({
-				id: 'dns-hosting',
-				source: 'dns',
-				target: 'hosting',
-				status: 'active'
-			});
-		} else if (nodeIds.has('hosting')) {
-			edges.push({
-				id: 'user-hosting',
-				source: 'user',
-				target: 'hosting',
+				target: 'site',
 				status: 'active'
 			});
 		}
 
-		// Hosting -> Database
+		// Site -> Backend services
 		if (nodeIds.has('database')) {
 			edges.push({
-				id: 'hosting-database',
-				source: 'hosting',
+				id: 'site-database',
+				source: 'site',
 				target: 'database',
 				status: 'active'
 			});
 		}
 
-		// Hosting -> Auth
 		if (nodeIds.has('auth')) {
 			edges.push({
-				id: 'hosting-auth',
-				source: 'hosting',
+				id: 'site-auth',
+				source: 'site',
 				target: 'auth',
 				status: 'active'
 			});
 		}
 
-		// Hosting -> Storage
 		if (nodeIds.has('storage')) {
 			edges.push({
-				id: 'hosting-storage',
-				source: 'hosting',
+				id: 'site-storage',
+				source: 'site',
 				target: 'storage',
 				status: 'active'
 			});
 		}
 
-		// CI -> Hosting (deploy)
+		// CI -> Site (deploy)
 		if (nodeIds.has('ci')) {
 			edges.push({
-				id: 'ci-hosting',
+				id: 'ci-site',
 				source: 'ci',
-				target: 'hosting',
+				target: 'site',
 				label: 'deploy',
 				status: 'idle'
 			});
 		}
 
-		// Hosting -> Monitoring
+		// Site -> Monitoring
 		if (nodeIds.has('monitoring')) {
 			edges.push({
-				id: 'hosting-monitoring',
-				source: 'hosting',
+				id: 'site-monitoring',
+				source: 'site',
 				target: 'monitoring',
-				label: 'errors',
+				label: 'logs',
 				status: 'idle'
 			});
 		}
@@ -271,34 +240,61 @@
 		const node = nodes.find((n) => n.id === nodeId);
 		return node ? { x: node.x || 0, y: node.y || 0 } : { x: 0, y: 0 };
 	}
+
+	// Calculate edge path with proper connection points
+	function getEdgePath(
+		source: { x: number; y: number },
+		target: { x: number; y: number }
+	): { x1: number; y1: number; x2: number; y2: number } {
+		const nodeRadius = 16;
+		const dx = target.x - source.x;
+		const dy = target.y - source.y;
+		const dist = Math.sqrt(dx * dx + dy * dy);
+
+		if (dist === 0) return { x1: source.x, y1: source.y, x2: target.x, y2: target.y };
+
+		// Normalize and offset by radius
+		const nx = dx / dist;
+		const ny = dy / dist;
+
+		return {
+			x1: source.x + nx * nodeRadius,
+			y1: source.y + ny * nodeRadius,
+			x2: target.x - nx * (nodeRadius + 6), // Extra offset for arrowhead
+			y2: target.y - ny * (nodeRadius + 6)
+		};
+	}
 </script>
 
 <div class="w-full overflow-x-auto">
-	<svg viewBox="0 0 450 300" class="w-full h-auto min-w-[300px]">
+	<svg viewBox="0 0 340 210" class="w-full h-auto max-h-48">
 		<defs>
 			<!-- Arrow marker -->
 			<marker
-				id="arrowhead"
-				markerWidth="10"
-				markerHeight="7"
-				refX="9"
-				refY="3.5"
+				id="arrowhead-active"
+				markerWidth="8"
+				markerHeight="6"
+				refX="7"
+				refY="3"
 				orient="auto"
 			>
-				<polygon points="0 0, 10 3.5, 0 7" fill="#4b5563" />
+				<polygon points="0 0, 8 3, 0 6" fill="#22c55e" />
+			</marker>
+			<marker id="arrowhead-idle" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+				<polygon points="0 0, 8 3, 0 6" fill="#4b5563" />
 			</marker>
 
 			<!-- Animated dash pattern -->
 			{#if animated}
 				<style>
-					@keyframes dash {
+					@keyframes flowDash {
 						to {
-							stroke-dashoffset: -20;
+							stroke-dashoffset: -16;
 						}
 					}
-					.animated-edge {
-						stroke-dasharray: 5 5;
-						animation: dash 1s linear infinite;
+					.flow-animated {
+						stroke-dasharray: 4 4;
+						animation: flowDash 0.8s linear infinite;
 					}
 				</style>
 			{/if}
@@ -308,23 +304,25 @@
 		{#each edges as edge}
 			{@const source = getNodePosition(edge.source)}
 			{@const target = getNodePosition(edge.target)}
+			{@const path = getEdgePath(source, target)}
+			{@const isActive = edge.status === 'active'}
 			<g>
 				<line
-					x1={source.x + 25}
-					y1={source.y}
-					x2={target.x - 25}
-					y2={target.y}
-					stroke={edge.status === 'active' ? '#22c55e' : '#4b5563'}
-					stroke-width="2"
-					marker-end="url(#arrowhead)"
-					class={animated && edge.status === 'active' ? 'animated-edge' : ''}
+					x1={path.x1}
+					y1={path.y1}
+					x2={path.x2}
+					y2={path.y2}
+					stroke={isActive ? '#22c55e' : '#4b5563'}
+					stroke-width="1.5"
+					marker-end={isActive ? 'url(#arrowhead-active)' : 'url(#arrowhead-idle)'}
+					class={animated && isActive ? 'flow-animated' : ''}
 				/>
 				{#if edge.label}
 					<text
 						x={(source.x + target.x) / 2}
-						y={(source.y + target.y) / 2 - 8}
+						y={(source.y + target.y) / 2 - 4}
 						text-anchor="middle"
-						class="text-[10px] fill-gray-500"
+						class="text-[7px] fill-gray-500"
 					>
 						{edge.label}
 					</text>
@@ -338,37 +336,28 @@
 			{@const color = nodeColors[node.type] || '#6b7280'}
 			{@const nodeX = node.x ?? 0}
 			{@const nodeY = node.y ?? 0}
-			<g transform="translate({nodeX - 25}, {nodeY - 25})">
+			<g transform="translate({nodeX}, {nodeY})">
 				<!-- Node circle -->
 				<circle
-					cx="25"
-					cy="25"
-					r="22"
+					cx="0"
+					cy="0"
+					r="16"
 					fill="#1f2937"
 					stroke={color}
-					stroke-width="2"
-					class="transition-all hover:stroke-[3px]"
+					stroke-width="1.5"
+					class="transition-all"
 				/>
 
-				<!-- Status indicator -->
-				{#if node.status === 'healthy'}
-					<circle cx="40" cy="10" r="5" fill="#22c55e" />
-				{:else if node.status === 'degraded'}
-					<circle cx="40" cy="10" r="5" fill="#eab308" />
-				{:else if node.status === 'down'}
-					<circle cx="40" cy="10" r="5" fill="#ef4444" />
-				{/if}
-
 				<!-- Icon (positioned in center) -->
-				<foreignObject x="9" y="9" width="32" height="32">
+				<foreignObject x="-10" y="-10" width="20" height="20">
 					<div class="flex items-center justify-center w-full h-full" style="color: {color}">
-						<IconComponent class="w-5 h-5" />
+						<IconComponent class="w-3 h-3" />
 					</div>
 				</foreignObject>
 
 				<!-- Label -->
-				<text x="25" y="60" text-anchor="middle" class="text-[9px] fill-gray-400 font-medium">
-					{node.label.length > 12 ? node.label.slice(0, 10) + '..' : node.label}
+				<text x="0" y="28" text-anchor="middle" class="text-[7px] fill-gray-400">
+					{node.label.length > 10 ? node.label.slice(0, 9) + '..' : node.label}
 				</text>
 			</g>
 		{/each}

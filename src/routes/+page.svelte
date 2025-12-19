@@ -16,30 +16,19 @@
 		AlertTriangle,
 		BarChart3,
 		Server,
-		Layers,
-		Network
+		Layers
 	} from '@lucide/svelte';
 	import InfraFlowDiagram from '$lib/components/InfraFlowDiagram.svelte';
 
 	let { data }: { data: PageData } = $props();
 
 	let showDates = $state(false);
-	let showDiagram = $state<Set<string>>(new Set());
 	let sortBy = $state<'name' | 'account' | 'recent'>('name');
 	let expandedRows = $state<Set<string>>(new Set());
 
 	// Infrastructure data is static - loaded from config
 	function getInfra(repoName: string) {
 		return getProjectInfrastructure(repoName);
-	}
-
-	function toggleDiagram(repoKey: string) {
-		if (showDiagram.has(repoKey)) {
-			showDiagram.delete(repoKey);
-		} else {
-			showDiagram.add(repoKey);
-		}
-		showDiagram = new Set(showDiagram);
 	}
 
 	const statusColors: Record<WorkflowStatus, string> = {
@@ -266,29 +255,14 @@
 							<div class="border-t border-gray-700 p-4 bg-gray-850">
 								{#if repoInfra}
 									{@const grouped = groupServicesByCategory(repoInfra.services)}
-									{@const isDiagramView = showDiagram.has(repoKey)}
 
-									<!-- View Toggle -->
-									<div class="flex items-center justify-end mb-4">
-										<button
-											onclick={() => toggleDiagram(repoKey)}
-											class="flex items-center gap-1 px-2 py-1 text-xs rounded {isDiagramView ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'} transition-colors"
-										>
-											<Network class="w-3 h-3" />
-											<span>Flow</span>
-										</button>
+									<!-- Flow Diagram -->
+									<div class="mb-4 pb-4 border-b border-gray-700">
+										<InfraFlowDiagram
+											services={repoInfra.services}
+											projectName={repoInfra.displayName}
+										/>
 									</div>
-
-									<!-- Flow Diagram View -->
-									{#if isDiagramView}
-										<div class="mb-4 pb-4 border-b border-gray-700">
-											<InfraFlowDiagram
-												services={repoInfra.services}
-												projectName={repoInfra.displayName}
-												animated={true}
-											/>
-										</div>
-									{/if}
 
 									<!-- Stack Info -->
 									{#if repoInfra.stack}
