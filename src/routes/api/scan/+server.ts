@@ -3,16 +3,32 @@
  *
  * GET /api/scan - Scan all known projects
  * GET /api/scan?project=livna - Scan specific project
+ *
+ * Note: Filesystem scanning only works locally, not on Cloudflare edge.
+ * In production, this returns a message indicating scanning is local-only.
  */
 
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { scanProject, scanAllProjects, KNOWN_PROJECTS, buildProject } from '$lib/services/project-scanner';
+import { dev } from '$app/environment';
 
 export const GET: RequestHandler = async ({ url }) => {
+  // Filesystem scanning only works in dev mode (local)
+  if (!dev) {
+    return json({
+      message: 'Infrastructure scanning is only available locally',
+      reason: 'Cloudflare edge runtime does not have filesystem access',
+      suggestion: 'Run npm run dev locally to scan projects'
+    }, { status: 200 });
+  }
+
   const projectId = url.searchParams.get('project');
 
   try {
+    // Dynamic import to avoid bundling Node.js modules in edge build
+    const { scanProject, scanAllProjects, KNOWN_PROJECTS, buildProject } =
+      await import('$lib/services/project-scanner');
+
     if (projectId) {
       // Scan specific project
       const info = KNOWN_PROJECTS[projectId];
