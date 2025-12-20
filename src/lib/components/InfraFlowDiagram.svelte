@@ -25,7 +25,6 @@
 	let { services, projectName, domain, animated = true }: Props = $props();
 
 	// Zoom and pan state
-	let scale = $state(1);
 	let panX = $state(0);
 	let panY = $state(0);
 	let containerEl: HTMLDivElement | null = $state(null);
@@ -39,11 +38,22 @@
 
 	const MIN_SCALE = 0.5;
 	const MAX_SCALE = 3;
-	const ZOOM_STEP = 0.15;
+	const ZOOM_STEP = 0.1;
 
 	// Build nodes from services - include dashboard URLs
 	let nodes = $derived(buildNodes(services, projectName, domain));
 	let edges = $derived(buildEdges(nodes));
+
+	// Auto-scale based on number of nodes - more nodes = larger base scale
+	let baseScale = $derived(Math.min(1.5, 0.7 + nodes.length * 0.1));
+	let scale = $state(1);
+
+	// Initialize scale when nodes change
+	$effect(() => {
+		scale = baseScale;
+		panX = 0;
+		panY = 0;
+	});
 
 	const nodeIcons: Record<string, typeof Cloud> = {
 		user: User,
@@ -229,22 +239,28 @@
 	function getEdgePath(
 		source: { x: number; y: number },
 		target: { x: number; y: number }
-	): { x1: number; y1: number; x2: number; y2: number } {
-		const nodeRadius = 12;
+	): { x1: number; y1: number; x2: number; y2: number; midX: number; midY: number; angle: number } {
+		const nodeRadius = 14; // Slightly larger than node to ensure connection
+		const arrowGap = 6;
 		const dx = target.x - source.x;
 		const dy = target.y - source.y;
 		const dist = Math.sqrt(dx * dx + dy * dy);
 
-		if (dist === 0) return { x1: source.x, y1: source.y, x2: target.x, y2: target.y };
+		if (dist === 0) return { x1: source.x, y1: source.y, x2: target.x, y2: target.y, midX: source.x, midY: source.y, angle: 0 };
 
 		const nx = dx / dist;
 		const ny = dy / dist;
 
+		const x1 = source.x + nx * nodeRadius;
+		const y1 = source.y + ny * nodeRadius;
+		const x2 = target.x - nx * (nodeRadius + arrowGap);
+		const y2 = target.y - ny * (nodeRadius + arrowGap);
+
 		return {
-			x1: source.x + nx * nodeRadius,
-			y1: source.y + ny * nodeRadius,
-			x2: target.x - nx * (nodeRadius + 4),
-			y2: target.y - ny * (nodeRadius + 4)
+			x1, y1, x2, y2,
+			midX: (x1 + x2) / 2,
+			midY: (y1 + y2) / 2,
+			angle: Math.atan2(dy, dx) * 180 / Math.PI
 		};
 	}
 
@@ -267,22 +283,26 @@
 		const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
 		const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale + delta));
 
-		if (containerEl) {
+		if (containerEl && newScale !== scale) {
 			const rect = containerEl.getBoundingClientRect();
-			const mouseX = e.clientX - rect.left;
-			const mouseY = e.clientY - rect.top;
+			const centerX = rect.width / 2;
+			const centerY = rect.height / 2;
+
+			// Get mouse position relative to center
+			const mouseX = e.clientX - rect.left - centerX;
+			const mouseY = e.clientY - rect.top - centerY;
 
 			// Adjust pan to zoom toward cursor
-			const scaleChange = newScale / scale;
-			panX = mouseX - (mouseX - panX) * scaleChange;
-			panY = mouseY - (mouseY - panY) * scaleChange;
+			const scaleFactor = newScale / scale;
+			panX = panX * scaleFactor - mouseX * (scaleFactor - 1) / newScale;
+			panY = panY * scaleFactor - mouseY * (scaleFactor - 1) / newScale;
 		}
 
 		scale = newScale;
 	}
 
 	function resetZoom() {
-		scale = 1;
+		scale = baseScale;
 		panX = 0;
 		panY = 0;
 	}
@@ -318,28 +338,28 @@
 </script>
 
 <div class="relative w-full h-full" bind:this={containerEl}>
-	<!-- Zoom Controls -->
-	<div class="absolute top-1 right-1 flex items-center gap-0.5 z-20 bg-gray-800/90 backdrop-blur rounded px-1 py-0.5 border border-gray-600">
+	<!-- Zoom Controls - outside diagram -->
+	<div class="absolute -top-6 right-0 flex items-center gap-1 z-20">
 		<button
 			onclick={zoomOut}
-			class="p-1 hover:bg-gray-700 rounded text-gray-300 transition-colors"
+			class="p-0.5 hover:bg-gray-700/50 rounded text-gray-400 hover:text-gray-200 transition-colors"
 			title="Zoom out"
 		>
-			<Minus class="w-3 h-3" />
+			<Minus class="w-3.5 h-3.5" />
 		</button>
 		<button
 			onclick={resetZoom}
-			class="px-1 py-0.5 hover:bg-gray-700 rounded text-[9px] text-gray-300 transition-colors min-w-[2rem] text-center"
+			class="px-1 hover:bg-gray-700/50 rounded text-[10px] text-gray-400 hover:text-gray-200 transition-colors"
 			title="Reset zoom"
 		>
 			{Math.round(scale * 100)}%
 		</button>
 		<button
 			onclick={zoomIn}
-			class="p-1 hover:bg-gray-700 rounded text-gray-300 transition-colors"
+			class="p-0.5 hover:bg-gray-700/50 rounded text-gray-400 hover:text-gray-200 transition-colors"
 			title="Zoom in"
 		>
-			<Plus class="w-3 h-3" />
+			<Plus class="w-3.5 h-3.5" />
 		</button>
 	</div>
 
@@ -394,16 +414,25 @@
 						x2={path.x2}
 						y2={path.y2}
 						stroke={isActive ? '#22c55e' : '#4b5563'}
-						stroke-width="1"
+						stroke-width="1.5"
 						marker-end={isActive ? 'url(#arrow-active)' : 'url(#arrow-idle)'}
 						class={animated && isActive ? 'flow-animated' : ''}
 					/>
 					{#if edge.label}
+						<!-- Label background for readability -->
+						<rect
+							x={path.midX - 12}
+							y={path.midY - 6}
+							width="24"
+							height="10"
+							fill="#1f2937"
+							rx="2"
+						/>
 						<text
-							x={(source.x + target.x) / 2}
-							y={(source.y + target.y) / 2 - 3}
+							x={path.midX}
+							y={path.midY + 2}
 							text-anchor="middle"
-							class="text-[6px] fill-gray-500"
+							class="text-[6px] fill-gray-400 font-medium"
 						>
 							{edge.label}
 						</text>

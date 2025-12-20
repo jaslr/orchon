@@ -316,14 +316,16 @@
 
 					<!-- Flow Diagram - Auto Height -->
 					<div class="shrink-0 px-6 py-4 border-b border-gray-700">
-						<div class="text-xs text-gray-500 uppercase tracking-wider mb-2">Infrastructure Flow</div>
-						<div class="bg-gray-900 rounded-lg p-3 min-h-[12rem]">
+						<div class="flex items-center justify-between mb-2">
+							<div class="text-xs text-gray-500 uppercase tracking-wider">Infrastructure Flow</div>
+							<div class="text-xs text-gray-600">Drag to pan • Scroll to zoom</div>
+						</div>
+						<div class="bg-gray-900 rounded-lg p-3 pt-8 min-h-[14rem]">
 							<InfraFlowDiagram
 								services={selectedInfra.services}
 								projectName={selectedInfra.displayName}
 							/>
 						</div>
-						<p class="text-xs text-gray-600 mt-1">Click nodes to open dashboards • Scroll to zoom</p>
 					</div>
 
 					<!-- Details Grid -->
