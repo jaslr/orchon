@@ -62,7 +62,7 @@ export async function fetchPagesProjects(): Promise<CFPagesProject[]> {
       throw new Error(`Cloudflare API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { result?: CFPagesProject[] };
     return data.result || [];
   } catch (err) {
     console.error('Failed to fetch Cloudflare Pages projects:', err);
@@ -92,7 +92,7 @@ export async function fetchLatestDeployment(
       throw new Error(`Cloudflare API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { result?: CFDeployment[] };
     return data.result?.[0] || null;
   } catch (err) {
     console.error(`Failed to fetch deployment for ${projectName}:`, err);

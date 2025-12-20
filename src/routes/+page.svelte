@@ -3,7 +3,8 @@
 	import type { WorkflowStatus, RepoStatus } from '$lib/github';
 	import type { InfraService, TechStack } from '$lib/types/infrastructure';
 	import { getProjectInfrastructure } from '$lib/config/infrastructure';
-	import { invalidateAll } from '$app/navigation';
+	import { browser } from '$app/environment';
+	import { sseClient, type SSEEvent, type DeploymentEvent } from '$lib/services/sse-client';
 	import {
 		Cloud,
 		Database,
@@ -16,24 +17,93 @@
 		BarChart3,
 		Server,
 		Layers,
-		ExternalLink
+		ExternalLink,
+		Radio
 	} from '@lucide/svelte';
 	import InfraFlowDiagram from '$lib/components/InfraFlowDiagram.svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	// Background polling - refresh status every 30 seconds
-	const POLL_INTERVAL = 30_000;
+	// Local state for real-time updates
+	let statuses = $state<RepoStatus[]>(data.statuses);
+	let lastUpdated = $state(data.lastUpdated);
+	let sseConnected = $state(false);
+
+	// Update local state when server data changes (navigation, etc.)
+	$effect(() => {
+		statuses = data.statuses;
+		lastUpdated = data.lastUpdated;
+	});
+
+	// SSE connection for real-time updates
+	const BACKEND_URL = 'https://observatory-backend.fly.dev';
 
 	$effect(() => {
-		const interval = setInterval(() => {
-			invalidateAll();
-		}, POLL_INTERVAL);
+		if (!browser) return;
+
+		sseClient.connect(BACKEND_URL);
+
+		const unsubscribe = sseClient.subscribe((event: SSEEvent) => {
+			handleSSEEvent(event);
+		});
+
+		// Check connection status periodically
+		const statusCheck = setInterval(() => {
+			sseConnected = sseClient.isConnected;
+		}, 1000);
 
 		return () => {
-			clearInterval(interval);
+			unsubscribe();
+			clearInterval(statusCheck);
+			sseClient.disconnect();
 		};
 	});
+
+	function handleSSEEvent(event: SSEEvent): void {
+		lastUpdated = new Date().toISOString();
+
+		if (event.type === 'connected') {
+			sseConnected = true;
+			return;
+		}
+
+		if (event.type === 'deployment' && event.project) {
+			const deployment = event.data as DeploymentEvent;
+			updateRepoStatus(event.project, deployment);
+		}
+	}
+
+	function updateRepoStatus(projectId: string, deployment: DeploymentEvent): void {
+		statuses = statuses.map((status) => {
+			// Match by repo name (project ID matches repo name in our config)
+			if (status.repo === projectId || status.repo.toLowerCase() === projectId.toLowerCase()) {
+				let newStatus: WorkflowStatus;
+				switch (deployment.status) {
+					case 'success':
+						newStatus = 'success';
+						break;
+					case 'failure':
+						newStatus = 'failure';
+						break;
+					case 'in_progress':
+					case 'queued':
+						newStatus = 'in_progress';
+						break;
+					default:
+						newStatus = 'unknown';
+				}
+
+				return {
+					...status,
+					status: newStatus,
+					conclusion: deployment.status,
+					html_url: deployment.runUrl || status.html_url,
+					run_date: new Date().toISOString()
+				};
+			}
+			return status;
+		});
+	}
 
 	let sortBy = $state<'name' | 'account' | 'recent'>('name');
 	let selectedRepo = $state<string | null>(null);
@@ -112,7 +182,7 @@
 		return grouped;
 	}
 
-	let displayStatuses = $derived(sortedStatuses(data.statuses, sortBy));
+	let displayStatuses = $derived(sortedStatuses(statuses, sortBy));
 	let selectedStatus = $derived(displayStatuses.find((s) => s.repo === selectedRepo));
 	let selectedInfra = $derived(selectedRepo ? getInfra(selectedRepo) : null);
 
@@ -127,9 +197,18 @@
 <div class="min-h-screen bg-gray-900 text-white flex flex-col">
 	<!-- Header -->
 	<header class="shrink-0 px-4 py-3 border-b border-gray-800">
-		<div>
-			<h1 class="text-lg font-semibold text-gray-100">Infrastructure Observatory</h1>
-			<p class="text-xs text-gray-500">Last updated: {formatTime(data.lastUpdated)}</p>
+		<div class="flex items-center justify-between">
+			<div>
+				<h1 class="text-lg font-semibold text-gray-100">Infrastructure Observatory</h1>
+				<p class="text-xs text-gray-500">Last updated: {formatTime(lastUpdated)}</p>
+			</div>
+			<!-- SSE Connection Status -->
+			<div class="flex items-center gap-2 text-xs">
+				<Radio class="w-3 h-3 {sseConnected ? 'text-green-400' : 'text-gray-500'}" />
+				<span class="{sseConnected ? 'text-green-400' : 'text-gray-500'}">
+					{sseConnected ? 'Live' : 'Connecting...'}
+				</span>
+			</div>
 		</div>
 	</header>
 
@@ -166,7 +245,7 @@
 			</div>
 
 			<!-- Repo List -->
-			{#if data.statuses.length === 0}
+			{#if statuses.length === 0}
 				<div class="p-4 text-center text-gray-500">
 					<p>No repos configured.</p>
 				</div>
@@ -207,7 +286,7 @@
 
 		<!-- Mobile Accordion View (shown on small, hidden on lg+) -->
 		<div class="lg:hidden flex-1 overflow-y-auto bg-gray-900">
-			{#if data.statuses.length === 0}
+			{#if statuses.length === 0}
 				<div class="p-4 text-center text-gray-500">
 					<p>No repos configured.</p>
 				</div>

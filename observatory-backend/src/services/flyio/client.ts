@@ -76,7 +76,10 @@ export async function fetchFlyApps(): Promise<FlyApp[]> {
       throw new Error(`Fly.io API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      data?: { apps?: { nodes?: FlyApp[] } };
+      errors?: unknown[];
+    };
 
     if (data.errors) {
       throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);

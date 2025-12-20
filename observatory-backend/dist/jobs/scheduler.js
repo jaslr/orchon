@@ -1,0 +1,50 @@
+import { pollFlyioApps } from '../services/flyio/poller.js';
+import { pollCloudflarePages } from '../services/cloudflare/poller.js';
+import { runUptimeChecks } from '../services/uptime/checker.js';
+// Polling intervals
+const FLY_POLL_INTERVAL = 60 * 1000; // 1 minute
+const CF_POLL_INTERVAL = 60 * 1000; // 1 minute
+const UPTIME_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
+let flyInterval = null;
+let cfInterval = null;
+let uptimeInterval = null;
+export function startScheduler() {
+    console.log('Starting background job scheduler...');
+    // Run initial checks after a short delay
+    setTimeout(() => {
+        console.log('Running initial checks...');
+        pollFlyioApps().catch((err) => console.error('Fly.io poll error:', err));
+        pollCloudflarePages().catch((err) => console.error('Cloudflare poll error:', err));
+        runUptimeChecks().catch((err) => console.error('Uptime check error:', err));
+    }, 5000);
+    // Schedule recurring polls
+    flyInterval = setInterval(() => {
+        pollFlyioApps().catch((err) => console.error('Fly.io poll error:', err));
+    }, FLY_POLL_INTERVAL);
+    cfInterval = setInterval(() => {
+        pollCloudflarePages().catch((err) => console.error('Cloudflare poll error:', err));
+    }, CF_POLL_INTERVAL);
+    uptimeInterval = setInterval(() => {
+        runUptimeChecks().catch((err) => console.error('Uptime check error:', err));
+    }, UPTIME_CHECK_INTERVAL);
+    console.log(`Scheduler started:
+  - Fly.io polling: every ${FLY_POLL_INTERVAL / 1000}s
+  - Cloudflare polling: every ${CF_POLL_INTERVAL / 1000}s
+  - Uptime checks: every ${UPTIME_CHECK_INTERVAL / 1000}s`);
+}
+export function stopScheduler() {
+    if (flyInterval) {
+        clearInterval(flyInterval);
+        flyInterval = null;
+    }
+    if (cfInterval) {
+        clearInterval(cfInterval);
+        cfInterval = null;
+    }
+    if (uptimeInterval) {
+        clearInterval(uptimeInterval);
+        uptimeInterval = null;
+    }
+    console.log('Scheduler stopped');
+}
+//# sourceMappingURL=scheduler.js.map
