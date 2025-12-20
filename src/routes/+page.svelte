@@ -314,13 +314,16 @@
 						</div>
 					</div>
 
-					<!-- Flow Diagram - Auto Height -->
+					<!-- Flow Diagram - Dynamic Height based on service count -->
 					<div class="shrink-0 px-6 py-4 border-b border-gray-700">
 						<div class="flex items-center justify-between mb-2">
 							<div class="text-xs text-gray-500 uppercase tracking-wider">Infrastructure Flow</div>
 							<div class="text-xs text-gray-600">Drag to pan • Scroll to zoom</div>
 						</div>
-						<div class="bg-gray-900 rounded-lg p-3 pt-8 min-h-[14rem]">
+						<div
+							class="bg-gray-900 rounded-lg p-3 pt-8"
+							style="height: {selectedInfra.services.length <= 2 ? '8rem' : selectedInfra.services.length <= 4 ? '10rem' : '14rem'}"
+						>
 							<InfraFlowDiagram
 								services={selectedInfra.services}
 								projectName={selectedInfra.displayName}
