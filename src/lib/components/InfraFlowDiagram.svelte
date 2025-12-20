@@ -12,7 +12,8 @@
 		AlertTriangle,
 		ExternalLink,
 		Plus,
-		Minus
+		Minus,
+		Maximize2
 	} from '@lucide/svelte';
 
 	interface Props {
@@ -331,6 +332,22 @@
 		panY = 0;
 	}
 
+	function maximizeView() {
+		// Scale to fill the container width while keeping aspect ratio
+		// The viewBox width is 690 (230 * 3), so we calculate how much to scale
+		// to make content fill available width
+		if (containerEl) {
+			const containerWidth = containerEl.getBoundingClientRect().width;
+			const contentWidth = 230; // Original content width before SCALE_FACTOR
+			const currentViewBoxWidth = viewBox().width;
+			// Calculate scale to make content fill ~90% of container width
+			const targetScale = (containerWidth * 0.9) / (contentWidth * (currentViewBoxWidth / (230 * SCALE_FACTOR)));
+			scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, targetScale / SCALE_FACTOR));
+			panX = 0;
+			panY = 0;
+		}
+	}
+
 	function handleMouseDown(e: MouseEvent) {
 		// Don't start drag if clicking on a node
 		if ((e.target as HTMLElement).closest('g[role="button"]')) return;
@@ -385,6 +402,13 @@
 		>
 			<Plus class="w-3.5 h-3.5" />
 		</button>
+		<button
+			onclick={maximizeView}
+			class="p-0.5 hover:bg-gray-700/50 rounded text-gray-400 hover:text-gray-200 transition-colors"
+			title="Maximize"
+		>
+			<Maximize2 class="w-3.5 h-3.5" />
+		</button>
 	</div>
 
 	<!-- Diagram Canvas -->
@@ -437,25 +461,25 @@
 						x2={path.x2}
 						y2={path.y2}
 						stroke={isActive ? '#22c55e' : '#4b5563'}
-						stroke-width="1.5"
+						stroke-width="0.75"
 						marker-end={isActive ? 'url(#arrow-active)' : 'url(#arrow-idle)'}
 						class={animated && isActive ? 'flow-animated' : ''}
 					/>
 					{#if edge.label}
 						<!-- Label background for readability -->
 						<rect
-							x={path.midX - 12}
-							y={path.midY - 6}
-							width="24"
-							height="10"
+							x={path.midX - 10}
+							y={path.midY - 4}
+							width="20"
+							height="7"
 							fill="#1f2937"
-							rx="2"
+							rx="1"
 						/>
 						<text
 							x={path.midX}
 							y={path.midY + 2}
 							text-anchor="middle"
-							class="text-[6px] fill-gray-400 font-medium"
+							class="text-[4px] fill-gray-400 font-medium"
 						>
 							{edge.label}
 						</text>
@@ -497,7 +521,7 @@
 					</foreignObject>
 
 					<!-- Label -->
-					<text x="0" y="20" text-anchor="middle" class="text-[7px] fill-gray-400">
+					<text x="0" y="20" text-anchor="middle" class="text-[4px] fill-gray-400">
 						{node.label.length > 10 ? node.label.slice(0, 9) + '..' : node.label}
 					</text>
 
