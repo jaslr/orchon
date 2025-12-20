@@ -89,28 +89,17 @@ bd ready           # Check beads issues
 
 **Every code change gets deployed to production.** After completing any task:
 ```bash
-npm run get-it-live
+npm version patch --no-git-tag-version  # Bump version
+git add -A                               # Stage all changes
+git commit -m "v0.x.x: Description"      # Commit with version
+git push                                 # Push to remote
+npm run build                            # Build locally
+wrangler pages deploy .svelte-kit/cloudflare --project-name=ci-monitor  # Deploy
+wrangler pages deployment list --project-name=ci-monitor | head -10     # Verify
 ```
 
-This automated script:
-1. Checks for uncommitted changes
-2. Bumps version (patch)
-3. Stages all changes
-4. Runs lint/fix
-5. Commits with version message
-6. Pushes to remote
-7. Monitors GitHub Actions until complete
-8. Reports Cloudflare deployment status
-
-**Manual steps if needed:**
-```bash
-npm run version:patch     # Bump version
-git add -A                # Stage changes
-npm run check             # Fix any type errors
-git commit -m "message"   # Commit
-git push                  # Push
-gh run watch              # Monitor GitHub Actions
-```
+**Note:** This project deploys via direct Wrangler push, not GitHub Actions.
+The GitHub integration may be slow/unreliable, so use `wrangler pages deploy` directly.
 
 ### VS Code Tasks
 
