@@ -44,6 +44,27 @@
 	let nodes = $derived(buildNodes(services, projectName, domain));
 	let edges = $derived(buildEdges(nodes));
 
+	// Calculate dynamic viewBox based on actual node positions
+	let viewBox = $derived(() => {
+		if (nodes.length === 0) return { x: 0, y: 0, width: 230, height: 100 };
+
+		const padding = 25; // Space for labels below nodes
+		const topPadding = 15; // Space above top nodes
+
+		const minY = Math.min(...nodes.map(n => n.y ?? 0)) - topPadding;
+		const maxY = Math.max(...nodes.map(n => n.y ?? 0)) + padding;
+
+		// Height based on actual content
+		const height = maxY - minY + 10; // Small buffer
+
+		return {
+			x: 0,
+			y: Math.max(0, minY - 5),
+			width: 230,
+			height: Math.max(80, height) // Minimum height of 80
+		};
+	});
+
 	// Default to 100% scale
 	let baseScale = $derived(1);
 	let scale = $state(1);
@@ -375,9 +396,9 @@
 		aria-label="Infrastructure diagram - drag to pan, scroll to zoom"
 	>
 		<svg
-			viewBox="0 0 230 150"
+			viewBox="{viewBox().x} {viewBox().y} {viewBox().width} {viewBox().height}"
 			class="w-full"
-			style="aspect-ratio: 230/150; transform: scale({scale}) translate({panX / scale}px, {panY / scale}px); transform-origin: center;"
+			style="aspect-ratio: {viewBox().width}/{viewBox().height}; transform: scale({scale}) translate({panX / scale}px, {panY / scale}px); transform-origin: center;"
 		>
 			<defs>
 				<marker id="arrow-active" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
