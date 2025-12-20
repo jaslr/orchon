@@ -36,8 +36,8 @@
 	let dragStartPanX = $state(0);
 	let dragStartPanY = $state(0);
 
-	const MIN_SCALE = 0.5;
-	const MAX_SCALE = 3;
+	const MIN_SCALE = 0.2;
+	const MAX_SCALE = 4;
 	const ZOOM_STEP = 0.1;
 
 	// Build nodes from services - include dashboard URLs
