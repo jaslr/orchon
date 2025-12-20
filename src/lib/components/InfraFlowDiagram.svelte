@@ -45,23 +45,26 @@
 	let edges = $derived(buildEdges(nodes));
 
 	// Calculate dynamic viewBox based on actual node positions
+	// Scale factor of 3 makes default view show nodes at ~45-50px diameter
+	const SCALE_FACTOR = 3;
+
 	let viewBox = $derived(() => {
-		if (nodes.length === 0) return { x: 0, y: 0, width: 230, height: 100 };
+		if (nodes.length === 0) return { x: 0, y: 0, width: 230 * SCALE_FACTOR, height: 100 };
 
 		const padding = 25; // Space for labels below nodes
-		const topPadding = 15; // Space above top nodes
+		const topMargin = 30; // ~100px from top at 3x scale
 
-		const minY = Math.min(...nodes.map(n => n.y ?? 0)) - topPadding;
+		const minY = Math.min(...nodes.map(n => n.y ?? 0));
 		const maxY = Math.max(...nodes.map(n => n.y ?? 0)) + padding;
 
-		// Height based on actual content
-		const height = maxY - minY + 10; // Small buffer
+		// Height based on actual content (NOT scaled - just the content bounds)
+		const contentHeight = maxY - minY + topMargin + 10;
 
 		return {
-			x: 0,
-			y: Math.max(0, minY - 5),
-			width: 230,
-			height: Math.max(80, height) // Minimum height of 80
+			x: -115, // Center the content horizontally in wider viewBox
+			y: minY - topMargin,
+			width: 230 * SCALE_FACTOR,
+			height: Math.max(80, contentHeight) // No scale factor on height
 		};
 	});
 
