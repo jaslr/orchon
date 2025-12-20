@@ -1,0 +1,69 @@
+import pg from 'pg';
+import { env } from '../config/env.js';
+
+const { Pool } = pg;
+
+let pool: pg.Pool | null = null;
+
+export async function initDb(): Promise<void> {
+  if (!env.databaseUrl) {
+    console.warn('DATABASE_URL not set, running without database');
+    return;
+  }
+
+  pool = new Pool({
+    connectionString: env.databaseUrl,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+  });
+
+  // Test connection
+  try {
+    const client = await pool.connect();
+    await client.query('SELECT NOW()');
+    client.release();
+    console.log('Database connected successfully');
+  } catch (err) {
+    console.error('Database connection failed:', err);
+    throw err;
+  }
+}
+
+export function getPool(): pg.Pool {
+  if (!pool) {
+    throw new Error('Database not initialized');
+  }
+  return pool;
+}
+
+export async function query<T extends pg.QueryResultRow>(
+  text: string,
+  params?: unknown[]
+): Promise<pg.QueryResult<T>> {
+  if (!pool) {
+    throw new Error('Database not initialized');
+  }
+  return pool.query<T>(text, params);
+}
+
+export async function getDbStatus(): Promise<{ connected: boolean; latencyMs?: number }> {
+  if (!pool) {
+    return { connected: false };
+  }
+
+  try {
+    const start = Date.now();
+    await pool.query('SELECT 1');
+    return { connected: true, latencyMs: Date.now() - start };
+  } catch {
+    return { connected: false };
+  }
+}
+
+export async function closeDb(): Promise<void> {
+  if (pool) {
+    await pool.end();
+    pool = null;
+  }
+}

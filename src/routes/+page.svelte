@@ -3,6 +3,7 @@
 	import type { WorkflowStatus, RepoStatus } from '$lib/github';
 	import type { InfraService, TechStack } from '$lib/types/infrastructure';
 	import { getProjectInfrastructure } from '$lib/config/infrastructure';
+	import { invalidateAll } from '$app/navigation';
 	import {
 		Cloud,
 		Database,
@@ -20,6 +21,19 @@
 	import InfraFlowDiagram from '$lib/components/InfraFlowDiagram.svelte';
 
 	let { data }: { data: PageData } = $props();
+
+	// Background polling - refresh status every 30 seconds
+	const POLL_INTERVAL = 30_000;
+
+	$effect(() => {
+		const interval = setInterval(() => {
+			invalidateAll();
+		}, POLL_INTERVAL);
+
+		return () => {
+			clearInterval(interval);
+		};
+	});
 
 	let sortBy = $state<'name' | 'account' | 'recent'>('name');
 	let selectedRepo = $state<string | null>(null);

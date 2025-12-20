@@ -265,8 +265,8 @@
 		source: { x: number; y: number },
 		target: { x: number; y: number }
 	): { x1: number; y1: number; x2: number; y2: number; midX: number; midY: number; angle: number } {
-		const nodeRadius = 14; // Slightly larger than node to ensure connection
-		const arrowGap = 6;
+		const nodeRadius = 12; // Match actual node radius
+		const arrowGap = 2; // Minimal gap for arrow tip
 		const dx = target.x - source.x;
 		const dy = target.y - source.y;
 		const dist = Math.sqrt(dx * dx + dy * dy);
@@ -407,7 +407,7 @@
 			class="p-0.5 hover:bg-gray-700/50 rounded text-gray-400 hover:text-gray-200 transition-colors"
 			title="Maximize"
 		>
-			<Maximize2 class="w-3.5 h-3.5" />
+			<Maximize2 class="w-3 h-3" />
 		</button>
 	</div>
 
@@ -466,18 +466,9 @@
 						class={animated && isActive ? 'flow-animated' : ''}
 					/>
 					{#if edge.label}
-						<!-- Label background for readability -->
-						<rect
-							x={path.midX - 10}
-							y={path.midY - 4}
-							width="20"
-							height="7"
-							fill="#1f2937"
-							rx="1"
-						/>
 						<text
 							x={path.midX}
-							y={path.midY + 2}
+							y={path.midY + 1}
 							text-anchor="middle"
 							class="text-[4px] fill-gray-400 font-medium"
 						>
@@ -509,8 +500,8 @@
 						r="12"
 						fill="#1f2937"
 						stroke={color}
-						stroke-width="1.5"
-						class="transition-all {isClickable ? 'hover:stroke-2 hover:fill-gray-800' : ''}"
+						stroke-width="1"
+						class="transition-all {isClickable ? 'hover:stroke-[1.5] hover:fill-gray-800' : ''}"
 					/>
 
 					<!-- Icon -->
@@ -527,7 +518,7 @@
 
 					<!-- Clickable indicator -->
 					{#if isClickable}
-						<circle cx="9" cy="-9" r="3" fill="#374151" stroke={color} stroke-width="0.5" />
+						<circle cx="9" cy="-9" r="3" fill="#374151" />
 						<foreignObject x="6" y="-12" width="6" height="6">
 							<div class="flex items-center justify-center w-full h-full text-gray-400">
 								<ExternalLink class="w-1.5 h-1.5" />
