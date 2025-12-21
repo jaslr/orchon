@@ -29,6 +29,18 @@
 			{/if}
 
 			<div class="mb-4">
+				<input
+					type="email"
+					name="username"
+					id="username"
+					required
+					autocomplete="username"
+					class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+					placeholder="Email"
+				/>
+			</div>
+
+			<div class="mb-4">
 				<div class="relative">
 					<input
 						type={showPassword ? 'text' : 'password'}
@@ -37,7 +49,7 @@
 						required
 						autocomplete="current-password"
 						class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
-						placeholder="Enter password"
+						placeholder="Password"
 					/>
 					<button
 						type="button"

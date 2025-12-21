@@ -87,6 +87,17 @@ export const projects = [
             { id: 'loadmanagement-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
         ],
     },
+    {
+        id: 'workwithchip',
+        name: 'workwithchip',
+        displayName: 'Work With Chip',
+        owner: 'jaslr',
+        alertLevel: 'hobby',
+        uptimeUrl: 'https://workwithchip.com',
+        services: [
+            { id: 'workwithchip-hosting', category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', cfProjectName: 'workwithchip' },
+        ],
+    },
 ];
 // Helper to find project by repo name
 export function getProjectByRepo(repoName) {

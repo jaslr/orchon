@@ -16,11 +16,24 @@ function simpleHash(str: string): string {
 	return Math.abs(hash).toString(36);
 }
 
+export function verifyCredentials(username: string, password: string): boolean {
+	const storedUsernameHash = env.AUTH_USERNAME_HASH;
+	const storedPasswordHash = env.AUTH_PASSWORD_HASH;
+
+	if (!storedUsernameHash || !storedPasswordHash) {
+		console.warn('AUTH_USERNAME_HASH or AUTH_PASSWORD_HASH not set - auth disabled');
+		return true; // Allow access if no credentials configured
+	}
+
+	return simpleHash(username) === storedUsernameHash &&
+	       simpleHash(password) === storedPasswordHash;
+}
+
+// Kept for backwards compatibility
 export function verifyPassword(password: string): boolean {
 	const storedHash = env.AUTH_PASSWORD_HASH;
 	if (!storedHash) {
-		console.warn('AUTH_PASSWORD_HASH not set - auth disabled');
-		return true; // Allow access if no password configured
+		return true;
 	}
 	return simpleHash(password) === storedHash;
 }

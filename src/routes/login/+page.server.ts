@@ -1,18 +1,23 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
-import { verifyPassword, createSession, addSession, getSessionCookie } from '$lib/server/auth';
+import { verifyCredentials, createSession, addSession, getSessionCookie } from '$lib/server/auth';
 
 export const actions: Actions = {
 	default: async ({ request, cookies }) => {
 		const data = await request.formData();
+		const username = data.get('username');
 		const password = data.get('password');
+
+		if (!username || typeof username !== 'string') {
+			return fail(400, { error: 'Email is required' });
+		}
 
 		if (!password || typeof password !== 'string') {
 			return fail(400, { error: 'Password is required' });
 		}
 
-		if (!verifyPassword(password)) {
-			return fail(401, { error: 'Invalid password' });
+		if (!verifyCredentials(username, password)) {
+			return fail(401, { error: 'Invalid credentials' });
 		}
 
 		// Create session
