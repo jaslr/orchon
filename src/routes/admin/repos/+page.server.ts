@@ -14,6 +14,14 @@ interface PackageJson {
 	scripts?: Record<string, string>;
 }
 
+interface RepoInfo {
+	lastPush: string | null;
+	defaultBranch: string | null;
+	hasGitHubActions: boolean;
+	deploymentMethod: 'github-actions' | 'forked' | 'unknown';
+	workflowFiles: string[];
+}
+
 interface DetectedStack {
 	framework: string | null;
 	language: string;
@@ -82,6 +90,69 @@ function detectTechStack(pkg: PackageJson): DetectedStack {
 	return stack;
 }
 
+// Fetch repo info from GitHub
+async function fetchRepoInfo(owner: string, repo: string, pat: string): Promise<RepoInfo> {
+	const defaultInfo: RepoInfo = {
+		lastPush: null,
+		defaultBranch: null,
+		hasGitHubActions: false,
+		deploymentMethod: 'unknown',
+		workflowFiles: []
+	};
+
+	try {
+		// Get repo info (last push, default branch)
+		const repoResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+			headers: {
+				'Authorization': `Bearer ${pat}`,
+				'Accept': 'application/vnd.github.v3+json',
+				'User-Agent': 'ci-monitor'
+			}
+		});
+
+		if (repoResponse.ok) {
+			const repoData = await repoResponse.json();
+			defaultInfo.lastPush = repoData.pushed_at;
+			defaultInfo.defaultBranch = repoData.default_branch;
+		}
+
+		// Check for GitHub Actions workflows
+		const workflowsResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/.github/workflows`, {
+			headers: {
+				'Authorization': `Bearer ${pat}`,
+				'Accept': 'application/vnd.github.v3+json',
+				'User-Agent': 'ci-monitor'
+			}
+		});
+
+		if (workflowsResponse.ok) {
+			const files = await workflowsResponse.json();
+			if (Array.isArray(files)) {
+				defaultInfo.workflowFiles = files
+					.filter((f: { name: string }) => f.name.endsWith('.yml') || f.name.endsWith('.yaml'))
+					.map((f: { name: string }) => f.name);
+				defaultInfo.hasGitHubActions = defaultInfo.workflowFiles.length > 0;
+
+				// Check if any workflow deploys
+				const deployWorkflows = defaultInfo.workflowFiles.filter(f =>
+					f.toLowerCase().includes('deploy') ||
+					f.toLowerCase().includes('release') ||
+					f.toLowerCase().includes('publish')
+				);
+				defaultInfo.deploymentMethod = deployWorkflows.length > 0 ? 'github-actions' : 'forked';
+			}
+		} else {
+			// No workflows directory means forked deployment
+			defaultInfo.deploymentMethod = 'forked';
+		}
+
+		return defaultInfo;
+	} catch (err) {
+		console.warn(`Error fetching repo info for ${owner}/${repo}:`, err);
+		return defaultInfo;
+	}
+}
+
 // Fetch package.json from GitHub repo
 async function fetchPackageJson(owner: string, repo: string, pat: string): Promise<PackageJson | null> {
 	try {
@@ -115,6 +186,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		infraConfig: typeof INFRASTRUCTURE[string] | null;
 		detectedStack: DetectedStack | null;
 		packageJson: PackageJson | null;
+		repoInfo: RepoInfo | null;
 	}> = [];
 
 	for (const [owner, repoList] of Object.entries(repos)) {
@@ -125,15 +197,20 @@ export const load: PageServerLoad = async ({ url }) => {
 			const infraConfig = INFRASTRUCTURE[repo] || null;
 			let packageJson: PackageJson | null = null;
 			let detectedStack: DetectedStack | null = null;
+			let repoInfo: RepoInfo | null = null;
 
-			// Only fetch package.json for the selected project to avoid rate limits
-			if (pat && (selectedProject === repo || !selectedProject)) {
-				// For now, only fetch for selected project to keep things fast
-				if (selectedProject === repo) {
-					packageJson = await fetchPackageJson(owner, repo, pat);
-					if (packageJson) {
-						detectedStack = detectTechStack(packageJson);
-					}
+			// Only fetch for the selected project to avoid rate limits
+			if (pat && selectedProject === repo) {
+				// Fetch repo info and package.json in parallel
+				const [fetchedRepoInfo, fetchedPackageJson] = await Promise.all([
+					fetchRepoInfo(owner, repo, pat),
+					fetchPackageJson(owner, repo, pat)
+				]);
+
+				repoInfo = fetchedRepoInfo;
+				packageJson = fetchedPackageJson;
+				if (packageJson) {
+					detectedStack = detectTechStack(packageJson);
 				}
 			}
 
@@ -142,7 +219,8 @@ export const load: PageServerLoad = async ({ url }) => {
 				repo,
 				infraConfig,
 				detectedStack,
-				packageJson
+				packageJson,
+				repoInfo
 			});
 		}
 	}
@@ -154,6 +232,42 @@ export const load: PageServerLoad = async ({ url }) => {
 		reposFilePath: 'src/lib/config/repos.ts'
 	};
 };
+
+// Check a package version against npm registry
+async function checkPackageVersion(name: string, currentVersion: string): Promise<{
+	name: string;
+	current: string;
+	latest: string;
+	isOutdated: boolean;
+	majorBehind: number;
+}> {
+	try {
+		const response = await fetch(`https://registry.npmjs.org/${name}/latest`, {
+			headers: { 'Accept': 'application/json' }
+		});
+
+		if (!response.ok) {
+			return { name, current: currentVersion, latest: 'unknown', isOutdated: false, majorBehind: 0 };
+		}
+
+		const data = await response.json();
+		const latest = data.version || 'unknown';
+
+		// Parse versions to compare
+		const cleanCurrent = currentVersion.replace(/^[\^~]/, '');
+		const currentParts = cleanCurrent.split('.').map(p => parseInt(p) || 0);
+		const latestParts = latest.split('.').map((p: string) => parseInt(p) || 0);
+
+		const majorBehind = latestParts[0] - currentParts[0];
+		const isOutdated = majorBehind > 0 ||
+			(majorBehind === 0 && latestParts[1] > currentParts[1]) ||
+			(majorBehind === 0 && latestParts[1] === currentParts[1] && latestParts[2] > currentParts[2]);
+
+		return { name, current: cleanCurrent, latest, isOutdated, majorBehind };
+	} catch {
+		return { name, current: currentVersion, latest: 'error', isOutdated: false, majorBehind: 0 };
+	}
+}
 
 export const actions: Actions = {
 	// Scan a specific repo's package.json
@@ -186,5 +300,42 @@ export const actions: Actions = {
 			detectedStack,
 			packageJson
 		};
+	},
+
+	// Check for outdated packages
+	checkOutdated: async ({ request }) => {
+		const formData = await request.formData();
+		const packagesJson = formData.get('packages') as string;
+
+		if (!packagesJson) {
+			return fail(400, { error: 'Missing packages data' });
+		}
+
+		try {
+			const packages: Record<string, string> = JSON.parse(packagesJson);
+			const packageNames = Object.keys(packages);
+
+			// Check up to 10 key packages to avoid rate limiting
+			const keyPackages = packageNames.slice(0, 10);
+			const results = await Promise.all(
+				keyPackages.map(name => checkPackageVersion(name, packages[name]))
+			);
+
+			const outdated = results.filter(r => r.isOutdated);
+			const majorOutdated = results.filter(r => r.majorBehind > 0);
+
+			return {
+				action: 'checkOutdated',
+				success: true,
+				results,
+				summary: {
+					checked: results.length,
+					outdated: outdated.length,
+					majorOutdated: majorOutdated.length
+				}
+			};
+		} catch (err) {
+			return fail(400, { error: 'Invalid packages data' });
+		}
 	}
 };
