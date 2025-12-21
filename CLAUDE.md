@@ -85,35 +85,66 @@ npm run check      # Type checking
 bd ready           # Check beads issues
 ```
 
+### Quick Commands
+
+- **"get it live"** = Full deployment workflow (see below)
+
+### Get It Live (Fly.io Deployment)
+
+When asked to "get it live" for this project:
+
+1. **Check for uncommitted changes first**:
+   ```bash
+   git status --porcelain
+   ```
+2. If there are uncommitted files, commit them with a descriptive message
+3. **Bump version**:
+   ```bash
+   npm version patch --no-git-tag-version
+   ```
+4. **Commit the version bump**:
+   ```bash
+   git add -A && git commit -m "v0.x.x: <description>"
+   ```
+5. **Push to GitHub** (version control/backup):
+   ```bash
+   git push
+   ```
+6. **Deploy to Fly.io**:
+   ```bash
+   fly deploy --now
+   ```
+
+### Task Completion Protocol
+
+When completing a task where work has been signed off:
+1. Run `npm version patch --no-git-tag-version`
+2. Commit with descriptive message
+3. Push to GitHub
+4. Deploy to Fly.io with `fly deploy --now`
+
 ### Deployment (Forked Workflow - No GitHub Actions)
 
-This project uses a **forked deployment workflow** to avoid GitHub Actions costs:
+This project uses a **forked deployment workflow**:
 
 ```
 Your Machine
     │
-    ├──► npm run release  →  GitHub (version control, backup)
+    ├──► git push         →  GitHub (version control, backup)
     │
-    └──► npm run deploy   →  Cloudflare Pages (production)
+    └──► fly deploy --now →  Fly.io (production)
 ```
 
 **Quick commands:**
 ```bash
-npm run release    # Bump version, commit, push to GitHub
-npm run deploy     # Build and deploy to Cloudflare
-npm run ship       # Both: release + deploy
-```
-
-**Manual workflow (if you need custom commit messages):**
-```bash
 npm version patch --no-git-tag-version     # Bump version
 git add -A && git commit -m "v0.x.x: ..."  # Commit with description
 git push                                    # Push to GitHub (backup)
-npm run deploy                              # Deploy to Cloudflare
+fly deploy --now                            # Deploy to Fly.io
 ```
 
 **Why forked?**
-- Deploys directly via Wrangler - no GitHub Actions minutes consumed
+- Deploys directly to Fly.io - no GitHub Actions minutes consumed
 - Build errors appear locally in your terminal
 - Faster than waiting for CI runner to spin up
 - GitHub is for version control/backup, not deployment triggers

@@ -22,7 +22,10 @@
 		Layers,
 		ExternalLink,
 		Radio,
-		Settings
+		Settings,
+		ArrowDownAZ,
+		Clock,
+		ChevronDown
 	} from '@lucide/svelte';
 	import InfraFlowDiagram from '$lib/components/InfraFlowDiagram.svelte';
 
@@ -188,7 +191,24 @@
 		});
 	}
 
-	let sortBy = $state<'name' | 'account' | 'recent'>('name');
+	let sortBy = $state<'name' | 'recent'>('name');
+	let sortDropdownOpen = $state(false);
+
+	// Close dropdown when clicking outside
+	function handleClickOutside(event: MouseEvent) {
+		const target = event.target as Element;
+		if (sortDropdownOpen && !target.closest('.sort-dropdown')) {
+			sortDropdownOpen = false;
+		}
+	}
+
+	$effect(() => {
+		if (!browser) return;
+		if (sortDropdownOpen) {
+			document.addEventListener('click', handleClickOutside);
+			return () => document.removeEventListener('click', handleClickOutside);
+		}
+	});
 
 	// Owner filter state - load from localStorage
 	type OwnerFilter = 'jaslr' | 'vp' | 'junipa';
@@ -324,12 +344,10 @@
 		return new Date(isoString).toLocaleTimeString();
 	}
 
-	function sortedStatuses(statuses: RepoStatus[], sort: 'name' | 'account' | 'recent'): RepoStatus[] {
+	function sortedStatuses(statuses: RepoStatus[], sort: 'name' | 'recent'): RepoStatus[] {
 		const sorted = [...statuses];
 		if (sort === 'name') {
 			sorted.sort((a, b) => a.repo.localeCompare(b.repo));
-		} else if (sort === 'account') {
-			sorted.sort((a, b) => a.owner.localeCompare(b.owner) || a.repo.localeCompare(b.repo));
 		} else if (sort === 'recent') {
 			sorted.sort((a, b) => {
 				if (!a.run_date && !b.run_date) return 0;
@@ -424,58 +442,64 @@
 		<aside class="hidden lg:flex lg:flex-col w-[20rem] shrink-0 border-r border-gray-800 bg-gray-900">
 			<!-- Sort & Filter Options -->
 			<div class="shrink-0 px-4 py-2 border-b border-gray-800 flex justify-between items-center">
-				<!-- Sort buttons -->
-				<div class="flex gap-1">
+				<!-- Sort dropdown -->
+				<div class="relative sort-dropdown">
 					<button
-						onclick={() => (sortBy = 'name')}
-						class="px-2 py-1 text-xs rounded cursor-pointer {sortBy === 'name'
-							? 'bg-blue-600'
-							: 'bg-gray-700 hover:bg-gray-600'} transition-colors"
+						onclick={() => (sortDropdownOpen = !sortDropdownOpen)}
+						class="flex items-center gap-1 p-1.5 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors"
+						title={sortBy === 'name' ? 'Sorted A-Z' : 'Sorted by Recent'}
 					>
-						A-Z
+						{#if sortBy === 'name'}
+							<ArrowDownAZ class="w-4 h-4" />
+						{:else}
+							<Clock class="w-4 h-4" />
+						{/if}
+						<ChevronDown class="w-3 h-3" />
 					</button>
-					<button
-						onclick={() => (sortBy = 'account')}
-						class="px-2 py-1 text-xs rounded cursor-pointer {sortBy === 'account'
-							? 'bg-blue-600'
-							: 'bg-gray-700 hover:bg-gray-600'} transition-colors"
-					>
-						Account
-					</button>
-					<button
-						onclick={() => (sortBy = 'recent')}
-						class="px-2 py-1 text-xs rounded cursor-pointer {sortBy === 'recent'
-							? 'bg-blue-600'
-							: 'bg-gray-700 hover:bg-gray-600'} transition-colors"
-					>
-						Recent
-					</button>
+					{#if sortDropdownOpen}
+						<div class="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded shadow-lg z-10 min-w-[100px]">
+							<button
+								onclick={() => { sortBy = 'name'; sortDropdownOpen = false; }}
+								class="w-full flex items-center gap-2 px-3 py-2 text-xs text-left cursor-pointer hover:bg-gray-700 transition-colors {sortBy === 'name' ? 'text-white' : 'text-gray-400'}"
+							>
+								<ArrowDownAZ class="w-4 h-4" />
+								<span>A-Z</span>
+							</button>
+							<button
+								onclick={() => { sortBy = 'recent'; sortDropdownOpen = false; }}
+								class="w-full flex items-center gap-2 px-3 py-2 text-xs text-left cursor-pointer hover:bg-gray-700 transition-colors {sortBy === 'recent' ? 'text-white' : 'text-gray-400'}"
+							>
+								<Clock class="w-4 h-4" />
+								<span>Recent</span>
+							</button>
+						</div>
+					{/if}
 				</div>
-				<!-- Owner filter buttons -->
-				<div class="flex gap-1">
+				<!-- Owner filter buttons (groups) -->
+				<div class="flex gap-2">
 					<button
 						onclick={() => toggleFilter('jaslr')}
-						class="px-2 py-1 text-xs rounded cursor-pointer {ownerFilters.jaslr
-							? 'bg-emerald-600'
-							: 'bg-gray-700 hover:bg-gray-600 text-gray-400'} transition-colors"
+						class="px-2 py-1 text-xs cursor-pointer transition-colors {ownerFilters.jaslr
+							? 'text-gray-200'
+							: 'text-gray-500'}"
 						title="Show jaslr projects"
 					>
 						jaslr
 					</button>
 					<button
 						onclick={() => toggleFilter('vp')}
-						class="px-2 py-1 text-xs rounded cursor-pointer {ownerFilters.vp
-							? 'bg-violet-600'
-							: 'bg-gray-700 hover:bg-gray-600 text-gray-400'} transition-colors"
+						class="px-2 py-1 text-xs cursor-pointer transition-colors {ownerFilters.vp
+							? 'text-gray-200'
+							: 'text-gray-500'}"
 						title="Show Vast Puddle projects"
 					>
 						VP
 					</button>
 					<button
 						onclick={() => toggleFilter('junipa')}
-						class="px-2 py-1 text-xs rounded cursor-pointer {ownerFilters.junipa
-							? 'bg-blue-600'
-							: 'bg-gray-700 hover:bg-gray-600 text-gray-400'} transition-colors"
+						class="px-2 py-1 text-xs cursor-pointer transition-colors {ownerFilters.junipa
+							? 'text-gray-200'
+							: 'text-gray-500'}"
 						title="Show Junipa projects only"
 					>
 						Junipa
@@ -556,28 +580,52 @@
 		<div class="lg:hidden flex-1 flex flex-col overflow-hidden bg-gray-900">
 			<!-- Mobile Filter Bar -->
 			<div class="shrink-0 px-4 py-2 border-b border-gray-800 flex justify-between items-center">
-				<div class="flex gap-1">
+				<!-- Sort dropdown (mobile) -->
+				<div class="relative sort-dropdown">
 					<button
-						onclick={() => (sortBy = 'name')}
-						class="px-2 py-1 text-xs rounded cursor-pointer {sortBy === 'name' ? 'bg-blue-600' : 'bg-gray-700'}"
-					>A-Z</button>
-					<button
-						onclick={() => (sortBy = 'recent')}
-						class="px-2 py-1 text-xs rounded cursor-pointer {sortBy === 'recent' ? 'bg-blue-600' : 'bg-gray-700'}"
-					>Recent</button>
+						onclick={() => (sortDropdownOpen = !sortDropdownOpen)}
+						class="flex items-center gap-1 p-1.5 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors"
+						title={sortBy === 'name' ? 'Sorted A-Z' : 'Sorted by Recent'}
+					>
+						{#if sortBy === 'name'}
+							<ArrowDownAZ class="w-4 h-4" />
+						{:else}
+							<Clock class="w-4 h-4" />
+						{/if}
+						<ChevronDown class="w-3 h-3" />
+					</button>
+					{#if sortDropdownOpen}
+						<div class="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded shadow-lg z-10 min-w-[100px]">
+							<button
+								onclick={() => { sortBy = 'name'; sortDropdownOpen = false; }}
+								class="w-full flex items-center gap-2 px-3 py-2 text-xs text-left cursor-pointer hover:bg-gray-700 transition-colors {sortBy === 'name' ? 'text-white' : 'text-gray-400'}"
+							>
+								<ArrowDownAZ class="w-4 h-4" />
+								<span>A-Z</span>
+							</button>
+							<button
+								onclick={() => { sortBy = 'recent'; sortDropdownOpen = false; }}
+								class="w-full flex items-center gap-2 px-3 py-2 text-xs text-left cursor-pointer hover:bg-gray-700 transition-colors {sortBy === 'recent' ? 'text-white' : 'text-gray-400'}"
+							>
+								<Clock class="w-4 h-4" />
+								<span>Recent</span>
+							</button>
+						</div>
+					{/if}
 				</div>
-				<div class="flex gap-1">
+				<!-- Owner filter buttons (groups - mobile) -->
+				<div class="flex gap-2">
 					<button
 						onclick={() => toggleFilter('jaslr')}
-						class="px-2 py-1 text-xs rounded cursor-pointer {ownerFilters.jaslr ? 'bg-emerald-600' : 'bg-gray-700 text-gray-400'}"
+						class="px-2 py-1 text-xs cursor-pointer transition-colors {ownerFilters.jaslr ? 'text-gray-200' : 'text-gray-500'}"
 					>jaslr</button>
 					<button
 						onclick={() => toggleFilter('vp')}
-						class="px-2 py-1 text-xs rounded cursor-pointer {ownerFilters.vp ? 'bg-violet-600' : 'bg-gray-700 text-gray-400'}"
+						class="px-2 py-1 text-xs cursor-pointer transition-colors {ownerFilters.vp ? 'text-gray-200' : 'text-gray-500'}"
 					>VP</button>
 					<button
 						onclick={() => toggleFilter('junipa')}
-						class="px-2 py-1 text-xs rounded cursor-pointer {ownerFilters.junipa ? 'bg-blue-600' : 'bg-gray-700 text-gray-400'}"
+						class="px-2 py-1 text-xs cursor-pointer transition-colors {ownerFilters.junipa ? 'text-gray-200' : 'text-gray-500'}"
 					>Junipa</button>
 				</div>
 			</div>
