@@ -89,7 +89,7 @@ bd ready           # Check beads issues
 
 - **"get it live"** = Full deployment workflow (see below)
 
-### Get It Live (Fly.io Deployment)
+### Get It Live (Cloudflare Pages Deployment)
 
 When asked to "get it live" for this project:
 
@@ -110,9 +110,9 @@ When asked to "get it live" for this project:
    ```bash
    git push
    ```
-6. **Deploy to Fly.io**:
+6. **Deploy to Cloudflare Pages**:
    ```bash
-   fly deploy --now
+   npm run build && npx wrangler pages deploy .svelte-kit/cloudflare --project-name=ci-monitor
    ```
 
 ### Task Completion Protocol
@@ -121,7 +121,7 @@ When completing a task where work has been signed off:
 1. Run `npm version patch --no-git-tag-version`
 2. Commit with descriptive message
 3. Push to GitHub
-4. Deploy to Fly.io with `fly deploy --now`
+4. Deploy to Cloudflare Pages
 
 ### Deployment (Forked Workflow - No GitHub Actions)
 
@@ -130,21 +130,21 @@ This project uses a **forked deployment workflow**:
 ```
 Your Machine
     │
-    ├──► git push         →  GitHub (version control, backup)
+    ├──► git push     →  GitHub (version control, backup)
     │
-    └──► fly deploy --now →  Fly.io (production)
+    └──► wrangler     →  Cloudflare Pages (production)
 ```
 
 **Quick commands:**
 ```bash
-npm version patch --no-git-tag-version     # Bump version
-git add -A && git commit -m "v0.x.x: ..."  # Commit with description
-git push                                    # Push to GitHub (backup)
-fly deploy --now                            # Deploy to Fly.io
+npm version patch --no-git-tag-version                                      # Bump version
+git add -A && git commit -m "v0.x.x: ..."                                   # Commit
+git push                                                                     # Push to GitHub
+npm run build && npx wrangler pages deploy .svelte-kit/cloudflare --project-name=ci-monitor  # Deploy
 ```
 
 **Why forked?**
-- Deploys directly to Fly.io - no GitHub Actions minutes consumed
+- Deploys directly via Wrangler - no GitHub Actions minutes consumed
 - Build errors appear locally in your terminal
 - Faster than waiting for CI runner to spin up
 - GitHub is for version control/backup, not deployment triggers
