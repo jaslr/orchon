@@ -74,7 +74,9 @@ export const actions: Actions = {
 		try {
 			// Generate key: {type}/{filename}
 			const ext = file.type === 'image/svg+xml' ? 'svg' : 'png';
-			const baseName = file.name.replace(/\.(svg|png)$/i, '').replace(/[^a-zA-Z0-9-_]/g, '-');
+			// Use provided filename if available, otherwise use uploaded file name
+			const providedFilename = formData.get('filename') as string | null;
+			const baseName = providedFilename || file.name.replace(/\.(svg|png)$/i, '').replace(/[^a-zA-Z0-9-_]/g, '-');
 			const key = `${type}/${baseName}.${ext}`;
 
 			// Read file as ArrayBuffer
