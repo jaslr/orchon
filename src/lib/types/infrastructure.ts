@@ -259,3 +259,19 @@ export interface DiscoveryError {
   message: string;
   recoverable: boolean;
 }
+
+// =============================================================================
+// LOG COMMANDS
+// =============================================================================
+
+export type LogEnvironment = 'local' | 'production';
+export type LogTarget = 'server' | 'database' | 'all';
+
+export interface LogCommand {
+  label: string;                  // "Dev Server Logs", "Production Logs"
+  command: string;                // Shell command to run
+  environment: LogEnvironment;
+  target: LogTarget;
+  description?: string;           // Optional explanation
+  workingDir?: string;            // Working directory (defaults to project localPath)
+}

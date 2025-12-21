@@ -25,7 +25,8 @@
 		Settings,
 		ArrowDownAZ,
 		Clock,
-		ChevronDown
+		ChevronDown,
+		Network
 	} from '@lucide/svelte';
 	import InfraFlowDiagram from '$lib/components/InfraFlowDiagram.svelte';
 
@@ -630,6 +631,23 @@
 					{/each}
 				</div>
 			{/if}
+
+			<!-- ECOSYSTEM Section -->
+			<div class="shrink-0 border-t border-gray-800">
+				<div class="px-4 py-2">
+					<span class="text-[10px] text-gray-600 uppercase tracking-wider font-medium">Ecosystem</span>
+				</div>
+				<a
+					href="/ecosystem"
+					class="flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent"
+				>
+					<Network class="w-4 h-4 text-gray-500" />
+					<div class="flex-1 min-w-0">
+						<div class="font-medium text-sm text-gray-300">Ecosystem</div>
+						<div class="text-xs text-gray-500">Provider dependencies</div>
+					</div>
+				</a>
+			</div>
 		</aside>
 
 		<!-- Mobile Accordion View (shown on small, hidden on lg+) -->
