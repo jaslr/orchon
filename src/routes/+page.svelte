@@ -553,13 +553,40 @@
 		</aside>
 
 		<!-- Mobile Accordion View (shown on small, hidden on lg+) -->
-		<div class="lg:hidden flex-1 overflow-y-auto bg-gray-900">
-			{#if statuses.length === 0}
+		<div class="lg:hidden flex-1 flex flex-col overflow-hidden bg-gray-900">
+			<!-- Mobile Filter Bar -->
+			<div class="shrink-0 px-4 py-2 border-b border-gray-800 flex justify-between items-center">
+				<div class="flex gap-1">
+					<button
+						onclick={() => (sortBy = 'name')}
+						class="px-2 py-1 text-xs rounded cursor-pointer {sortBy === 'name' ? 'bg-blue-600' : 'bg-gray-700'}"
+					>A-Z</button>
+					<button
+						onclick={() => (sortBy = 'recent')}
+						class="px-2 py-1 text-xs rounded cursor-pointer {sortBy === 'recent' ? 'bg-blue-600' : 'bg-gray-700'}"
+					>Recent</button>
+				</div>
+				<div class="flex gap-1">
+					<button
+						onclick={() => toggleFilter('jaslr')}
+						class="px-2 py-1 text-xs rounded cursor-pointer {ownerFilters.jaslr ? 'bg-emerald-600' : 'bg-gray-700 text-gray-400'}"
+					>jaslr</button>
+					<button
+						onclick={() => toggleFilter('vp')}
+						class="px-2 py-1 text-xs rounded cursor-pointer {ownerFilters.vp ? 'bg-violet-600' : 'bg-gray-700 text-gray-400'}"
+					>VP</button>
+					<button
+						onclick={() => toggleFilter('junipa')}
+						class="px-2 py-1 text-xs rounded cursor-pointer {ownerFilters.junipa ? 'bg-blue-600' : 'bg-gray-700 text-gray-400'}"
+					>Junipa</button>
+				</div>
+			</div>
+			{#if displayStatuses.length === 0}
 				<div class="p-4 text-center text-gray-500">
 					<p>No repos configured.</p>
 				</div>
 			{:else}
-				<div class="divide-y divide-gray-800">
+				<div class="flex-1 overflow-y-auto divide-y divide-gray-800">
 					{#each displayStatuses as status (status.repo)}
 						{@const repoInfra = getInfra(status.repo)}
 						{@const isExpanded = selectedRepo === status.repo}
