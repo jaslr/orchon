@@ -8,9 +8,9 @@ export const projects = [
         displayName: 'Livna',
         owner: 'jaslr',
         alertLevel: 'business',
-        uptimeUrl: 'https://livna.io',
+        uptimeUrl: 'https://livna.anvilenterprises.com.au',
         services: [
-            { id: 'livna-hosting', category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages' },
+            { id: 'livna-hosting', category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', cfProjectName: 'livna' },
             { id: 'livna-db', category: 'database', provider: 'supabase', serviceName: 'Supabase' },
             { id: 'livna-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
             { id: 'livna-monitoring', category: 'monitoring', provider: 'sentry', serviceName: 'Sentry' },
@@ -24,7 +24,7 @@ export const projects = [
         alertLevel: 'business',
         uptimeUrl: 'https://ladderbox.fly.dev',
         services: [
-            { id: 'ladderbox-hosting', category: 'hosting', provider: 'flyio', serviceName: 'Fly.io' },
+            { id: 'ladderbox-hosting', category: 'hosting', provider: 'flyio', serviceName: 'Fly.io', flyAppName: 'ladderbox' },
             { id: 'ladderbox-db', category: 'database', provider: 'supabase', serviceName: 'Supabase' },
             { id: 'ladderbox-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
         ],
@@ -37,8 +37,21 @@ export const projects = [
         alertLevel: 'hobby',
         uptimeUrl: 'https://ci-monitor.pages.dev',
         services: [
-            { id: 'ci-monitor-hosting', category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages' },
+            { id: 'ci-monitor-hosting', category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', cfProjectName: 'ci-monitor' },
             { id: 'ci-monitor-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
+        ],
+    },
+    {
+        id: 'littlelistoflights',
+        name: 'littlelistoflights',
+        displayName: 'Little List of Lights',
+        owner: 'jaslr',
+        alertLevel: 'hobby',
+        uptimeUrl: 'https://littlelistoflights.com',
+        services: [
+            { id: 'littlelistoflights-hosting', category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', cfProjectName: 'littlelistoflights' },
+            { id: 'littlelistoflights-db', category: 'database', provider: 'supabase', serviceName: 'Supabase' },
+            { id: 'littlelistoflights-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
         ],
     },
     {
@@ -57,33 +70,21 @@ export const projects = [
         displayName: 'ShippyWhippy',
         owner: 'jaslr',
         alertLevel: 'hobby',
+        uptimeUrl: 'https://shippywhippy-admin.pages.dev',
         services: [
+            { id: 'shippywhippy-hosting', category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', cfProjectName: 'shippywhippy-admin' },
             { id: 'shippywhippy-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
         ],
     },
-    // jvp-ux projects
+    // loadmanagement - MCP server, no hosting needed
     {
-        id: 'vastpuddle',
-        name: 'vastpuddle.com.au',
-        displayName: 'Vast Puddle',
-        owner: 'jvp-ux',
+        id: 'loadmanagement',
+        name: 'loadmanagement',
+        displayName: 'Load Management',
+        owner: 'jaslr',
         alertLevel: 'hobby',
-        uptimeUrl: 'https://vastpuddle.com.au',
         services: [
-            { id: 'vastpuddle-hosting', category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages' },
-            { id: 'vastpuddle-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
-        ],
-    },
-    {
-        id: 'junipa',
-        name: 'junipa.com.au',
-        displayName: 'Junipa',
-        owner: 'jvp-ux',
-        alertLevel: 'hobby',
-        uptimeUrl: 'https://junipa.com.au',
-        services: [
-            { id: 'junipa-hosting', category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages' },
-            { id: 'junipa-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
+            { id: 'loadmanagement-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
         ],
     },
 ];

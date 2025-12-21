@@ -96,10 +96,10 @@ INSERT INTO projects (id, name, display_name, owner, alert_level) VALUES
   ('livna', 'livna', 'Livna', 'jaslr', 'business'),
   ('ladderbox', 'Ladderbox', 'Ladderbox', 'jaslr', 'business'),
   ('ci-monitor', 'ci-monitor', 'Infrastructure Observatory', 'jaslr', 'hobby'),
+  ('littlelistoflights', 'littlelistoflights', 'Little List of Lights', 'jaslr', 'hobby'),
   ('brontiq', 'brontiq', 'Brontiq', 'jaslr', 'hobby'),
   ('shippywhippy', 'shippywhippy', 'ShippyWhippy', 'jaslr', 'hobby'),
-  ('vastpuddle', 'vastpuddle.com.au', 'Vast Puddle', 'jvp-ux', 'hobby'),
-  ('junipa', 'junipa.com.au', 'Junipa', 'jvp-ux', 'hobby')
+  ('loadmanagement', 'loadmanagement', 'Load Management', 'jaslr', 'hobby')
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   display_name = EXCLUDED.display_name,
@@ -121,16 +121,17 @@ INSERT INTO services (id, project_id, category, provider, service_name) VALUES
   -- ci-monitor
   ('ci-monitor-hosting', 'ci-monitor', 'hosting', 'cloudflare', 'Cloudflare Pages'),
   ('ci-monitor-ci', 'ci-monitor', 'ci', 'github', 'GitHub Actions'),
+  -- Little List of Lights
+  ('littlelistoflights-hosting', 'littlelistoflights', 'hosting', 'cloudflare', 'Cloudflare Pages'),
+  ('littlelistoflights-db', 'littlelistoflights', 'database', 'supabase', 'Supabase'),
+  ('littlelistoflights-ci', 'littlelistoflights', 'ci', 'github', 'GitHub Actions'),
   -- Brontiq
   ('brontiq-ci', 'brontiq', 'ci', 'github', 'GitHub Actions'),
   -- ShippyWhippy
+  ('shippywhippy-hosting', 'shippywhippy', 'hosting', 'cloudflare', 'Cloudflare Pages'),
   ('shippywhippy-ci', 'shippywhippy', 'ci', 'github', 'GitHub Actions'),
-  -- Vast Puddle
-  ('vastpuddle-hosting', 'vastpuddle', 'hosting', 'cloudflare', 'Cloudflare Pages'),
-  ('vastpuddle-ci', 'vastpuddle', 'ci', 'github', 'GitHub Actions'),
-  -- Junipa
-  ('junipa-hosting', 'junipa', 'hosting', 'cloudflare', 'Cloudflare Pages'),
-  ('junipa-ci', 'junipa', 'ci', 'github', 'GitHub Actions')
+  -- Load Management
+  ('loadmanagement-ci', 'loadmanagement', 'ci', 'github', 'GitHub Actions')
 ON CONFLICT (id) DO UPDATE SET
   category = EXCLUDED.category,
   provider = EXCLUDED.provider,
