@@ -85,19 +85,38 @@ npm run check      # Type checking
 bd ready           # Check beads issues
 ```
 
-### Deployment (Every Change = Production)
+### Deployment (Forked Workflow - No GitHub Actions)
 
-**Every code change gets deployed to production.** After completing any task:
-```bash
-npm version patch --no-git-tag-version  # Bump version
-git add -A && git commit -m "v0.x.x: Description"  # Commit
-npm run build                            # Build locally
-wrangler pages deploy .svelte-kit/cloudflare --project-name=ci-monitor  # Deploy
-wrangler pages deployment list --project-name=ci-monitor | head -8      # Verify
+This project uses a **forked deployment workflow** to avoid GitHub Actions costs:
+
+```
+Your Machine
+    │
+    ├──► npm run release  →  GitHub (version control, backup)
+    │
+    └──► npm run deploy   →  Cloudflare Pages (production)
 ```
 
-**Note:** This project deploys directly via Wrangler - no need to push to GitHub first.
-Git commits are for local history; Wrangler deploys straight to Cloudflare.
+**Quick commands:**
+```bash
+npm run release    # Bump version, commit, push to GitHub
+npm run deploy     # Build and deploy to Cloudflare
+npm run ship       # Both: release + deploy
+```
+
+**Manual workflow (if you need custom commit messages):**
+```bash
+npm version patch --no-git-tag-version     # Bump version
+git add -A && git commit -m "v0.x.x: ..."  # Commit with description
+git push                                    # Push to GitHub (backup)
+npm run deploy                              # Deploy to Cloudflare
+```
+
+**Why forked?**
+- Deploys directly via Wrangler - no GitHub Actions minutes consumed
+- Build errors appear locally in your terminal
+- Faster than waiting for CI runner to spin up
+- GitHub is for version control/backup, not deployment triggers
 
 ### VS Code Tasks
 

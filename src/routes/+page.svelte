@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { WorkflowStatus, RepoStatus } from '$lib/github';
+	import type { WorkflowStatus, RepoStatus, DeploymentStatus } from '$lib/github';
 	import type { InfraService, TechStack } from '$lib/types/infrastructure';
 	import { getProjectInfrastructure } from '$lib/config/infrastructure';
 	import { browser } from '$app/environment';
@@ -18,7 +18,8 @@
 		Server,
 		Layers,
 		ExternalLink,
-		Radio
+		Radio,
+		Settings
 	} from '@lucide/svelte';
 	import InfraFlowDiagram from '$lib/components/InfraFlowDiagram.svelte';
 
@@ -38,10 +39,13 @@
 	// SSE connection for real-time updates
 	const BACKEND_URL = 'https://observatory-backend.fly.dev';
 
+	// Get API secret from layout data (passed from server)
+	let apiSecret = $derived((data as { apiSecret?: string }).apiSecret || '');
+
 	$effect(() => {
 		if (!browser) return;
 
-		sseClient.connect(BACKEND_URL);
+		sseClient.connect(BACKEND_URL, apiSecret);
 
 		const unsubscribe = sseClient.subscribe((event: SSEEvent) => {
 			handleSSEEvent(event);
@@ -77,6 +81,24 @@
 		statuses = statuses.map((status) => {
 			// Match by repo name (project ID matches repo name in our config)
 			if (status.repo === projectId || status.repo.toLowerCase() === projectId.toLowerCase()) {
+				// Map SSE deployment status to our DeploymentStatus type
+				let newDeployStatus: DeploymentStatus;
+				switch (deployment.status) {
+					case 'success':
+						newDeployStatus = 'success';
+						break;
+					case 'failure':
+						newDeployStatus = 'failure';
+						break;
+					case 'in_progress':
+					case 'queued':
+						newDeployStatus = 'deploying';
+						break;
+					default:
+						newDeployStatus = 'unknown';
+				}
+
+				// Also update legacy status for backward compatibility
 				let newStatus: WorkflowStatus;
 				switch (deployment.status) {
 					case 'success':
@@ -95,6 +117,11 @@
 
 				return {
 					...status,
+					// New deployment fields
+					deployStatus: newDeployStatus,
+					deployedAt: new Date().toISOString(),
+					deployUrl: deployment.runUrl || status.deployUrl,
+					// Legacy fields for backward compatibility
 					status: newStatus,
 					conclusion: deployment.status,
 					html_url: deployment.runUrl || status.html_url,
@@ -119,6 +146,31 @@
 		in_progress: 'bg-yellow-500 animate-pulse',
 		unknown: 'bg-gray-500'
 	};
+
+	// Deployment status colors (for Fly.io/Cloudflare deployment status)
+	const deployStatusColors: Record<DeploymentStatus, string> = {
+		success: 'bg-green-500',
+		failure: 'bg-red-500',
+		deploying: 'bg-yellow-500 animate-pulse',
+		unknown: 'bg-gray-500'
+	};
+
+	// Format relative time for last push
+	function formatRelativeTime(isoString: string | null): string {
+		if (!isoString) return 'never';
+		const date = new Date(isoString);
+		const now = new Date();
+		const diffMs = now.getTime() - date.getTime();
+		const diffMins = Math.floor(diffMs / 60000);
+		const diffHours = Math.floor(diffMs / 3600000);
+		const diffDays = Math.floor(diffMs / 86400000);
+
+		if (diffMins < 1) return 'just now';
+		if (diffMins < 60) return `${diffMins}m ago`;
+		if (diffHours < 24) return `${diffHours}h ago`;
+		if (diffDays < 7) return `${diffDays}d ago`;
+		return date.toLocaleDateString();
+	}
 
 	const categoryIcons: Record<string, typeof Cloud> = {
 		hosting: Cloud,
@@ -202,12 +254,23 @@
 				<h1 class="text-lg font-semibold text-gray-100">Infrastructure Observatory</h1>
 				<p class="text-xs text-gray-500">Last updated: {formatTime(lastUpdated)}</p>
 			</div>
-			<!-- SSE Connection Status -->
-			<div class="flex items-center gap-2 text-xs">
-				<Radio class="w-3 h-3 {sseConnected ? 'text-green-400' : 'text-gray-500'}" />
-				<span class="{sseConnected ? 'text-green-400' : 'text-gray-500'}">
-					{sseConnected ? 'Live' : 'Connecting...'}
-				</span>
+			<!-- Right side: SSE status + Settings -->
+			<div class="flex items-center gap-4">
+				<!-- SSE Connection Status -->
+				<div class="flex items-center gap-2 text-xs">
+					<Radio class="w-3 h-3 {sseConnected ? 'text-green-400' : 'text-gray-500'}" />
+					<span class="{sseConnected ? 'text-green-400' : 'text-gray-500'}">
+						{sseConnected ? 'Live' : 'Connecting...'}
+					</span>
+				</div>
+				<!-- Settings cog -->
+				<a
+					href="/admin"
+					class="p-2 -m-2 text-gray-400 hover:text-gray-200 transition-colors"
+					title="Settings"
+				>
+					<Settings class="w-5 h-5" />
+				</a>
 			</div>
 		</div>
 	</header>
@@ -260,8 +323,8 @@
 								? 'bg-gray-800 border-l-2 border-blue-500'
 								: 'hover:bg-gray-800/50 border-l-2 border-transparent'}"
 						>
-							<!-- Status Dot -->
-							<div class="w-2.5 h-2.5 rounded-full {statusColors[status.status]} shrink-0"></div>
+							<!-- Deployment Status Dot (Fly.io/Cloudflare) -->
+							<div class="w-2.5 h-2.5 rounded-full {deployStatusColors[status.deployStatus]} shrink-0" title="Deployment: {status.deployStatus}"></div>
 
 							<!-- Repo Info -->
 							<div class="flex-1 min-w-0">
@@ -271,15 +334,30 @@
 								<div class="text-xs text-gray-500 truncate">{status.owner}</div>
 							</div>
 
+							<!-- Git Repo Status (grey icon) -->
+							<a
+								href={status.repoUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								onclick={(e) => e.stopPropagation()}
+								class="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 transition-colors shrink-0"
+								title="GitHub: {status.version || 'no version'} • {formatRelativeTime(status.lastPush)}"
+							>
+								<GitBranch class="w-3.5 h-3.5" />
+								{#if status.version}
+									<span class="text-xs">{status.version}</span>
+								{/if}
+							</a>
+
 							<!-- Error Link (clickable, goes to problematic service) -->
-							{#if status.status === 'failure'}
+							{#if status.deployStatus === 'failure'}
 								<a
-									href={status.html_url}
+									href={status.deployUrl || status.html_url}
 									target="_blank"
 									rel="noopener noreferrer"
 									onclick={(e) => e.stopPropagation()}
 									class="p-1 -m-1 text-red-400 hover:text-red-300 transition-colors shrink-0"
-									title="View failed workflow"
+									title="View failed deployment"
 								>
 									<AlertTriangle class="w-4 h-4" />
 								</a>
@@ -317,8 +395,8 @@
 									? 'bg-gray-800'
 									: 'hover:bg-gray-800/50'}"
 							>
-								<!-- Status Dot -->
-								<div class="w-2.5 h-2.5 rounded-full {statusColors[status.status]} shrink-0"></div>
+								<!-- Deployment Status Dot (Fly.io/Cloudflare) -->
+								<div class="w-2.5 h-2.5 rounded-full {deployStatusColors[status.deployStatus]} shrink-0" title="Deployment: {status.deployStatus}"></div>
 
 								<!-- Repo Info -->
 								<div class="flex-1 min-w-0">
@@ -328,15 +406,27 @@
 									<div class="text-xs text-gray-500 truncate">{status.owner}</div>
 								</div>
 
+								<!-- Git Repo Status (grey icon) -->
+								<a
+									href={status.repoUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									onclick={(e) => e.stopPropagation()}
+									class="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 transition-colors shrink-0"
+									title="GitHub: {status.version || 'no version'} • {formatRelativeTime(status.lastPush)}"
+								>
+									<GitBranch class="w-3.5 h-3.5" />
+								</a>
+
 								<!-- Error Link (clickable, goes to problematic service) -->
-								{#if status.status === 'failure'}
+								{#if status.deployStatus === 'failure'}
 									<a
-										href={status.html_url}
+										href={status.deployUrl || status.html_url}
 										target="_blank"
 										rel="noopener noreferrer"
 										onclick={(e) => e.stopPropagation()}
 										class="p-1 -m-1 text-red-400 hover:text-red-300 transition-colors shrink-0"
-										title="View failed workflow"
+										title="View failed deployment"
 									>
 										<AlertTriangle class="w-4 h-4" />
 									</a>
@@ -418,20 +508,41 @@
 					<!-- Project Header -->
 					<div class="shrink-0 px-6 py-4 border-b border-gray-700 bg-gray-800">
 						<div class="flex items-center justify-between">
-							<div>
-								<h2 class="text-xl font-semibold text-white">{selectedInfra.displayName}</h2>
-								<p class="text-sm text-gray-400">{selectedStatus.owner}/{selectedStatus.repo}</p>
+							<div class="flex items-center gap-3">
+								<!-- Deployment Status Dot -->
+								<div class="w-3 h-3 rounded-full {deployStatusColors[selectedStatus.deployStatus]}" title="Deployment: {selectedStatus.deployStatus}"></div>
+								<div>
+									<h2 class="text-xl font-semibold text-white">{selectedInfra.displayName}</h2>
+									<p class="text-sm text-gray-400">{selectedStatus.owner}/{selectedStatus.repo}</p>
+								</div>
 							</div>
-							<a
-								href={selectedStatus.html_url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm text-gray-300 transition-colors"
-							>
-								<GitBranch class="w-4 h-4" />
-								<span>Actions</span>
-								<ExternalLink class="w-3 h-3" />
-							</a>
+							<div class="flex items-center gap-2">
+								<!-- GitHub Repo Link (grey) -->
+								<a
+									href={selectedStatus.repoUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm text-gray-400 transition-colors"
+									title="GitHub: {selectedStatus.version || 'no version'} • {formatRelativeTime(selectedStatus.lastPush)}"
+								>
+									<GitBranch class="w-4 h-4" />
+									<span>{selectedStatus.version || 'Repo'}</span>
+									<ExternalLink class="w-3 h-3" />
+								</a>
+								<!-- Deployment Link (if available) -->
+								{#if selectedStatus.deployUrl}
+									<a
+										href={selectedStatus.deployUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm text-gray-300 transition-colors"
+									>
+										<Cloud class="w-4 h-4" />
+										<span>Deploy</span>
+										<ExternalLink class="w-3 h-3" />
+									</a>
+								{/if}
+							</div>
 						</div>
 					</div>
 

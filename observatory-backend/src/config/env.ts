@@ -22,6 +22,9 @@ export const env = {
 
   // Email
   resendApiKey: process.env.RESEND_API_KEY || '',
+
+  // API Security
+  apiSecret: process.env.API_SECRET || '',
 } as const;
 
 // Validate required env vars in production
@@ -32,6 +35,7 @@ export function validateEnv(): void {
     'FLY_API_TOKEN',
     'CLOUDFLARE_API_TOKEN',
     'CLOUDFLARE_ACCOUNT_ID',
+    'API_SECRET',
   ];
 
   const missing = required.filter((key) => !process.env[key]);

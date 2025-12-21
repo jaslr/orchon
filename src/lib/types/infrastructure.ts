@@ -137,7 +137,39 @@ export interface PortUsage {
 }
 
 // =============================================================================
-// CI/CD STATUS
+// DEPLOYMENT STATUS (Fly.io / Cloudflare)
+// =============================================================================
+
+export type DeploymentStatus = 'success' | 'failure' | 'deploying' | 'unknown';
+
+export interface DeploymentInfo {
+  projectId: string;
+  platform: 'flyio' | 'cloudflare' | 'vercel' | 'netlify' | 'other';
+  status: DeploymentStatus;
+  version?: string;               // Deployed version
+  deployedAt?: string;            // ISO timestamp
+  deployUrl?: string;             // URL to deployment logs
+  commitSha?: string;             // Commit that was deployed
+}
+
+// =============================================================================
+// GITHUB REPO STATUS (version control / backup)
+// =============================================================================
+
+export interface RepoInfo {
+  projectId: string;
+  owner: string;
+  repo: string;
+  version?: string;               // From package.json
+  lastPush?: string;              // ISO timestamp of last push
+  lastCommitSha?: string;
+  lastCommitMessage?: string;
+  branch?: string;
+  repoUrl: string;
+}
+
+// =============================================================================
+// CI/CD STATUS (legacy - for repos still using GitHub Actions for deploy)
 // =============================================================================
 
 export type WorkflowStatus = 'success' | 'failure' | 'in_progress' | 'queued' | 'unknown';

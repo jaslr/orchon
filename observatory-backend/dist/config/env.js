@@ -17,6 +17,8 @@ export const env = {
     cloudflareAccountId: process.env.CLOUDFLARE_ACCOUNT_ID || '',
     // Email
     resendApiKey: process.env.RESEND_API_KEY || '',
+    // API Security
+    apiSecret: process.env.API_SECRET || '',
 };
 // Validate required env vars in production
 export function validateEnv() {
@@ -26,6 +28,7 @@ export function validateEnv() {
         'FLY_API_TOKEN',
         'CLOUDFLARE_API_TOKEN',
         'CLOUDFLARE_ACCOUNT_ID',
+        'API_SECRET',
     ];
     const missing = required.filter((key) => !process.env[key]);
     if (missing.length > 0 && !env.isDev) {

@@ -44,17 +44,24 @@ class SSEClient {
 	private reconnectAttempts = 0;
 	private maxReconnectAttempts = 5;
 	private reconnectDelay = 1000;
-	private url: string | null = null;
+	private baseUrl: string | null = null;
+	private apiSecret: string | null = null;
 
-	connect(baseUrl: string): void {
+	connect(baseUrl: string, apiSecret?: string): void {
 		if (this.eventSource) {
 			this.disconnect();
 		}
 
-		this.url = `${baseUrl}/events`;
+		this.baseUrl = baseUrl;
+		this.apiSecret = apiSecret || null;
+
+		// Include API secret as query param for SSE (can't use headers)
+		const url = apiSecret
+			? `${baseUrl}/events?secret=${encodeURIComponent(apiSecret)}`
+			: `${baseUrl}/events`;
 
 		try {
-			this.eventSource = new EventSource(this.url);
+			this.eventSource = new EventSource(url);
 
 			this.eventSource.onopen = () => {
 				console.log('[SSE] Connected to observatory-backend');
@@ -91,8 +98,8 @@ class SSEClient {
 		console.log(`[SSE] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
 
 		setTimeout(() => {
-			if (this.url) {
-				this.connect(this.url.replace('/events', ''));
+			if (this.baseUrl) {
+				this.connect(this.baseUrl, this.apiSecret || undefined);
 			}
 		}, delay);
 	}

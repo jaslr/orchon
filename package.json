@@ -1,7 +1,7 @@
 {
 	"name": "ci-monitor",
 	"private": true,
-	"version": "0.0.24",
+	"version": "0.0.26",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev --port 4573",
@@ -17,8 +17,9 @@
 		"lint:fix": "prettier --write .",
 		"ports": "lsof -i -P -n 2>/dev/null | grep LISTEN | awk '{print $1, $9}' | sort -t: -k2 -n | uniq",
 		"ports:kill": "lsof -ti:4573,:4617 2>/dev/null | xargs kill -9 2>/dev/null || echo 'Ports already free'",
-		"get-it-live": "node scripts/get-it-live.js",
-		"version:patch": "npm version patch --no-git-tag-version"
+		"release": "npm version patch --no-git-tag-version && git add -A && git commit -m \"v$(node -p \"require('./package.json').version\")\" && git push",
+		"deploy": "npm run build && wrangler pages deploy .svelte-kit/cloudflare --project-name=ci-monitor",
+		"ship": "npm run release && npm run deploy"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.0",

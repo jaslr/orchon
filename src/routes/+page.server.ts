@@ -17,6 +17,17 @@ export const load: PageServerLoad = async () => {
 				statuses.push({
 					owner,
 					repo,
+					// Deployment status - unknown without PAT
+					deployStatus: 'unknown',
+					deployPlatform: 'local',
+					deployedAt: null,
+					deployUrl: null,
+					// Git repo status
+					version: null,
+					lastPush: null,
+					lastCommitSha: null,
+					repoUrl: `https://github.com/${owner}/${repo}`,
+					// Legacy CI status
 					status: 'unknown',
 					conclusion: null,
 					html_url: `https://github.com/${owner}/${repo}/actions`,

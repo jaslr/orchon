@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { createMiddleware } from 'hono/factory';
 import { env, validateEnv } from './config/env.js';
 import { healthRoutes } from './routes/health.js';
 import { webhookRoutes } from './routes/webhooks.js';
@@ -13,15 +14,33 @@ import { initDb } from './db/client.js';
 validateEnv();
 // Create Hono app
 const app = new Hono();
+// API Secret authentication middleware
+const apiAuth = createMiddleware(async (c, next) => {
+    // Check Authorization header or query param for API secret
+    const authHeader = c.req.header('Authorization');
+    const querySecret = c.req.query('secret');
+    const providedSecret = authHeader?.replace('Bearer ', '') || querySecret;
+    if (!env.apiSecret) {
+        // No secret configured (dev mode), allow all
+        return next();
+    }
+    if (providedSecret !== env.apiSecret) {
+        return c.json({ error: 'Unauthorized' }, 401);
+    }
+    return next();
+});
 // Middleware
 app.use('*', logger());
 app.use('*', cors({
     origin: ['https://ci-monitor.pages.dev', 'http://localhost:4573', 'http://localhost:5173'],
     credentials: true,
 }));
-// Routes
+// Public routes (no auth required)
 app.route('/health', healthRoutes);
 app.route('/webhooks', webhookRoutes);
+// Protected routes (require API secret)
+app.use('/events/*', apiAuth);
+app.use('/api/*', apiAuth);
 app.route('/events', eventsRoutes);
 app.route('/api', apiRoutes);
 // Root

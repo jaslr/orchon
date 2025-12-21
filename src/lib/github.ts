@@ -1,8 +1,21 @@
 export type WorkflowStatus = 'success' | 'failure' | 'in_progress' | 'unknown';
+export type DeploymentStatus = 'success' | 'failure' | 'deploying' | 'unknown';
+export type HostingPlatform = 'flyio' | 'cloudflare' | 'vercel' | 'netlify' | 'local';
 
 export interface RepoStatus {
 	owner: string;
 	repo: string;
+	// Deployment status (primary - colored dot)
+	deployStatus: DeploymentStatus;
+	deployPlatform: HostingPlatform;
+	deployedAt: string | null;
+	deployUrl: string | null;
+	// Git repo status (secondary - grey icon)
+	version: string | null;
+	lastPush: string | null;
+	lastCommitSha: string | null;
+	repoUrl: string;
+	// Legacy CI status (for backward compatibility)
 	status: WorkflowStatus;
 	conclusion: string | null;
 	html_url: string | null;
@@ -43,6 +56,17 @@ export async function getLatestWorkflowRun(
 			return {
 				owner,
 				repo,
+				// Deployment status - unknown until we get real platform data
+				deployStatus: 'unknown',
+				deployPlatform: 'local',
+				deployedAt: null,
+				deployUrl: null,
+				// Git repo status
+				version: null,
+				lastPush: null,
+				lastCommitSha: null,
+				repoUrl: `https://github.com/${owner}/${repo}`,
+				// Legacy CI status
 				status: 'unknown',
 				conclusion: null,
 				html_url: `https://github.com/${owner}/${repo}/actions`,
@@ -57,6 +81,17 @@ export async function getLatestWorkflowRun(
 			return {
 				owner,
 				repo,
+				// Deployment status - unknown until we get real platform data
+				deployStatus: 'unknown',
+				deployPlatform: 'local',
+				deployedAt: null,
+				deployUrl: null,
+				// Git repo status
+				version: null,
+				lastPush: null,
+				lastCommitSha: null,
+				repoUrl: `https://github.com/${owner}/${repo}`,
+				// Legacy CI status
 				status: 'unknown',
 				conclusion: null,
 				html_url: `https://github.com/${owner}/${repo}/actions`,
@@ -81,6 +116,17 @@ export async function getLatestWorkflowRun(
 		return {
 			owner,
 			repo,
+			// Deployment status - unknown until we get real platform data
+			deployStatus: 'unknown',
+			deployPlatform: 'local',
+			deployedAt: null,
+			deployUrl: null,
+			// Git repo status - use workflow updated_at as proxy for last push
+			version: null,
+			lastPush: latestRun.updated_at,
+			lastCommitSha: null,
+			repoUrl: `https://github.com/${owner}/${repo}`,
+			// Legacy CI status
 			status,
 			conclusion: latestRun.conclusion,
 			html_url: latestRun.html_url,
@@ -92,6 +138,17 @@ export async function getLatestWorkflowRun(
 		return {
 			owner,
 			repo,
+			// Deployment status - unknown on error
+			deployStatus: 'unknown',
+			deployPlatform: 'local',
+			deployedAt: null,
+			deployUrl: null,
+			// Git repo status
+			version: null,
+			lastPush: null,
+			lastCommitSha: null,
+			repoUrl: `https://github.com/${owner}/${repo}`,
+			// Legacy CI status
 			status: 'unknown',
 			conclusion: null,
 			html_url: `https://github.com/${owner}/${repo}/actions`,
