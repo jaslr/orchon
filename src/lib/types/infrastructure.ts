@@ -111,6 +111,7 @@ export type FrameworkType =
 export type CssFramework =
   | 'tailwind' | 'skeleton' | 'daisyui'
   | 'bootstrap' | 'bulma'
+  | 'angular-material'
   | 'css-modules' | 'styled-components'
   | 'scss' | 'less'
   | 'other';

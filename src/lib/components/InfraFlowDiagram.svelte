@@ -122,6 +122,7 @@
 
 	interface DiagramNode extends InfraNode {
 		dashboardUrl?: string;
+		label2?: string; // Secondary label (e.g., provider name)
 	}
 
 	function buildNodes(services: InfraService[], name: string, siteDomain?: string): DiagramNode[] {
@@ -179,7 +180,7 @@
 			y: 70
 		});
 
-		// Backend services - right column with provider names
+		// Backend services - right column with type | provider format
 		let backendY = backendStartY;
 
 		if (hasDb) {
@@ -188,7 +189,8 @@
 			nodes.push({
 				id: 'database',
 				type: 'database',
-				label: dbProvider,
+				label: 'DB',
+				label2: dbProvider,
 				provider: dbService.provider,
 				status: dbService.status,
 				dashboardUrl: dbService.dashboardUrl,
@@ -204,7 +206,8 @@
 			nodes.push({
 				id: 'auth',
 				type: 'auth',
-				label: authProvider,
+				label: 'Auth',
+				label2: authProvider,
 				provider: authService.provider,
 				status: authService.status,
 				dashboardUrl: authService.dashboardUrl,
@@ -216,12 +219,14 @@
 
 		if (hasStorage) {
 			const storageService = services.find((s) => s.category === 'storage')!;
-			// For storage, show the service name (e.g., "R2" instead of "Cloudflare")
-			const storageLabel = storageService.serviceName.replace('Cloudflare ', '');
+			const storageProvider = providerNames[storageService.provider] || storageService.provider;
+			// For storage, use R2 as the product name if Cloudflare
+			const storageName = storageService.provider === 'cloudflare' ? 'R2' : storageProvider;
 			nodes.push({
 				id: 'storage',
 				type: 'storage',
-				label: storageLabel,
+				label: 'Storage',
+				label2: storageName,
 				provider: storageService.provider,
 				status: storageService.status,
 				dashboardUrl: storageService.dashboardUrl,
@@ -237,7 +242,8 @@
 			nodes.push({
 				id: 'monitoring',
 				type: 'monitoring',
-				label: monitoringProvider,
+				label: 'Errors',
+				label2: monitoringProvider,
 				provider: monitoringService.provider,
 				status: monitoringService.status,
 				dashboardUrl: monitoringService.dashboardUrl,
@@ -537,10 +543,15 @@
 						</div>
 					</foreignObject>
 
-					<!-- Label -->
-					<text x="0" y="20" text-anchor="middle" class="text-[4px] fill-gray-400">
+					<!-- Labels -->
+					<text x="0" y="18" text-anchor="middle" class="text-[4px] fill-gray-400 font-medium">
 						{node.label.length > 10 ? node.label.slice(0, 9) + '..' : node.label}
 					</text>
+					{#if node.label2}
+						<text x="0" y="24" text-anchor="middle" class="text-[3.5px] fill-gray-500">
+							{node.label2.length > 12 ? node.label2.slice(0, 11) + '..' : node.label2}
+						</text>
+					{/if}
 
 					<!-- Clickable indicator (external link) -->
 					{#if isClickable}

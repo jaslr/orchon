@@ -1,6 +1,6 @@
 export type WorkflowStatus = 'success' | 'failure' | 'in_progress' | 'unknown';
 export type DeploymentStatus = 'success' | 'failure' | 'deploying' | 'unknown';
-export type HostingPlatform = 'flyio' | 'cloudflare' | 'vercel' | 'netlify' | 'local';
+export type HostingPlatform = 'flyio' | 'cloudflare' | 'vercel' | 'netlify' | 'gcp' | 'local';
 
 export interface RepoStatus {
 	owner: string;

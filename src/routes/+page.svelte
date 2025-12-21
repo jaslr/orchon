@@ -190,6 +190,59 @@
 
 	let sortBy = $state<'name' | 'account' | 'recent'>('name');
 
+	// Owner filter state - load from localStorage
+	type OwnerFilter = 'jaslr' | 'vp' | 'junipa';
+	let ownerFilters = $state<Record<OwnerFilter, boolean>>({
+		jaslr: true,
+		vp: true,
+		junipa: true
+	});
+
+	// Load filters from localStorage on mount
+	$effect(() => {
+		if (!browser) return;
+		const saved = localStorage.getItem('ci-monitor-owner-filters');
+		if (saved) {
+			try {
+				const parsed = JSON.parse(saved);
+				ownerFilters = { ...ownerFilters, ...parsed };
+			} catch (e) {
+				// Ignore invalid JSON
+			}
+		}
+	});
+
+	// Save filters to localStorage when changed
+	function toggleFilter(filter: OwnerFilter) {
+		ownerFilters[filter] = !ownerFilters[filter];
+		if (browser) {
+			localStorage.setItem('ci-monitor-owner-filters', JSON.stringify(ownerFilters));
+		}
+	}
+
+	// Filter statuses based on owner
+	function filterByOwner(statuses: RepoStatus[]): RepoStatus[] {
+		return statuses.filter((status) => {
+			const isJaslr = status.owner === 'jaslr';
+			const isVP = status.owner === 'jvp-ux' || status.owner === 'unknown';
+			const isJunipa = status.repo.toLowerCase().includes('junipa');
+
+			// If Junipa filter is on, show all Junipa regardless of other filters
+			if (ownerFilters.junipa && isJunipa) return true;
+
+			// Otherwise check jaslr/vp filters
+			if (isJaslr && ownerFilters.jaslr) return true;
+			if (isVP && ownerFilters.vp && !isJunipa) return true;
+
+			// If only junipa filter is on, only show junipa
+			if (!ownerFilters.jaslr && !ownerFilters.vp && ownerFilters.junipa) {
+				return isJunipa;
+			}
+
+			return false;
+		});
+	}
+
 	// Initialize selectedRepo from URL param or null
 	let selectedRepo = $state<string | null>(null);
 
@@ -263,6 +316,7 @@
 		vercel: 'text-white',
 		flyio: 'text-violet-400',
 		google: 'text-blue-400',
+		gcp: 'text-blue-400',
 		netlify: 'text-teal-400'
 	};
 
@@ -313,7 +367,8 @@
 		return grouped;
 	}
 
-	let displayStatuses = $derived(sortedStatuses(statuses, sortBy));
+	let filteredStatuses = $derived(filterByOwner(statuses));
+	let displayStatuses = $derived(sortedStatuses(filteredStatuses, sortBy));
 	let selectedStatus = $derived(displayStatuses.find((s) => s.repo === selectedRepo));
 	let selectedInfra = $derived(selectedRepo ? getInfra(selectedRepo) : null);
 
@@ -367,32 +422,65 @@
 	<div class="flex-1 flex flex-col lg:flex-row min-h-0">
 		<!-- Left Sidebar - Repo List (hidden on small, shown on lg+) -->
 		<aside class="hidden lg:flex lg:flex-col w-[20rem] shrink-0 border-r border-gray-800 bg-gray-900">
-			<!-- Sort Options -->
-			<div class="shrink-0 px-4 py-2 border-b border-gray-800 flex gap-1">
-				<button
-					onclick={() => (sortBy = 'name')}
-					class="px-2 py-1 text-xs rounded cursor-pointer {sortBy === 'name'
-						? 'bg-blue-600'
-						: 'bg-gray-700 hover:bg-gray-600'} transition-colors"
-				>
-					A-Z
-				</button>
-				<button
-					onclick={() => (sortBy = 'account')}
-					class="px-2 py-1 text-xs rounded cursor-pointer {sortBy === 'account'
-						? 'bg-blue-600'
-						: 'bg-gray-700 hover:bg-gray-600'} transition-colors"
-				>
-					Account
-				</button>
-				<button
-					onclick={() => (sortBy = 'recent')}
-					class="px-2 py-1 text-xs rounded cursor-pointer {sortBy === 'recent'
-						? 'bg-blue-600'
-						: 'bg-gray-700 hover:bg-gray-600'} transition-colors"
-				>
-					Recent
-				</button>
+			<!-- Sort & Filter Options -->
+			<div class="shrink-0 px-4 py-2 border-b border-gray-800 flex justify-between items-center">
+				<!-- Sort buttons -->
+				<div class="flex gap-1">
+					<button
+						onclick={() => (sortBy = 'name')}
+						class="px-2 py-1 text-xs rounded cursor-pointer {sortBy === 'name'
+							? 'bg-blue-600'
+							: 'bg-gray-700 hover:bg-gray-600'} transition-colors"
+					>
+						A-Z
+					</button>
+					<button
+						onclick={() => (sortBy = 'account')}
+						class="px-2 py-1 text-xs rounded cursor-pointer {sortBy === 'account'
+							? 'bg-blue-600'
+							: 'bg-gray-700 hover:bg-gray-600'} transition-colors"
+					>
+						Account
+					</button>
+					<button
+						onclick={() => (sortBy = 'recent')}
+						class="px-2 py-1 text-xs rounded cursor-pointer {sortBy === 'recent'
+							? 'bg-blue-600'
+							: 'bg-gray-700 hover:bg-gray-600'} transition-colors"
+					>
+						Recent
+					</button>
+				</div>
+				<!-- Owner filter buttons -->
+				<div class="flex gap-1">
+					<button
+						onclick={() => toggleFilter('jaslr')}
+						class="px-2 py-1 text-xs rounded cursor-pointer {ownerFilters.jaslr
+							? 'bg-emerald-600'
+							: 'bg-gray-700 hover:bg-gray-600 text-gray-400'} transition-colors"
+						title="Show jaslr projects"
+					>
+						jaslr
+					</button>
+					<button
+						onclick={() => toggleFilter('vp')}
+						class="px-2 py-1 text-xs rounded cursor-pointer {ownerFilters.vp
+							? 'bg-violet-600'
+							: 'bg-gray-700 hover:bg-gray-600 text-gray-400'} transition-colors"
+						title="Show Vast Puddle projects"
+					>
+						VP
+					</button>
+					<button
+						onclick={() => toggleFilter('junipa')}
+						class="px-2 py-1 text-xs rounded cursor-pointer {ownerFilters.junipa
+							? 'bg-blue-600'
+							: 'bg-gray-700 hover:bg-gray-600 text-gray-400'} transition-colors"
+						title="Show Junipa projects only"
+					>
+						Junipa
+					</button>
+				</div>
 			</div>
 
 			<!-- Repo List -->

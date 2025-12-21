@@ -138,6 +138,53 @@ export const load: PageServerLoad = async ({ locals }) => {
 		statuses.push(...repoStatuses);
 	}
 
+	// Add backend-only projects (like Junipa GCP projects) that aren't in GitHub repos
+	const gitRepoIds = new Set(
+		Object.entries(repos).flatMap(([owner, repoList]) =>
+			repoList.map(repo => repo.toLowerCase())
+		)
+	);
+
+	for (const project of backendProjects) {
+		// Skip if we already have this repo from GitHub config
+		if (gitRepoIds.has(project.name.toLowerCase()) || gitRepoIds.has(project.id.toLowerCase())) {
+			continue;
+		}
+
+		// Check if this is a GCP/non-GitHub project
+		const ciService = project.services.find(s => s.category === 'ci');
+		if (ciService?.provider === 'gcp' || ciService?.provider === 'github') {
+			// Determine owner from project ID or use a default
+			const owner = project.id.startsWith('junipa') ? 'jvp-ux' : 'unknown';
+
+			statuses.push({
+				owner,
+				repo: project.id,
+				// Deployment status from backend
+				deployStatus: mapBackendStatus(project.currentStatus?.status),
+				deployPlatform: ciService?.provider === 'gcp' ? 'gcp' as HostingPlatform : getHostingPlatform(project),
+				deployedAt: project.currentStatus?.checkedAt || null,
+				deployUrl: null,
+				// Git repo status - not applicable for GCP Source Repos
+				version: null,
+				lastPush: null,
+				lastCommitSha: null,
+				repoUrl: ciService?.provider === 'gcp'
+					? `https://console.cloud.google.com/cloud-build/builds?project=${project.services.find(s => s.category === 'ci')?.provider === 'gcp' ? project.id : ''}`
+					: `https://github.com/${owner}/${project.name}`,
+				// Legacy CI status - use backend status
+				status: project.currentStatus?.status === 'healthy' ? 'success' :
+				        project.currentStatus?.status === 'down' ? 'failure' : 'unknown',
+				conclusion: project.currentStatus?.status || null,
+				html_url: ciService?.provider === 'gcp'
+					? `https://console.cloud.google.com/cloud-build/builds?project=${project.id}`
+					: `https://github.com/${owner}/${project.name}/actions`,
+				workflow_name: ciService?.provider === 'gcp' ? 'GCP Cloud Build' : null,
+				run_date: project.currentStatus?.checkedAt || null
+			});
+		}
+	}
+
 	return {
 		statuses,
 		lastUpdated: new Date().toISOString()

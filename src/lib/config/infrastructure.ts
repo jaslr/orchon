@@ -248,6 +248,135 @@ export const INFRASTRUCTURE: Record<string, {
       packageManager: 'npm',
     },
   },
+
+  // ==========================================================================
+  // JUNIPA TENANT APPS (GCP Cloud Build)
+  // ==========================================================================
+  'junipa-demo': {
+    displayName: 'Junipa Demo',
+    identity: 'jvp-ux',
+    repoOwner: 'jvp-ux',
+    services: [
+      { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=junipa' },
+      { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=junipa' },
+    ],
+    stack: {
+      framework: 'angular',
+      language: 'typescript',
+      css: ['angular-material'],
+      testing: [],
+      buildTool: 'webpack',
+      packageManager: 'npm',
+    },
+  },
+
+  'junipa-cedarcollege': {
+    displayName: 'Junipa - Cedar College',
+    identity: 'jvp-ux',
+    repoOwner: 'jvp-ux',
+    services: [
+      { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=cedarcollege-prod' },
+      { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=cedarcollege-prod' },
+    ],
+    stack: {
+      framework: 'angular',
+      language: 'typescript',
+      css: ['angular-material'],
+      testing: [],
+      buildTool: 'webpack',
+      packageManager: 'npm',
+    },
+  },
+
+  'junipa-menofbusiness': {
+    displayName: 'Junipa - Men of Business',
+    identity: 'jvp-ux',
+    repoOwner: 'jvp-ux',
+    services: [
+      { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=menofbusiness-prod' },
+      { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=menofbusiness-prod' },
+    ],
+    stack: {
+      framework: 'angular',
+      language: 'typescript',
+      css: ['angular-material'],
+      testing: [],
+      buildTool: 'webpack',
+      packageManager: 'npm',
+    },
+  },
+
+  'junipa-mjc': {
+    displayName: 'Junipa - MJC',
+    identity: 'jvp-ux',
+    repoOwner: 'jvp-ux',
+    services: [
+      { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=mjc-prod-2022b' },
+      { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=mjc-prod-2022b' },
+    ],
+    stack: {
+      framework: 'angular',
+      language: 'typescript',
+      css: ['angular-material'],
+      testing: [],
+      buildTool: 'webpack',
+      packageManager: 'npm',
+    },
+  },
+
+  'junipa-tuncurry': {
+    displayName: 'Junipa - Tuncurry',
+    identity: 'jvp-ux',
+    repoOwner: 'jvp-ux',
+    services: [
+      { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=mjc-tuncurry-prod' },
+      { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=mjc-tuncurry-prod' },
+    ],
+    stack: {
+      framework: 'angular',
+      language: 'typescript',
+      css: ['angular-material'],
+      testing: [],
+      buildTool: 'webpack',
+      packageManager: 'npm',
+    },
+  },
+
+  'junipa-central-demo': {
+    displayName: 'Junipa Central Demo',
+    identity: 'jvp-ux',
+    repoOwner: 'jvp-ux',
+    services: [
+      { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=junipa-central-demo' },
+      { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=junipa-central-demo' },
+    ],
+    stack: {
+      framework: 'angular',
+      language: 'typescript',
+      css: ['angular-material'],
+      testing: [],
+      buildTool: 'webpack',
+      packageManager: 'npm',
+    },
+  },
+
+  'junipa-west-demo': {
+    displayName: 'Junipa West Demo',
+    identity: 'jvp-ux',
+    repoOwner: 'jvp-ux',
+    services: [
+      { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=junipa-west-demo' },
+      { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=junipa-west-demo' },
+    ],
+    stack: {
+      framework: 'angular',
+      language: 'typescript',
+      css: ['angular-material'],
+      testing: [],
+      buildTool: 'webpack',
+      packageManager: 'npm',
+    },
+  },
 };
 
 /**
