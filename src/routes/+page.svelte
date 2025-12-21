@@ -5,6 +5,8 @@
 	import type { StatusEvent } from '$lib/services/sse-client';
 	import { getProjectInfrastructure } from '$lib/config/infrastructure';
 	import { browser } from '$app/environment';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { sseClient, type SSEEvent, type DeploymentEvent } from '$lib/services/sse-client';
 	import {
 		Cloud,
@@ -187,7 +189,18 @@
 	}
 
 	let sortBy = $state<'name' | 'account' | 'recent'>('name');
+
+	// Initialize selectedRepo from URL param or null
 	let selectedRepo = $state<string | null>(null);
+
+	// Sync selectedRepo with URL on mount
+	$effect(() => {
+		if (!browser) return;
+		const projectParam = page.url.searchParams.get('project');
+		if (projectParam && !selectedRepo) {
+			selectedRepo = projectParam;
+		}
+	});
 
 	// Infrastructure data is static - loaded from config
 	function getInfra(repoName: string) {
@@ -275,7 +288,19 @@
 	}
 
 	function selectRepo(repoName: string) {
-		selectedRepo = selectedRepo === repoName ? null : repoName;
+		const newSelection = selectedRepo === repoName ? null : repoName;
+		selectedRepo = newSelection;
+
+		// Update URL param
+		if (browser) {
+			const url = new URL(window.location.href);
+			if (newSelection) {
+				url.searchParams.set('project', newSelection);
+			} else {
+				url.searchParams.delete('project');
+			}
+			goto(url.toString(), { replaceState: true, noScroll: true });
+		}
 	}
 
 	function groupServicesByCategory(services: InfraService[]): Map<string, InfraService[]> {
@@ -292,10 +317,19 @@
 	let selectedStatus = $derived(displayStatuses.find((s) => s.repo === selectedRepo));
 	let selectedInfra = $derived(selectedRepo ? getInfra(selectedRepo) : null);
 
-	// Auto-select first repo on load
+	// Auto-select first repo on load (if no URL param)
 	$effect(() => {
 		if (!selectedRepo && displayStatuses.length > 0) {
-			selectedRepo = displayStatuses[0].repo;
+			const projectParam = browser ? page.url.searchParams.get('project') : null;
+			const repoToSelect = projectParam || displayStatuses[0].repo;
+			selectedRepo = repoToSelect;
+
+			// Update URL if we auto-selected
+			if (browser && !projectParam) {
+				const url = new URL(window.location.href);
+				url.searchParams.set('project', repoToSelect);
+				goto(url.toString(), { replaceState: true, noScroll: true });
+			}
 		}
 	});
 </script>
@@ -596,6 +630,14 @@
 										<ExternalLink class="w-3 h-3" />
 									</a>
 								{/if}
+								<!-- Settings Link -->
+								<a
+									href="/admin/repos?project={selectedStatus.repo}"
+									class="flex items-center justify-center w-8 h-8 bg-gray-700 hover:bg-gray-600 rounded text-gray-400 hover:text-gray-300 transition-colors"
+									title="Configure {selectedStatus.repo}"
+								>
+									<Settings class="w-4 h-4" />
+								</a>
 							</div>
 						</div>
 					</div>
