@@ -89,7 +89,8 @@
 		auth: Shield,
 		storage: HardDrive,
 		ci: GitBranch,
-		monitoring: AlertTriangle
+		monitoring: AlertTriangle,
+		localdev: Server
 	};
 
 	const nodeColors: Record<string, string> = {
@@ -102,7 +103,21 @@
 		auth: '#eab308',
 		storage: '#ec4899',
 		ci: '#64748b',
-		monitoring: '#ef4444'
+		monitoring: '#ef4444',
+		localdev: '#9ca3af'
+	};
+
+	// Provider display names
+	const providerNames: Record<string, string> = {
+		cloudflare: 'Cloudflare',
+		flyio: 'Fly.io',
+		supabase: 'Supabase',
+		github: 'GitHub',
+		sentry: 'Sentry',
+		aws: 'AWS',
+		vercel: 'Vercel',
+		netlify: 'Netlify',
+		google: 'Google'
 	};
 
 	interface DiagramNode extends InfraNode {
@@ -124,67 +139,17 @@
 		const backendStartY = backendCount === 1 ? 70 : backendCount === 2 ? 50 : 30;
 		const backendSpacing = 40;
 
-		// Site node - left side (front-facing application with globe icon)
-		const hostingService = services.find((s) => s.category === 'hosting');
+		// Local Dev node - top left (developer's machine)
 		nodes.push({
-			id: 'site',
-			type: 'site',
-			label: siteDomain || name,
-			provider: hostingService?.provider,
-			status: hostingService?.status || 'unknown',
-			dashboardUrl: hostingService?.dashboardUrl,
-			x: 70,
-			y: 70
+			id: 'localdev',
+			type: 'localdev',
+			label: 'Local Dev',
+			status: 'unknown',
+			x: -10,
+			y: 15
 		});
 
-		// Backend services - right column
-		let backendY = backendStartY;
-
-		if (hasDb) {
-			const dbService = services.find((s) => s.category === 'database')!;
-			nodes.push({
-				id: 'database',
-				type: 'database',
-				label: dbService.serviceName.replace('Supabase ', ''),
-				provider: dbService.provider,
-				status: dbService.status,
-				dashboardUrl: dbService.dashboardUrl,
-				x: 150,
-				y: backendY
-			});
-			backendY += backendSpacing;
-		}
-
-		if (hasAuth) {
-			const authService = services.find((s) => s.category === 'auth')!;
-			nodes.push({
-				id: 'auth',
-				type: 'auth',
-				label: authService.serviceName.replace('Supabase ', ''),
-				provider: authService.provider,
-				status: authService.status,
-				dashboardUrl: authService.dashboardUrl,
-				x: 150,
-				y: backendY
-			});
-			backendY += backendSpacing;
-		}
-
-		if (hasStorage) {
-			const storageService = services.find((s) => s.category === 'storage')!;
-			nodes.push({
-				id: 'storage',
-				type: 'storage',
-				label: storageService.serviceName.replace('Cloudflare ', ''),
-				provider: storageService.provider,
-				status: storageService.status,
-				dashboardUrl: storageService.dashboardUrl,
-				x: 150,
-				y: backendY
-			});
-		}
-
-		// CI - top center
+		// CI - top center (deploy pipeline)
 		if (hasCi) {
 			const ciService = services.find((s) => s.category === 'ci')!;
 			nodes.push({
@@ -199,13 +164,80 @@
 			});
 		}
 
+		// Site node - center (front-facing application)
+		const hostingService = services.find((s) => s.category === 'hosting');
+		const hostingProvider = hostingService?.provider;
+		const hostingLabel = hostingProvider ? providerNames[hostingProvider] || hostingProvider : name;
+		nodes.push({
+			id: 'site',
+			type: 'site',
+			label: hostingLabel,
+			provider: hostingProvider,
+			status: hostingService?.status || 'unknown',
+			dashboardUrl: hostingService?.dashboardUrl,
+			x: 70,
+			y: 70
+		});
+
+		// Backend services - right column with provider names
+		let backendY = backendStartY;
+
+		if (hasDb) {
+			const dbService = services.find((s) => s.category === 'database')!;
+			const dbProvider = providerNames[dbService.provider] || dbService.provider;
+			nodes.push({
+				id: 'database',
+				type: 'database',
+				label: dbProvider,
+				provider: dbService.provider,
+				status: dbService.status,
+				dashboardUrl: dbService.dashboardUrl,
+				x: 150,
+				y: backendY
+			});
+			backendY += backendSpacing;
+		}
+
+		if (hasAuth) {
+			const authService = services.find((s) => s.category === 'auth')!;
+			const authProvider = providerNames[authService.provider] || authService.provider;
+			nodes.push({
+				id: 'auth',
+				type: 'auth',
+				label: authProvider,
+				provider: authService.provider,
+				status: authService.status,
+				dashboardUrl: authService.dashboardUrl,
+				x: 150,
+				y: backendY
+			});
+			backendY += backendSpacing;
+		}
+
+		if (hasStorage) {
+			const storageService = services.find((s) => s.category === 'storage')!;
+			// For storage, show the service name (e.g., "R2" instead of "Cloudflare")
+			const storageLabel = storageService.serviceName.replace('Cloudflare ', '');
+			nodes.push({
+				id: 'storage',
+				type: 'storage',
+				label: storageLabel,
+				provider: storageService.provider,
+				status: storageService.status,
+				dashboardUrl: storageService.dashboardUrl,
+				x: 150,
+				y: backendY
+			});
+		}
+
 		// Monitoring - bottom center
 		if (hasMonitoring) {
 			const monitoringService = services.find((s) => s.category === 'monitoring')!;
+			const monitoringProvider = providerNames[monitoringService.provider] || monitoringService.provider;
 			nodes.push({
 				id: 'monitoring',
 				type: 'monitoring',
-				label: monitoringService.serviceName,
+				label: monitoringProvider,
 				provider: monitoringService.provider,
 				status: monitoringService.status,
 				dashboardUrl: monitoringService.dashboardUrl,
@@ -221,6 +253,17 @@
 		const edges: InfraEdge[] = [];
 		const nodeIds = new Set(nodes.map((n) => n.id));
 
+		// Local dev to CI (dotted line - push triggers deploy)
+		if (nodeIds.has('localdev') && nodeIds.has('ci')) {
+			edges.push({ id: 'localdev-ci', source: 'localdev', target: 'ci', status: 'idle' });
+		}
+
+		// CI to Site (deploy flow)
+		if (nodeIds.has('ci')) {
+			edges.push({ id: 'ci-site', source: 'ci', target: 'site', status: 'idle' });
+		}
+
+		// Site to backend services (active connections)
 		if (nodeIds.has('database')) {
 			edges.push({ id: 'site-database', source: 'site', target: 'database', status: 'active' });
 		}
@@ -230,9 +273,8 @@
 		if (nodeIds.has('storage')) {
 			edges.push({ id: 'site-storage', source: 'site', target: 'storage', status: 'active' });
 		}
-		if (nodeIds.has('ci')) {
-			edges.push({ id: 'ci-site', source: 'ci', target: 'site', status: 'idle' });
-		}
+
+		// Site to monitoring
 		if (nodeIds.has('monitoring')) {
 			edges.push({ id: 'site-monitoring', source: 'site', target: 'monitoring', status: 'idle' });
 		}

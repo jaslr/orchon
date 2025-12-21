@@ -25,6 +25,9 @@ export const env = {
 
   // API Security
   apiSecret: process.env.API_SECRET || '',
+
+  // GCP Cloud Build
+  gcpServiceAccountKey: process.env.GCP_SERVICE_ACCOUNT_KEY || '',
 } as const;
 
 // Validate required env vars in production
