@@ -131,6 +131,31 @@ class SSEClient {
 	get isConnected(): boolean {
 		return this.eventSource?.readyState === EventSource.OPEN;
 	}
+
+	get connectionStatus(): {
+		connected: boolean;
+		connecting: boolean;
+		url: string | null;
+		reconnectAttempts: number;
+		maxReconnectAttempts: number;
+		readyState: number;
+		readyStateText: string;
+	} {
+		const readyState = this.eventSource?.readyState ?? -1;
+		const readyStateText = readyState === 0 ? 'Connecting' :
+			readyState === 1 ? 'Connected' :
+			readyState === 2 ? 'Closed' : 'Not initialized';
+
+		return {
+			connected: readyState === EventSource.OPEN,
+			connecting: readyState === EventSource.CONNECTING,
+			url: this.baseUrl,
+			reconnectAttempts: this.reconnectAttempts,
+			maxReconnectAttempts: this.maxReconnectAttempts,
+			readyState,
+			readyStateText
+		};
+	}
 }
 
 // Singleton instance

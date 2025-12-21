@@ -35,6 +35,8 @@
 	let statuses = $state<RepoStatus[]>(data.statuses);
 	let lastUpdated = $state(data.lastUpdated);
 	let sseConnected = $state(false);
+	let connectionInfo = $state(sseClient.connectionStatus);
+	let showConnectionDetails = $state(false);
 
 	// Update local state when server data changes (navigation, etc.)
 	$effect(() => {
@@ -60,6 +62,7 @@
 		// Check connection status periodically
 		const statusCheck = setInterval(() => {
 			sseConnected = sseClient.isConnected;
+			connectionInfo = sseClient.connectionStatus;
 		}, 1000);
 
 		return () => {
@@ -194,17 +197,20 @@
 	let sortBy = $state<'name' | 'recent'>('name');
 	let sortDropdownOpen = $state(false);
 
-	// Close dropdown when clicking outside
+	// Close dropdowns when clicking outside
 	function handleClickOutside(event: MouseEvent) {
 		const target = event.target as Element;
 		if (sortDropdownOpen && !target.closest('.sort-dropdown')) {
 			sortDropdownOpen = false;
 		}
+		if (showConnectionDetails && !target.closest('.connection-status')) {
+			showConnectionDetails = false;
+		}
 	}
 
 	$effect(() => {
 		if (!browser) return;
-		if (sortDropdownOpen) {
+		if (sortDropdownOpen || showConnectionDetails) {
 			document.addEventListener('click', handleClickOutside);
 			return () => document.removeEventListener('click', handleClickOutside);
 		}
@@ -218,14 +224,15 @@
 		junipa: true
 	});
 
-	// Load filters from localStorage on mount
+	// Load filters from localStorage on mount (runs once)
 	$effect(() => {
 		if (!browser) return;
 		const saved = localStorage.getItem('ci-monitor-owner-filters');
 		if (saved) {
 			try {
 				const parsed = JSON.parse(saved);
-				ownerFilters = { ...ownerFilters, ...parsed };
+				// Don't spread ownerFilters here - that creates an infinite loop!
+				ownerFilters = { jaslr: true, vp: true, junipa: true, ...parsed };
 			} catch (e) {
 				// Ignore invalid JSON
 			}
@@ -263,17 +270,9 @@
 		});
 	}
 
-	// Initialize selectedRepo from URL param or null
+	// Initialize selectedRepo from URL param or first repo
 	let selectedRepo = $state<string | null>(null);
-
-	// Sync selectedRepo with URL on mount
-	$effect(() => {
-		if (!browser) return;
-		const projectParam = page.url.searchParams.get('project');
-		if (projectParam && !selectedRepo) {
-			selectedRepo = projectParam;
-		}
-	});
+	let initializedFromUrl = $state(false);
 
 	// Infrastructure data is static - loaded from config
 	function getInfra(repoName: string) {
@@ -390,19 +389,23 @@
 	let selectedStatus = $derived(displayStatuses.find((s) => s.repo === selectedRepo));
 	let selectedInfra = $derived(selectedRepo ? getInfra(selectedRepo) : null);
 
-	// Auto-select first repo on load (if no URL param)
+	// Initialize selectedRepo once on mount from URL or first repo
 	$effect(() => {
-		if (!selectedRepo && displayStatuses.length > 0) {
-			const projectParam = browser ? page.url.searchParams.get('project') : null;
-			const repoToSelect = projectParam || displayStatuses[0].repo;
-			selectedRepo = repoToSelect;
+		if (!browser || initializedFromUrl) return;
+		if (displayStatuses.length === 0) return;
 
-			// Update URL if we auto-selected
-			if (browser && !projectParam) {
-				const url = new URL(window.location.href);
-				url.searchParams.set('project', repoToSelect);
-				goto(url.toString(), { replaceState: true, noScroll: true });
-			}
+		const projectParam = page.url.searchParams.get('project');
+		const repoToSelect = projectParam || displayStatuses[0].repo;
+
+		// Mark as initialized BEFORE setting state to prevent re-runs
+		initializedFromUrl = true;
+		selectedRepo = repoToSelect;
+
+		// Update URL if we auto-selected (no URL param was present)
+		if (!projectParam) {
+			const url = new URL(window.location.href);
+			url.searchParams.set('project', repoToSelect);
+			goto(url.toString(), { replaceState: true, noScroll: true });
 		}
 	});
 </script>
@@ -417,12 +420,62 @@
 			</div>
 			<!-- Right side: SSE status + Settings -->
 			<div class="flex items-center gap-4">
-				<!-- SSE Connection Status -->
-				<div class="flex items-center gap-2 text-xs">
-					<Radio class="w-3 h-3 {sseConnected ? 'text-green-400' : 'text-gray-500'}" />
-					<span class="{sseConnected ? 'text-green-400' : 'text-gray-500'}">
-						{sseConnected ? 'Live' : 'Connecting...'}
-					</span>
+				<!-- SSE Connection Status (clickable) -->
+				<div class="relative connection-status">
+					<button
+						onclick={() => showConnectionDetails = !showConnectionDetails}
+						class="flex items-center gap-2 text-xs px-2 py-1 rounded hover:bg-gray-800 transition-colors cursor-pointer"
+					>
+						<Radio class="w-3 h-3 {sseConnected ? 'text-green-400' : connectionInfo.connecting ? 'text-yellow-400 animate-pulse' : 'text-red-400'}" />
+						<span class="{sseConnected ? 'text-green-400' : connectionInfo.connecting ? 'text-yellow-400' : 'text-red-400'}">
+							{sseConnected ? 'Live' : connectionInfo.connecting ? 'Connecting...' : 'Disconnected'}
+						</span>
+					</button>
+
+					<!-- Connection Details Popup -->
+					{#if showConnectionDetails}
+						<div class="absolute top-full right-0 mt-2 w-72 bg-gray-800 border border-gray-700 rounded shadow-xl z-50">
+							<div class="p-3 border-b border-gray-700">
+								<div class="flex items-center justify-between">
+									<span class="text-xs text-gray-400 uppercase tracking-wider">Connection Status</span>
+									<button
+										onclick={() => showConnectionDetails = false}
+										class="text-gray-500 hover:text-gray-300 cursor-pointer"
+										aria-label="Close"
+									>
+										<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+										</svg>
+									</button>
+								</div>
+							</div>
+							<div class="p-3 space-y-2 text-sm">
+								<div class="flex justify-between">
+									<span class="text-gray-400">State:</span>
+									<span class="{sseConnected ? 'text-green-400' : connectionInfo.connecting ? 'text-yellow-400' : 'text-red-400'}">
+										{connectionInfo.readyStateText}
+									</span>
+								</div>
+								<div class="flex justify-between">
+									<span class="text-gray-400">Backend:</span>
+									<span class="text-gray-300 text-xs font-mono truncate max-w-[180px]" title={connectionInfo.url || 'Not set'}>
+										{connectionInfo.url ? new URL(connectionInfo.url).host : 'Not set'}
+									</span>
+								</div>
+								{#if connectionInfo.reconnectAttempts > 0}
+									<div class="flex justify-between">
+										<span class="text-gray-400">Reconnect attempts:</span>
+										<span class="text-yellow-400">
+											{connectionInfo.reconnectAttempts} / {connectionInfo.maxReconnectAttempts}
+										</span>
+									</div>
+								{/if}
+								<div class="pt-2 border-t border-gray-700 text-xs text-gray-500">
+									Real-time updates from the backend SSE stream
+								</div>
+							</div>
+						</div>
+					{/if}
 				</div>
 				<!-- Settings cog -->
 				<a
