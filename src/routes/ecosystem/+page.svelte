@@ -14,7 +14,7 @@
 		Network,
 		Settings,
 		ExternalLink,
-		FolderGit2
+		ChevronRight
 	} from '@lucide/svelte';
 	import EcosystemFlowDiagram from '$lib/components/EcosystemFlowDiagram.svelte';
 
@@ -127,44 +127,31 @@
 	<div class="flex-1 flex flex-col lg:flex-row min-h-0">
 		<!-- Left Sidebar - Project List -->
 		<aside class="hidden lg:flex lg:flex-col w-[20rem] shrink-0 border-r border-gray-800 bg-gray-900">
-			<!-- Projects (menu item, not active) -->
-			<a
-				href="/"
-				class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent"
-			>
-				<FolderGit2 class="w-4 h-4 text-gray-500 shrink-0" />
-				<div class="flex-1 min-w-0">
-					<div class="font-medium text-sm text-gray-300 truncate">Projects</div>
-				</div>
-			</a>
+			<!-- Top-level navigation items -->
+			<div class="shrink-0">
+				<!-- Projects (collapsed, links to main page) -->
+				<a
+					href="/"
+					class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent"
+				>
+					<ChevronRight class="w-4 h-4 text-gray-500 shrink-0" />
+					<div class="flex-1 min-w-0">
+						<div class="font-medium text-sm text-gray-300 truncate">Projects</div>
+					</div>
+				</a>
 
-			<!-- Project List (collapsed in ecosystem view) -->
-			<div class="flex-1 overflow-y-auto py-1">
-				{#each projects as project (project.id)}
-					<a
-						href="/?project={project.id}"
-						class="flex items-center gap-3 px-4 py-2.5 pl-8 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent"
-					>
-						<FolderGit2 class="w-4 h-4 text-gray-500 shrink-0" />
-						<div class="flex-1 min-w-0">
-							<div class="font-medium text-sm text-gray-300 truncate">{project.displayName}</div>
-							<div class="text-xs text-gray-500 truncate">{project.identity}</div>
-						</div>
-					</a>
-				{/each}
+				<!-- Ecosystem (active) -->
+				<a
+					href="/ecosystem"
+					class="flex items-center gap-3 px-4 py-2.5 bg-gray-800 border-l-2 border-blue-500"
+				>
+					<Network class="w-4 h-4 text-blue-400 shrink-0" />
+					<div class="flex-1 min-w-0">
+						<div class="font-medium text-sm text-white truncate">Ecosystem</div>
+						<div class="text-xs text-gray-500 truncate">Provider dependencies</div>
+					</div>
+				</a>
 			</div>
-
-			<!-- Ecosystem (at end, active) -->
-			<a
-				href="/ecosystem"
-				class="flex items-center gap-3 px-4 py-2.5 bg-gray-800 border-l-2 border-blue-500"
-			>
-				<Network class="w-4 h-4 text-blue-400 shrink-0" />
-				<div class="flex-1 min-w-0">
-					<div class="font-medium text-sm text-white truncate">Ecosystem</div>
-					<div class="text-xs text-gray-500 truncate">Provider dependencies</div>
-				</div>
-			</a>
 		</aside>
 
 		<!-- Main Content Area -->

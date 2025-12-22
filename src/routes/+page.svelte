@@ -26,6 +26,7 @@
 		ArrowDownAZ,
 		Clock,
 		ChevronDown,
+		ChevronRight,
 		Network,
 		FolderGit2
 	} from '@lucide/svelte';
@@ -198,6 +199,7 @@
 
 	let sortBy = $state<'name' | 'recent'>('name');
 	let sortDropdownOpen = $state(false);
+	let projectsExpanded = $state(true);
 
 	// Close dropdowns when clicking outside
 	function handleClickOutside(event: MouseEvent) {
@@ -498,17 +500,38 @@
 	<div class="flex-1 flex flex-col lg:flex-row min-h-0">
 		<!-- Left Sidebar - Repo List (hidden on small, shown on lg+) -->
 		<aside class="hidden lg:flex lg:flex-col w-[20rem] shrink-0 border-r border-gray-800 bg-gray-900">
-			<!-- Projects (menu item) -->
-			<a
-				href="/"
-				class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors bg-gray-800 border-l-2 border-blue-500"
-			>
-				<FolderGit2 class="w-4 h-4 text-blue-400 shrink-0" />
-				<div class="flex-1 min-w-0">
-					<div class="font-medium text-sm text-white truncate">Projects</div>
-				</div>
-			</a>
+			<!-- Top-level navigation items -->
+			<div class="shrink-0">
+				<!-- Projects (collapsible) -->
+				<button
+					onclick={() => projectsExpanded = !projectsExpanded}
+					class="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors bg-gray-800 border-l-2 border-blue-500 cursor-pointer"
+				>
+					{#if projectsExpanded}
+						<ChevronDown class="w-4 h-4 text-blue-400 shrink-0" />
+					{:else}
+						<ChevronRight class="w-4 h-4 text-blue-400 shrink-0" />
+					{/if}
+					<div class="flex-1 min-w-0">
+						<div class="font-medium text-sm text-white truncate">Projects</div>
+					</div>
+				</button>
 
+				<!-- Ecosystem (sibling to Projects) -->
+				<a
+					href="/ecosystem"
+					class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent"
+				>
+					<Network class="w-4 h-4 text-gray-500 shrink-0" />
+					<div class="flex-1 min-w-0">
+						<div class="font-medium text-sm text-gray-300 truncate">Ecosystem</div>
+						<div class="text-xs text-gray-500 truncate">Provider dependencies</div>
+					</div>
+				</a>
+			</div>
+
+			<!-- Projects content (collapsible) -->
+			{#if projectsExpanded}
 			<!-- Sort & Filter Options -->
 			<div class="shrink-0 px-4 py-2 border-b border-gray-800 flex justify-between items-center">
 				<!-- Sort dropdown -->
@@ -643,18 +666,7 @@
 					{/each}
 				</div>
 			{/if}
-
-			<!-- Ecosystem (at end of project list) -->
-			<a
-				href="/ecosystem"
-				class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent"
-			>
-				<Network class="w-4 h-4 text-gray-500 shrink-0" />
-				<div class="flex-1 min-w-0">
-					<div class="font-medium text-sm text-gray-300 truncate">Ecosystem</div>
-					<div class="text-xs text-gray-500 truncate">Provider dependencies</div>
-				</div>
-			</a>
+			{/if}
 		</aside>
 
 		<!-- Mobile Accordion View (shown on small, hidden on lg+) -->
