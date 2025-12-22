@@ -14,7 +14,8 @@
 		Server,
 		Network,
 		Settings,
-		ExternalLink
+		ExternalLink,
+		FolderGit2
 	} from '@lucide/svelte';
 	import EcosystemFlowDiagram from '$lib/components/EcosystemFlowDiagram.svelte';
 
@@ -111,13 +112,6 @@
 				<p class="text-xs text-gray-500">Provider dependencies across all projects</p>
 			</div>
 			<div class="flex items-center gap-4">
-				<!-- Back to projects -->
-				<a
-					href="/"
-					class="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-200 transition-colors"
-				>
-					<span>Projects</span>
-				</a>
 				<!-- Settings cog -->
 				<a
 					href="/admin"
@@ -130,8 +124,48 @@
 		</div>
 	</header>
 
-	<!-- Main Content -->
-	<div class="flex-1 flex flex-col overflow-hidden">
+	<!-- Main Content with Sidebar -->
+	<div class="flex-1 flex flex-col lg:flex-row min-h-0">
+		<!-- Left Sidebar - Project List -->
+		<aside class="hidden lg:flex lg:flex-col w-[20rem] shrink-0 border-r border-gray-800 bg-gray-900">
+			<!-- Projects Header -->
+			<div class="shrink-0 px-4 py-2 border-b border-gray-800">
+				<span class="text-[10px] text-gray-600 uppercase tracking-wider font-medium">Projects</span>
+			</div>
+
+			<!-- Project List -->
+			<div class="flex-1 overflow-y-auto py-1">
+				{#each projects as project (project.id)}
+					<a
+						href="/?project={project.id}"
+						class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent"
+					>
+						<FolderGit2 class="w-4 h-4 text-gray-500 shrink-0" />
+						<div class="flex-1 min-w-0">
+							<div class="font-medium text-sm text-gray-300 truncate">{project.displayName}</div>
+							<div class="text-xs text-gray-500 truncate">{project.identity}</div>
+						</div>
+					</a>
+				{/each}
+			</div>
+
+			<!-- ECOSYSTEM Section (current page indicator) -->
+			<div class="shrink-0 border-t border-gray-800">
+				<div class="px-4 py-2">
+					<span class="text-[10px] text-gray-600 uppercase tracking-wider font-medium">Ecosystem</span>
+				</div>
+				<div class="flex items-center gap-3 px-4 py-3 bg-gray-800 border-l-2 border-blue-500">
+					<Network class="w-4 h-4 text-blue-400" />
+					<div class="flex-1 min-w-0">
+						<div class="font-medium text-sm text-white">Ecosystem</div>
+						<div class="text-xs text-gray-500">Provider dependencies</div>
+					</div>
+				</div>
+			</div>
+		</aside>
+
+		<!-- Main Content Area -->
+		<div class="flex-1 flex flex-col overflow-hidden">
 		<!-- Flow Diagram Section -->
 		<div class="shrink-0 border-b border-gray-800 bg-gray-850">
 			<div class="px-6 py-4">
@@ -204,6 +238,7 @@
 					</div>
 				{/each}
 			</div>
+		</div>
 		</div>
 	</div>
 </div>

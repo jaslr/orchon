@@ -91,8 +91,10 @@ export const INFRASTRUCTURE: Record<string, {
     displayName: 'Brontiq',
     identity: 'jaslr',
     repoOwner: 'jaslr',
+    localPath: '/home/chip/brontiq',
     services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/brontiq' },
+      { category: 'hosting', provider: 'flyio', serviceName: 'Fly.io', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://fly.io/apps/brontiq' },
+      { category: 'database', provider: 'flyio', serviceName: 'Fly.io PocketBase', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://fly.io/apps/brontiq-pocketbase' },
       { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jaslr/brontiq/actions' },
     ],
     stack: {
@@ -103,6 +105,13 @@ export const INFRASTRUCTURE: Record<string, {
       buildTool: 'vite',
       packageManager: 'npm',
     },
+    logCommands: [
+      { label: 'Dev Server', command: 'docker compose logs -f', environment: 'local', target: 'all', description: 'Docker Compose dev logs' },
+      { label: 'Production DB Logs', command: 'fly logs --app brontiq-pocketbase --no-tail', environment: 'production', target: 'database', description: 'PocketBase logs (check first)' },
+      { label: 'Production App Logs', command: 'fly logs --app brontiq --no-tail', environment: 'production', target: 'server', description: 'Frontend/SSR logs' },
+      { label: 'DB App Status', command: 'fly status --app brontiq-pocketbase', environment: 'production', target: 'database', description: 'Check PocketBase health' },
+      { label: 'App Status', command: 'fly status --app brontiq', environment: 'production', target: 'server', description: 'Check app health' },
+    ],
   },
 
   // ==========================================================================
@@ -143,29 +152,41 @@ export const INFRASTRUCTURE: Record<string, {
     displayName: 'Shippy Whippy',
     identity: 'jaslr',
     repoOwner: 'jaslr',
+    localPath: '/home/chip/shippywhippy',
     services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/shippywhippy' },
+      { category: 'hosting', provider: 'flyio', serviceName: 'Fly.io', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://fly.io/apps/shippywhippy' },
+      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages (Admin)', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/shippywhippy-admin' },
+      { category: 'database', provider: 'supabase', serviceName: 'Supabase Database', status: 'unknown', config: {}, discoveryMethod: 'package_json', dashboardUrl: 'https://supabase.com/dashboard' },
       { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jaslr/shippywhippy/actions' },
     ],
     stack: {
-      framework: 'sveltekit',
+      framework: 'other',
       language: 'typescript',
       css: ['tailwind'],
       testing: [],
       buildTool: 'vite',
       packageManager: 'npm',
     },
+    logCommands: [
+      { label: 'Fly.io Logs', command: './scripts/tail_fly_logs.sh', environment: 'production', target: 'server', description: 'Production app logs' },
+      { label: 'CF Admin Logs', command: './scripts/tail_cloudflare_admin_logs.sh', environment: 'production', target: 'server', description: 'Admin dashboard logs' },
+      { label: 'Carrier Service', command: 'tail -f carrier-service.log', environment: 'local', target: 'server', description: 'Australia Post/Aramex logs' },
+      { label: 'Check Local DB', command: 'npm run check:db', environment: 'local', target: 'database', description: 'Verify PostgreSQL connection' },
+      { label: 'Check Prod DB', command: 'npm run check:db:prod', environment: 'production', target: 'database', description: 'Verify Supabase connection' },
+    ],
   },
 
   // ==========================================================================
-  // LOADMANAGEMENT
+  // LOADMANAGEMENT (Gabbyblat MCP)
   // ==========================================================================
   loadmanagement: {
     displayName: 'Load Management',
     identity: 'jaslr',
     repoOwner: 'jaslr',
+    localPath: '/home/chip/loadmanagement',
     services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/loadmanagement' },
+      { category: 'hosting', provider: 'flyio', serviceName: 'Fly.io', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://fly.io/apps/blatblat' },
+      { category: 'database', provider: 'pocketbase', serviceName: 'PocketBase', status: 'unknown', config: {}, discoveryMethod: 'config_file' },
       { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jaslr/loadmanagement/actions' },
     ],
     stack: {
@@ -176,6 +197,12 @@ export const INFRASTRUCTURE: Record<string, {
       buildTool: 'vite',
       packageManager: 'npm',
     },
+    logCommands: [
+      { label: 'Dev Server', command: 'tail -f logs/dev-server.log', environment: 'local', target: 'server', description: 'Vite dev logs (1000 line rolling)' },
+      { label: 'Production Logs', command: './scripts/tailFlyLogs.sh', environment: 'production', target: 'server', description: 'Fly.io logs to logs/tail.log' },
+      { label: 'Fly.io Direct', command: 'flyctl logs -a blatblat', environment: 'production', target: 'server', description: 'Direct Fly.io streaming' },
+      { label: 'PocketBase', command: 'npm run pocketbase', environment: 'local', target: 'database', description: 'Local PocketBase at :8190' },
+    ],
   },
 
   // ==========================================================================
@@ -185,8 +212,10 @@ export const INFRASTRUCTURE: Record<string, {
     displayName: 'Little List of Lights',
     identity: 'jaslr',
     repoOwner: 'jaslr',
+    localPath: '/home/chip/littlelistoflights',
     services: [
       { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/littlelistoflights' },
+      { category: 'database', provider: 'supabase', serviceName: 'Supabase Database', status: 'unknown', config: {}, discoveryMethod: 'package_json', dashboardUrl: 'https://supabase.com/dashboard/project/hjrawccyhnvtwulzfbbo' },
       { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jaslr/littlelistoflights/actions' },
     ],
     stack: {
@@ -197,6 +226,13 @@ export const INFRASTRUCTURE: Record<string, {
       buildTool: 'vite',
       packageManager: 'npm',
     },
+    logCommands: [
+      { label: 'CF Pages Logs', command: 'npm run cf:logs', environment: 'production', target: 'server', description: 'Cloudflare Pages real-time logs' },
+      { label: 'Dev Server', command: 'npm run dev', environment: 'local', target: 'server', description: 'Vite dev server on :5173' },
+      { label: 'Supabase Status', command: 'npm run supabase:status', environment: 'local', target: 'database', description: 'Docker container status' },
+      { label: 'DB Studio', command: 'npm run db:studio', environment: 'local', target: 'database', description: 'Open Supabase Studio' },
+      { label: 'DB Backup', command: 'npm run db:backup', environment: 'production', target: 'database', description: 'Create database backup' },
+    ],
   },
 
   // ==========================================================================
@@ -206,28 +242,58 @@ export const INFRASTRUCTURE: Record<string, {
     displayName: 'Vast Puddle',
     identity: 'jvp-ux',
     repoOwner: 'jvp-ux',
+    localPath: '/home/chip/vastpuddle/vastpuddle.com.au',
     services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/vastpuddle-com-au' },
+      { category: 'hosting', provider: 'github', serviceName: 'GitHub Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jvp-ux/vastpuddle.com.au/deployments' },
       { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jvp-ux/vastpuddle.com.au/actions' },
     ],
     stack: {
-      framework: 'sveltekit',
-      language: 'typescript',
-      css: ['tailwind'],
+      framework: 'other',
+      language: 'javascript',
+      css: ['other'],
       testing: [],
-      buildTool: 'vite',
+      buildTool: 'other',
       packageManager: 'npm',
     },
+    logCommands: [
+      { label: 'Deploy History', command: 'gh run list --workflow=deploy-pages.yml --limit=5', environment: 'production', target: 'all', description: 'GitHub Pages deployments' },
+      { label: 'Git Log', command: 'git log --oneline -10', environment: 'local', target: 'all', description: 'Recent commits' },
+    ],
   },
 
   'junipa.com.au': {
-    displayName: 'Junipa',
+    displayName: 'Junipa Marketing',
     identity: 'jvp-ux',
     repoOwner: 'jvp-ux',
+    localPath: '/home/chip/vastpuddle/junipa.com.au',
     services: [
       { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/junipa-com-au' },
-      { category: 'database', provider: 'supabase', serviceName: 'Supabase Database', status: 'unknown', config: {}, discoveryMethod: 'package_json', dashboardUrl: 'https://supabase.com/dashboard/project/junipa' },
       { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jvp-ux/junipa.com.au/actions' },
+    ],
+    stack: {
+      framework: 'other',
+      language: 'javascript',
+      css: ['tailwind'],
+      testing: [],
+      buildTool: 'other',
+      packageManager: 'npm',
+    },
+    logCommands: [
+      { label: 'Dev Server', command: 'npm run dev', environment: 'local', target: 'server', description: '11ty + Wrangler dev' },
+      { label: 'Deploy', command: 'npm run deploy', environment: 'production', target: 'all', description: 'Deploy to Cloudflare' },
+    ],
+  },
+
+  'junipa-organisations': {
+    displayName: 'Junipa Organisations',
+    identity: 'jvp-ux',
+    repoOwner: 'jvp-ux',
+    localPath: '/home/chip/vastpuddle/junipa-organisations',
+    services: [
+      { category: 'hosting', provider: 'firebase', serviceName: 'Firebase Hosting', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.firebase.google.com/project/junipa-organisations/hosting' },
+      { category: 'hosting', provider: 'gcp', serviceName: 'Cloud Run (API)', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/run?project=junipa-organisations' },
+      { category: 'database', provider: 'firebase', serviceName: 'Firestore', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.firebase.google.com/project/junipa-organisations/firestore' },
+      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jvp-ux/junipa-organisations/actions' },
     ],
     stack: {
       framework: 'angular',
@@ -237,24 +303,13 @@ export const INFRASTRUCTURE: Record<string, {
       buildTool: 'webpack',
       packageManager: 'npm',
     },
-  },
-
-  'junipa-organisations': {
-    displayName: 'Junipa Organisations',
-    identity: 'jvp-ux',
-    repoOwner: 'jvp-ux',
-    services: [
-      { category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://dash.cloudflare.com/?to=/:account/pages/view/junipa-organisations' },
-      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jvp-ux/junipa-organisations/actions' },
+    logCommands: [
+      { label: 'Dev Server', command: 'tail -50 logs/dev-server.log', environment: 'local', target: 'server', description: 'Last 50 lines dev logs' },
+      { label: 'Dev Errors', command: 'grep -i "error\\|fail\\|exception" logs/dev-server.log', environment: 'local', target: 'server', description: 'Filter errors only' },
+      { label: 'Live Dev Logs', command: 'tail -f logs/dev-server.log', environment: 'local', target: 'server', description: 'Follow dev server output' },
+      { label: 'Start Dev', command: './tools/start-org-portal.sh', environment: 'local', target: 'server', description: 'Start with logging on :4300' },
+      { label: 'Firebase Emulators', command: './tools/start-emulators.sh', environment: 'local', target: 'database', description: 'Start Firebase emulators' },
     ],
-    stack: {
-      framework: 'sveltekit',
-      language: 'typescript',
-      css: ['tailwind'],
-      testing: [],
-      buildTool: 'vite',
-      packageManager: 'npm',
-    },
   },
 
   'support.junipa.com.au': {
@@ -276,7 +331,43 @@ export const INFRASTRUCTURE: Record<string, {
   },
 
   // ==========================================================================
+  // JUNIPA MAIN APP (Angular + NestJS)
+  // ==========================================================================
+  'junipa': {
+    displayName: 'Junipa App',
+    identity: 'jvp-ux',
+    repoOwner: 'jvp-ux',
+    localPath: '/home/chip/vastpuddle/junipa',
+    services: [
+      { category: 'hosting', provider: 'firebase', serviceName: 'Firebase Hosting', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.firebase.google.com/project/junipa/hosting' },
+      { category: 'hosting', provider: 'gcp', serviceName: 'Cloud Run (API)', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/run?project=junipa' },
+      { category: 'database', provider: 'firebase', serviceName: 'Firestore', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.firebase.google.com/project/junipa/firestore' },
+      { category: 'auth', provider: 'firebase', serviceName: 'Firebase Auth', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.firebase.google.com/project/junipa/authentication' },
+      { category: 'storage', provider: 'firebase', serviceName: 'Firebase Storage', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.firebase.google.com/project/junipa/storage' },
+    ],
+    stack: {
+      framework: 'angular',
+      language: 'typescript',
+      css: ['angular-material'],
+      testing: ['playwright'],
+      buildTool: 'webpack',
+      packageManager: 'npm',
+    },
+    logCommands: [
+      { label: 'Dev Server', command: 'tail -1000 logs/devserver.log', environment: 'local', target: 'server', description: 'Angular dev logs' },
+      { label: 'Dev Errors', command: 'grep -i "error" logs/devserver.log', environment: 'local', target: 'server', description: 'Filter errors only' },
+      { label: 'Check Dev Running', command: 'lsof -ti:4200', environment: 'local', target: 'server', description: 'Check if dev server on :4200' },
+      { label: 'Start Frontend', command: 'npm run dev:junipa', environment: 'local', target: 'server', description: 'Start Angular on :4200' },
+      { label: 'Start API', command: 'npm run dev:api', environment: 'local', target: 'server', description: 'Start NestJS API' },
+      { label: 'Start All', command: 'npm run dev:all', environment: 'local', target: 'all', description: 'API + Frontend' },
+      { label: 'Firebase Emulators', command: 'npm run emulators:start', environment: 'local', target: 'database', description: 'Start Firebase emulators' },
+    ],
+  },
+
+  // ==========================================================================
   // JUNIPA TENANT APPS (GCP Cloud Build)
+  // Note: All tenants share the same codebase from /home/chip/vastpuddle/junipa
+  // with environment-specific configs
   // ==========================================================================
   'junipa-demo': {
     displayName: 'Junipa Demo',
@@ -294,6 +385,10 @@ export const INFRASTRUCTURE: Record<string, {
       buildTool: 'webpack',
       packageManager: 'npm',
     },
+    logCommands: [
+      { label: 'App Engine Logs', command: 'gcloud app logs tail --project=junipa', environment: 'production', target: 'server', description: 'Stream App Engine logs' },
+      { label: 'Cloud Build History', command: 'gcloud builds list --project=junipa --limit=5', environment: 'production', target: 'all', description: 'Recent builds' },
+    ],
   },
 
   'junipa-cedarcollege': {
@@ -312,6 +407,10 @@ export const INFRASTRUCTURE: Record<string, {
       buildTool: 'webpack',
       packageManager: 'npm',
     },
+    logCommands: [
+      { label: 'App Engine Logs', command: 'gcloud app logs tail --project=cedarcollege-prod', environment: 'production', target: 'server', description: 'Stream App Engine logs' },
+      { label: 'Cloud Build History', command: 'gcloud builds list --project=cedarcollege-prod --limit=5', environment: 'production', target: 'all', description: 'Recent builds' },
+    ],
   },
 
   'junipa-menofbusiness': {
@@ -330,6 +429,10 @@ export const INFRASTRUCTURE: Record<string, {
       buildTool: 'webpack',
       packageManager: 'npm',
     },
+    logCommands: [
+      { label: 'App Engine Logs', command: 'gcloud app logs tail --project=menofbusiness-prod', environment: 'production', target: 'server', description: 'Stream App Engine logs' },
+      { label: 'Cloud Build History', command: 'gcloud builds list --project=menofbusiness-prod --limit=5', environment: 'production', target: 'all', description: 'Recent builds' },
+    ],
   },
 
   'junipa-mjc': {
@@ -348,6 +451,10 @@ export const INFRASTRUCTURE: Record<string, {
       buildTool: 'webpack',
       packageManager: 'npm',
     },
+    logCommands: [
+      { label: 'App Engine Logs', command: 'gcloud app logs tail --project=mjc-prod-2022b', environment: 'production', target: 'server', description: 'Stream App Engine logs' },
+      { label: 'Cloud Build History', command: 'gcloud builds list --project=mjc-prod-2022b --limit=5', environment: 'production', target: 'all', description: 'Recent builds' },
+    ],
   },
 
   'junipa-tuncurry': {
@@ -366,6 +473,10 @@ export const INFRASTRUCTURE: Record<string, {
       buildTool: 'webpack',
       packageManager: 'npm',
     },
+    logCommands: [
+      { label: 'App Engine Logs', command: 'gcloud app logs tail --project=mjc-tuncurry-prod', environment: 'production', target: 'server', description: 'Stream App Engine logs' },
+      { label: 'Cloud Build History', command: 'gcloud builds list --project=mjc-tuncurry-prod --limit=5', environment: 'production', target: 'all', description: 'Recent builds' },
+    ],
   },
 
   'junipa-central-demo': {
@@ -384,6 +495,10 @@ export const INFRASTRUCTURE: Record<string, {
       buildTool: 'webpack',
       packageManager: 'npm',
     },
+    logCommands: [
+      { label: 'App Engine Logs', command: 'gcloud app logs tail --project=junipa-central-demo', environment: 'production', target: 'server', description: 'Stream App Engine logs' },
+      { label: 'Cloud Build History', command: 'gcloud builds list --project=junipa-central-demo --limit=5', environment: 'production', target: 'all', description: 'Recent builds' },
+    ],
   },
 
   'junipa-west-demo': {
@@ -402,6 +517,10 @@ export const INFRASTRUCTURE: Record<string, {
       buildTool: 'webpack',
       packageManager: 'npm',
     },
+    logCommands: [
+      { label: 'App Engine Logs', command: 'gcloud app logs tail --project=junipa-west-demo', environment: 'production', target: 'server', description: 'Stream App Engine logs' },
+      { label: 'Cloud Build History', command: 'gcloud builds list --project=junipa-west-demo --limit=5', environment: 'production', target: 'all', description: 'Recent builds' },
+    ],
   },
 };
 
