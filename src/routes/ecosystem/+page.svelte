@@ -15,8 +15,7 @@
 		Network,
 		Settings,
 		ExternalLink,
-		FolderGit2,
-		ArrowDownAZ
+		FolderGit2
 	} from '@lucide/svelte';
 	import EcosystemFlowDiagram from '$lib/components/EcosystemFlowDiagram.svelte';
 
@@ -109,8 +108,8 @@
 	<header class="shrink-0 px-4 py-3 border-b border-gray-800">
 		<div class="flex items-center justify-between">
 			<div>
-				<h1 class="text-lg font-semibold text-gray-100">Ecosystem</h1>
-				<p class="text-xs text-gray-500">Provider dependencies across all projects</p>
+				<h1 class="text-lg font-semibold text-gray-100">Orchon</h1>
+				<p class="text-xs text-gray-500">Infrastructure Observatory</p>
 			</div>
 			<div class="flex items-center gap-4">
 				<!-- Settings cog -->
@@ -129,17 +128,23 @@
 	<div class="flex-1 flex flex-col lg:flex-row min-h-0">
 		<!-- Left Sidebar - Project List -->
 		<aside class="hidden lg:flex lg:flex-col w-[20rem] shrink-0 border-r border-gray-800 bg-gray-900">
-			<!-- Projects Header -->
-			<div class="shrink-0 px-4 py-2 border-b border-gray-800">
-				<span class="text-[10px] text-gray-600 uppercase tracking-wider font-medium">Projects</span>
-			</div>
+			<!-- Projects (menu item, not active) -->
+			<a
+				href="/"
+				class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent"
+			>
+				<FolderGit2 class="w-4 h-4 text-gray-500 shrink-0" />
+				<div class="flex-1 min-w-0">
+					<div class="font-medium text-sm text-gray-300 truncate">Projects</div>
+				</div>
+			</a>
 
-			<!-- Project List -->
+			<!-- Project List (collapsed in ecosystem view) -->
 			<div class="flex-1 overflow-y-auto py-1">
 				{#each projects as project (project.id)}
 					<a
 						href="/?project={project.id}"
-						class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent"
+						class="flex items-center gap-3 px-4 py-2.5 pl-8 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent"
 					>
 						<FolderGit2 class="w-4 h-4 text-gray-500 shrink-0" />
 						<div class="flex-1 min-w-0">
@@ -148,41 +153,19 @@
 						</div>
 					</a>
 				{/each}
-
-				<!-- Filter options (styled as menu items) -->
-				<a
-					href="/"
-					class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent"
-				>
-					<ArrowDownAZ class="w-4 h-4 text-gray-500 shrink-0" />
-					<div class="flex-1 min-w-0">
-						<div class="font-medium text-sm text-gray-300 truncate">Sort A-Z</div>
-					</div>
-				</a>
-				<a
-					href="/"
-					class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent"
-				>
-					<FolderGit2 class="w-4 h-4 text-gray-500 shrink-0" />
-					<div class="flex-1 min-w-0">
-						<div class="font-medium text-sm text-gray-300 truncate">Show Projects</div>
-					</div>
-				</a>
 			</div>
 
-			<!-- Ecosystem (sibling to Projects) -->
-			<div class="shrink-0 border-t border-gray-800 py-1">
-				<a
-					href="/ecosystem"
-					class="flex items-center gap-3 px-4 py-2.5 bg-gray-800 border-l-2 border-blue-500"
-				>
-					<Network class="w-4 h-4 text-blue-400 shrink-0" />
-					<div class="flex-1 min-w-0">
-						<div class="font-medium text-sm text-white truncate">Ecosystem</div>
-						<div class="text-xs text-gray-500 truncate">Provider dependencies</div>
-					</div>
-				</a>
-			</div>
+			<!-- Ecosystem (at end, active) -->
+			<a
+				href="/ecosystem"
+				class="flex items-center gap-3 px-4 py-2.5 bg-gray-800 border-l-2 border-blue-500"
+			>
+				<Network class="w-4 h-4 text-blue-400 shrink-0" />
+				<div class="flex-1 min-w-0">
+					<div class="font-medium text-sm text-white truncate">Ecosystem</div>
+					<div class="text-xs text-gray-500 truncate">Provider dependencies</div>
+				</div>
+			</a>
 		</aside>
 
 		<!-- Main Content Area -->
