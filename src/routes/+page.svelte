@@ -652,10 +652,12 @@
 				</div>
 			{/if}
 
-			<!-- Ecosystem (at bottom of project list) -->
+			{/if}
+
+			<!-- Ecosystem (fixed at bottom of sidebar) -->
 			<a
 				href="/ecosystem"
-				class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent shrink-0"
+				class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent shrink-0 mt-auto"
 			>
 				<Network class="w-4 h-4 text-gray-500 shrink-0" />
 				<div class="flex-1 min-w-0">
@@ -663,7 +665,6 @@
 					<div class="text-xs text-gray-500 truncate">Provider dependencies</div>
 				</div>
 			</a>
-			{/if}
 		</aside>
 
 		<!-- Mobile Accordion View (shown on small, hidden on lg+) -->

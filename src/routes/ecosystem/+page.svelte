@@ -106,9 +106,12 @@
 	<!-- Header -->
 	<header class="shrink-0 px-4 py-3 border-b border-gray-800">
 		<div class="flex items-center justify-between">
-			<div>
-				<h1 class="text-lg font-semibold text-gray-100">Orchon</h1>
-				<p class="text-xs text-gray-500">Infrastructure Observatory</p>
+			<div class="flex items-center gap-3">
+				<img src="/logo.svg" alt="Orchon logo" class="w-8 h-8" />
+				<div>
+					<h1 class="text-lg font-semibold text-gray-100" style="font-family: 'Roboto', sans-serif;">Orchon</h1>
+					<p class="text-xs text-gray-500">Infrastructure Observatory</p>
+				</div>
 			</div>
 			<div class="flex items-center gap-4">
 				<!-- Settings cog -->
@@ -138,10 +141,10 @@
 				</div>
 			</a>
 
-			<!-- Ecosystem (active) -->
+			<!-- Ecosystem (active, fixed at bottom) -->
 			<a
 				href="/ecosystem"
-				class="flex items-center gap-3 px-4 py-2.5 bg-gray-800 border-l-2 border-blue-500 shrink-0"
+				class="flex items-center gap-3 px-4 py-2.5 bg-gray-800 border-l-2 border-blue-500 shrink-0 mt-auto"
 			>
 				<Network class="w-4 h-4 text-blue-400 shrink-0" />
 				<div class="flex-1 min-w-0">
