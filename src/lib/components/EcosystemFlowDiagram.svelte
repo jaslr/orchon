@@ -91,8 +91,8 @@
 	const PROJECT_SPACING = 22;
 	const PROVIDER_SPACING = 38;
 	const CATEGORY_GAP = 30;
-	const MIN_NODE_RADIUS = 6;
-	const MAX_NODE_RADIUS = 14;
+	const MIN_NODE_RADIUS = 2;
+	const MAX_NODE_RADIUS = 5;
 
 	// Category colors for grouping
 	const categoryColors: Record<string, string> = {
@@ -255,17 +255,13 @@
 
 		if (!projectPos || !providerPos) return '';
 
-		const x1 = projectPos.x + 8; // Right edge of project node
+		const x1 = projectPos.x + 3; // Right edge of project node
 		const y1 = projectPos.y;
-		const x2 = providerPos.x - getNodeRadius(providerPos.inDegree) - 2; // Left edge of provider node
+		const x2 = providerPos.x - getNodeRadius(providerPos.inDegree) - 1; // Left edge of provider node
 		const y2 = providerPos.y;
 
 		// Control points for bezier curve
 		const midX = (x1 + x2) / 2;
-
-		// Slight vertical offset based on edge density to reduce overlap
-		const yDiff = y2 - y1;
-		const curveFactor = Math.min(Math.abs(yDiff) * 0.3, 80);
 
 		return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
 	}
@@ -293,10 +289,10 @@
 	</defs>
 
 	<!-- Axis labels -->
-	<text x="{PROJECT_NODE_X}" y="18" text-anchor="middle" class="text-[10px] fill-gray-500 uppercase tracking-wider font-semibold">
+	<text x="{PROJECT_NODE_X}" y="18" text-anchor="middle" class="text-[3px] fill-gray-500 uppercase tracking-wider font-semibold">
 		Projects
 	</text>
-	<text x="{PROVIDER_NODE_X}" y="18" text-anchor="middle" class="text-[10px] fill-gray-500 uppercase tracking-wider font-semibold">
+	<text x="{PROVIDER_NODE_X}" y="18" text-anchor="middle" class="text-[3px] fill-gray-500 uppercase tracking-wider font-semibold">
 		Providers
 	</text>
 
@@ -314,7 +310,7 @@
 						d={getEdgePath(project.id, provider)}
 						fill="none"
 						stroke={highlighted ? getCategoryColor(getPrimaryCategory(providerPos.categories)) : '#374151'}
-						stroke-width={highlighted ? 2 : 1}
+						stroke-width={highlighted ? 0.5 : 0.25}
 						opacity={dimmed ? 0.08 : highlighted ? 0.9 : 0.25}
 						class="transition-all duration-150"
 					/>
@@ -341,18 +337,18 @@
 				<circle
 					cx="0"
 					cy="0"
-					r="6"
+					r="2"
 					fill={highlighted ? '#3b82f6' : '#4b5563'}
 					stroke={highlighted ? '#60a5fa' : 'transparent'}
-					stroke-width="2"
+					stroke-width="0.5"
 					class="transition-all duration-150"
 				/>
 				<!-- Project label (left of node) -->
 				<text
-					x="-12"
-					y="4"
+					x="-6"
+					y="1.5"
 					text-anchor="end"
-					class="text-[10px] {highlighted ? 'fill-white font-medium' : 'fill-gray-400'} transition-colors"
+					class="text-[3px] {highlighted ? 'fill-white font-medium' : 'fill-gray-400'} transition-colors"
 				>
 					{project.displayName.length > 18 ? project.displayName.slice(0, 17) + '..' : project.displayName}
 				</text>
@@ -387,7 +383,7 @@
 					r={radius}
 					fill="url(#grad-{p.provider})"
 					stroke={highlighted ? getCategoryColor(getPrimaryCategory(p.categories)) : '#374151'}
-					stroke-width={highlighted ? 3 : 1.5}
+					stroke-width={highlighted ? 0.75 : 0.5}
 					opacity={intensity}
 					class="transition-all duration-150"
 				/>
@@ -397,10 +393,10 @@
 					<circle
 						cx="0"
 						cy="0"
-						r={radius - 3}
+						r={radius - 1}
 						fill="none"
 						stroke={getCategoryColor(getPrimaryCategory(p.categories))}
-						stroke-width="1"
+						stroke-width="0.3"
 						opacity="0.4"
 					/>
 				{/if}
@@ -418,9 +414,9 @@
 				{:else}
 					<text
 						x="0"
-						y="4"
+						y="1.5"
 						text-anchor="middle"
-						class="text-[10px] fill-white font-bold"
+						class="text-[3px] fill-white font-bold"
 					>
 						{p.provider.charAt(0).toUpperCase()}
 					</text>
@@ -428,20 +424,20 @@
 
 				<!-- Provider name (right of node) -->
 				<text
-					x={radius + 6}
-					y="-3"
+					x={radius + 3}
+					y="-1"
 					text-anchor="start"
-					class="text-[10px] {highlighted ? 'fill-white font-medium' : 'fill-gray-300'} transition-colors"
+					class="text-[3px] {highlighted ? 'fill-white font-medium' : 'fill-gray-300'} transition-colors"
 				>
 					{getProviderName(p.provider)}
 				</text>
 
 				<!-- Dependency count badge - key analytical output -->
 				<text
-					x={radius + 6}
-					y="8"
+					x={radius + 3}
+					y="3"
 					text-anchor="start"
-					class="text-[8px] font-medium"
+					class="text-[2.5px] font-medium"
 					fill={getCategoryColor(getPrimaryCategory(p.categories))}
 				>
 					{p.inDegree} {p.inDegree === 1 ? 'project' : 'projects'}
@@ -449,9 +445,9 @@
 
 				<!-- Risk indicator for high-concentration vendors -->
 				{#if p.inDegree >= Math.ceil(projects.length * 0.5)}
-					<g transform="translate({-radius - 4}, {-radius + 2})">
-						<circle cx="0" cy="0" r="3" fill="#ef4444" />
-						<text x="0" y="2.5" text-anchor="middle" class="text-[5px] fill-white font-bold">!</text>
+					<g transform="translate({-radius - 2}, {-radius + 1})">
+						<circle cx="0" cy="0" r="1.5" fill="#ef4444" />
+						<text x="0" y="1" text-anchor="middle" class="text-[2px] fill-white font-bold">!</text>
 					</g>
 				{/if}
 			</g>
@@ -459,21 +455,21 @@
 	{/each}
 
 	<!-- Legend -->
-	<g transform="translate(20, {svgHeight - 35})">
-		<text x="0" y="0" class="text-[7px] fill-gray-500 uppercase tracking-wider">Vendor Risk</text>
-		<g transform="translate(0, 10)">
-			<circle cx="4" cy="0" r="3" fill="#4b5563" />
-			<text x="12" y="2" class="text-[7px] fill-gray-400">Low</text>
+	<g transform="translate(20, {svgHeight - 15})">
+		<text x="0" y="0" class="text-[2.5px] fill-gray-500 uppercase tracking-wider">Vendor Risk</text>
+		<g transform="translate(0, 5)">
+			<circle cx="2" cy="0" r="1.5" fill="#4b5563" />
+			<text x="6" y="1" class="text-[2.5px] fill-gray-400">Low</text>
 		</g>
-		<g transform="translate(45, 10)">
-			<circle cx="5" cy="0" r="5" fill="#6b7280" />
-			<text x="14" y="2" class="text-[7px] fill-gray-400">Med</text>
+		<g transform="translate(22, 5)">
+			<circle cx="2.5" cy="0" r="2.5" fill="#6b7280" />
+			<text x="7" y="1" class="text-[2.5px] fill-gray-400">Med</text>
 		</g>
-		<g transform="translate(90, 10)">
-			<circle cx="7" cy="0" r="7" fill="#9ca3af" />
-			<circle cx="1" cy="-5" r="3" fill="#ef4444" />
-			<text x="0" y="-3" class="text-[5px] fill-white font-bold">!</text>
-			<text x="18" y="2" class="text-[7px] fill-gray-400">High (50%+)</text>
+		<g transform="translate(45, 5)">
+			<circle cx="3.5" cy="0" r="3.5" fill="#9ca3af" />
+			<circle cx="0.5" cy="-2.5" r="1.5" fill="#ef4444" />
+			<text x="0" y="-1.5" class="text-[2px] fill-white font-bold">!</text>
+			<text x="9" y="1" class="text-[2.5px] fill-gray-400">High (50%+)</text>
 		</g>
 	</g>
 </svg>
