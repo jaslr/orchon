@@ -26,7 +26,8 @@
 		ArrowDownAZ,
 		Clock,
 		ChevronDown,
-		Network
+		Network,
+		FolderGit2
 	} from '@lucide/svelte';
 	import InfraFlowDiagram from '$lib/components/InfraFlowDiagram.svelte';
 
