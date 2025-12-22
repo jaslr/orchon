@@ -35,26 +35,48 @@
 		return map;
 	});
 
-	// Flatten all providers with their in-degree and category
+	// Deduplicate providers - each vendor appears once with aggregated data
+	// This better represents vendor lock-in (one vendor = one dependency, regardless of service types)
 	let allProviders = $derived.by(() => {
-		const providers: Array<{
+		const providerMap = new Map<string, {
 			provider: string;
-			category: string;
+			categories: string[];
 			inDegree: number;
+			projectIds: Set<string>;
 			projects: { id: string; displayName: string }[];
-		}> = [];
+		}>();
 
 		for (const cat of categories) {
 			for (const p of cat.providers) {
-				providers.push({
-					provider: p.provider,
-					category: cat.category,
-					inDegree: p.projects.length,
-					projects: p.projects
-				});
+				const existing = providerMap.get(p.provider);
+				if (existing) {
+					// Add category if not already present
+					if (!existing.categories.includes(cat.category)) {
+						existing.categories.push(cat.category);
+					}
+					// Add unique projects
+					for (const proj of p.projects) {
+						if (!existing.projectIds.has(proj.id)) {
+							existing.projectIds.add(proj.id);
+							existing.projects.push(proj);
+						}
+					}
+					existing.inDegree = existing.projects.length;
+				} else {
+					providerMap.set(p.provider, {
+						provider: p.provider,
+						categories: [cat.category],
+						inDegree: p.projects.length,
+						projectIds: new Set(p.projects.map(proj => proj.id)),
+						projects: [...p.projects]
+					});
+				}
 			}
 		}
-		return providers;
+
+		// Convert to array and sort by in-degree (highest first for visibility)
+		return Array.from(providerMap.values())
+			.sort((a, b) => b.inDegree - a.inDegree);
 	});
 
 	// Max in-degree for scaling
@@ -112,25 +134,16 @@
 		return positions;
 	});
 
-	// Calculate provider positions (right side, grouped by category)
+	// Calculate provider positions (right side, sorted by in-degree)
 	let providerPositions = $derived.by(() => {
-		const positions = new Map<string, { x: number; y: number; category: string; inDegree: number }>();
+		const positions = new Map<string, { x: number; y: number; categories: string[]; inDegree: number }>();
 		let y = TOP_MARGIN;
-		let currentCategory = '';
 
 		for (const p of allProviders) {
-			// Add category gap when category changes
-			if (p.category !== currentCategory) {
-				if (currentCategory !== '') {
-					y += CATEGORY_GAP;
-				}
-				currentCategory = p.category;
-			}
-
 			positions.set(p.provider, {
 				x: PROVIDER_NODE_X,
 				y,
-				category: p.category,
+				categories: p.categories,
 				inDegree: p.inDegree
 			});
 			y += PROVIDER_SPACING;
@@ -152,17 +165,8 @@
 
 	// SVG dimensions
 	let svgHeight = $derived.by(() => {
-		const projectHeight = projects.length * PROJECT_SPACING + TOP_MARGIN + 40;
-		let providerHeight = TOP_MARGIN;
-		let currentCategory = '';
-		for (const p of allProviders) {
-			if (p.category !== currentCategory && currentCategory !== '') {
-				providerHeight += CATEGORY_GAP;
-			}
-			currentCategory = p.category;
-			providerHeight += PROVIDER_SPACING;
-		}
-		providerHeight += 40;
+		const projectHeight = projects.length * PROJECT_SPACING + TOP_MARGIN + 50;
+		const providerHeight = allProviders.length * PROVIDER_SPACING + TOP_MARGIN + 50;
 		return Math.max(projectHeight, providerHeight, 300);
 	});
 
@@ -266,22 +270,10 @@
 		return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
 	}
 
-	// Get category labels with positions
-	let categoryLabels = $derived.by(() => {
-		const labels: Array<{ category: string; y: number }> = [];
-		let currentCategory = '';
-
-		for (const p of allProviders) {
-			if (p.category !== currentCategory) {
-				const pos = providerPositions.get(p.provider);
-				if (pos) {
-					labels.push({ category: p.category, y: pos.y - 20 });
-				}
-				currentCategory = p.category;
-			}
-		}
-		return labels;
-	});
+	// Get primary category for a provider (first in list, for coloring)
+	function getPrimaryCategory(categories: string[]): string {
+		return categories[0] || 'hosting';
+	}
 </script>
 
 <svg
@@ -292,7 +284,7 @@
 	<defs>
 		<!-- Gradient for high-degree nodes -->
 		{#each allProviders as p}
-			{@const color = getCategoryColor(p.category)}
+			{@const color = getCategoryColor(getPrimaryCategory(p.categories))}
 			<radialGradient id="grad-{p.provider}" cx="30%" cy="30%">
 				<stop offset="0%" stop-color="{color}" stop-opacity="0.9" />
 				<stop offset="100%" stop-color="{color}" stop-opacity="0.4" />
@@ -308,19 +300,6 @@
 		Providers
 	</text>
 
-	<!-- Category labels - positioned as subtle right-side markers -->
-	{#each categoryLabels as label}
-		<text
-			x="{PROVIDER_NODE_X + 115}"
-			y="{label.y + 4}"
-			text-anchor="end"
-			class="text-[7px] uppercase tracking-wider"
-			fill="{getCategoryColor(label.category)}"
-			opacity="0.5"
-		>
-			{label.category}
-		</text>
-	{/each}
 
 	<!-- Dependency edges -->
 	{#each projects as project}
@@ -334,7 +313,7 @@
 					<path
 						d={getEdgePath(project.id, provider)}
 						fill="none"
-						stroke={highlighted ? getCategoryColor(providerPos.category) : '#374151'}
+						stroke={highlighted ? getCategoryColor(getPrimaryCategory(providerPos.categories)) : '#374151'}
 						stroke-width={highlighted ? 2 : 1}
 						opacity={dimmed ? 0.08 : highlighted ? 0.9 : 0.25}
 						class="transition-all duration-150"
@@ -407,7 +386,7 @@
 					cy="0"
 					r={radius}
 					fill="url(#grad-{p.provider})"
-					stroke={highlighted ? getCategoryColor(p.category) : '#374151'}
+					stroke={highlighted ? getCategoryColor(getPrimaryCategory(p.categories)) : '#374151'}
 					stroke-width={highlighted ? 3 : 1.5}
 					opacity={intensity}
 					class="transition-all duration-150"
@@ -420,7 +399,7 @@
 						cy="0"
 						r={radius - 3}
 						fill="none"
-						stroke={getCategoryColor(p.category)}
+						stroke={getCategoryColor(getPrimaryCategory(p.categories))}
 						stroke-width="1"
 						opacity="0.4"
 					/>
@@ -463,7 +442,7 @@
 					y="8"
 					text-anchor="start"
 					class="text-[8px] font-medium"
-					fill={getCategoryColor(p.category)}
+					fill={getCategoryColor(getPrimaryCategory(p.categories))}
 				>
 					{p.inDegree} {p.inDegree === 1 ? 'project' : 'projects'}
 				</text>
