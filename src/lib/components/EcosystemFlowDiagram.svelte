@@ -62,15 +62,15 @@
 
 	// Layout constants
 	const LEFT_MARGIN = 20;
-	const RIGHT_MARGIN = 120;
+	const RIGHT_MARGIN = 150;
 	const PROJECT_NODE_X = LEFT_MARGIN + 100;
-	const PROVIDER_NODE_X = 500;
+	const PROVIDER_NODE_X = 450;
 	const TOP_MARGIN = 40;
-	const PROJECT_SPACING = 24;
-	const PROVIDER_SPACING = 50;
-	const CATEGORY_GAP = 25;
-	const MIN_NODE_RADIUS = 8;
-	const MAX_NODE_RADIUS = 22;
+	const PROJECT_SPACING = 22;
+	const PROVIDER_SPACING = 38;
+	const CATEGORY_GAP = 30;
+	const MIN_NODE_RADIUS = 6;
+	const MAX_NODE_RADIUS = 14;
 
 	// Category colors for grouping
 	const categoryColors: Record<string, string> = {
@@ -308,15 +308,15 @@
 		Providers
 	</text>
 
-	<!-- Category labels on right side -->
+	<!-- Category labels - positioned as subtle right-side markers -->
 	{#each categoryLabels as label}
 		<text
-			x="{PROVIDER_NODE_X + 50}"
-			y="{label.y + 5}"
-			text-anchor="start"
-			class="text-[8px] uppercase tracking-wider font-medium"
+			x="{PROVIDER_NODE_X + 115}"
+			y="{label.y + 4}"
+			text-anchor="end"
+			class="text-[7px] uppercase tracking-wider"
 			fill="{getCategoryColor(label.category)}"
-			opacity="0.7"
+			opacity="0.5"
 		>
 			{label.category}
 		</text>
@@ -449,33 +449,30 @@
 
 				<!-- Provider name (right of node) -->
 				<text
-					x={radius + 8}
-					y="0"
+					x={radius + 6}
+					y="-3"
 					text-anchor="start"
-					dominant-baseline="middle"
-					class="text-[11px] {highlighted ? 'fill-white font-medium' : 'fill-gray-300'} transition-colors"
+					class="text-[10px] {highlighted ? 'fill-white font-medium' : 'fill-gray-300'} transition-colors"
 				>
 					{getProviderName(p.provider)}
 				</text>
 
 				<!-- Dependency count badge - key analytical output -->
-				<g transform="translate({radius + 8}, 12)">
-					<text
-						x="0"
-						y="0"
-						text-anchor="start"
-						class="text-[9px] font-semibold"
-						fill={getCategoryColor(p.category)}
-					>
-						{p.inDegree} {p.inDegree === 1 ? 'project' : 'projects'}
-					</text>
-				</g>
+				<text
+					x={radius + 6}
+					y="8"
+					text-anchor="start"
+					class="text-[8px] font-medium"
+					fill={getCategoryColor(p.category)}
+				>
+					{p.inDegree} {p.inDegree === 1 ? 'project' : 'projects'}
+				</text>
 
 				<!-- Risk indicator for high-concentration vendors -->
 				{#if p.inDegree >= Math.ceil(projects.length * 0.5)}
-					<g transform="translate({-radius - 6}, {-radius + 4})">
-						<circle cx="0" cy="0" r="4" fill="#ef4444" />
-						<text x="0" y="3" text-anchor="middle" class="text-[6px] fill-white font-bold">!</text>
+					<g transform="translate({-radius - 4}, {-radius + 2})">
+						<circle cx="0" cy="0" r="3" fill="#ef4444" />
+						<text x="0" y="2.5" text-anchor="middle" class="text-[5px] fill-white font-bold">!</text>
 					</g>
 				{/if}
 			</g>
@@ -483,21 +480,21 @@
 	{/each}
 
 	<!-- Legend -->
-	<g transform="translate(20, {svgHeight - 50})">
-		<text x="0" y="0" class="text-[8px] fill-gray-500 uppercase tracking-wider">Vendor Risk</text>
-		<g transform="translate(0, 12)">
-			<circle cx="6" cy="0" r="4" fill="#4b5563" />
-			<text x="16" y="3" class="text-[8px] fill-gray-400">Low (1-2 projects)</text>
+	<g transform="translate(20, {svgHeight - 35})">
+		<text x="0" y="0" class="text-[7px] fill-gray-500 uppercase tracking-wider">Vendor Risk</text>
+		<g transform="translate(0, 10)">
+			<circle cx="4" cy="0" r="3" fill="#4b5563" />
+			<text x="12" y="2" class="text-[7px] fill-gray-400">Low</text>
 		</g>
-		<g transform="translate(0, 26)">
-			<circle cx="6" cy="0" r="8" fill="#6b7280" />
-			<text x="20" y="3" class="text-[8px] fill-gray-400">Medium</text>
+		<g transform="translate(45, 10)">
+			<circle cx="5" cy="0" r="5" fill="#6b7280" />
+			<text x="14" y="2" class="text-[7px] fill-gray-400">Med</text>
 		</g>
-		<g transform="translate(80, 12)">
-			<circle cx="10" cy="0" r="12" fill="#9ca3af" />
-			<circle cx="0" cy="-6" r="4" fill="#ef4444" />
-			<text x="-2" y="-3" class="text-[6px] fill-white font-bold">!</text>
-			<text x="28" y="3" class="text-[8px] fill-gray-400">High (50%+ projects)</text>
+		<g transform="translate(90, 10)">
+			<circle cx="7" cy="0" r="7" fill="#9ca3af" />
+			<circle cx="1" cy="-5" r="3" fill="#ef4444" />
+			<text x="0" y="-3" class="text-[5px] fill-white font-bold">!</text>
+			<text x="18" y="2" class="text-[7px] fill-gray-400">High (50%+)</text>
 		</g>
 	</g>
 </svg>
