@@ -649,22 +649,22 @@
 							{/if}
 						</button>
 					{/each}
+
+					<!-- Ecosystem (snug after last project) -->
+					<a
+						href="/ecosystem"
+						class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent"
+					>
+						<Network class="w-4 h-4 text-gray-500 shrink-0" />
+						<div class="flex-1 min-w-0">
+							<div class="font-medium text-sm text-gray-300 truncate">Ecosystem</div>
+							<div class="text-xs text-gray-500 truncate">Provider dependencies</div>
+						</div>
+					</a>
 				</div>
 			{/if}
 
 			{/if}
-
-			<!-- Ecosystem (fixed at bottom of sidebar) -->
-			<a
-				href="/ecosystem"
-				class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800/50 border-l-2 border-transparent shrink-0 mt-auto"
-			>
-				<Network class="w-4 h-4 text-gray-500 shrink-0" />
-				<div class="flex-1 min-w-0">
-					<div class="font-medium text-sm text-gray-300 truncate">Ecosystem</div>
-					<div class="text-xs text-gray-500 truncate">Provider dependencies</div>
-				</div>
-			</a>
 		</aside>
 
 		<!-- Mobile Accordion View (shown on small, hidden on lg+) -->
