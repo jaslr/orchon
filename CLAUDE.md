@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is an **Infrastructure Observatory** (working name: ci-monitor) - a comprehensive platform for monitoring CI/CD pipelines, infrastructure health, and service integrations across multiple projects and accounts.
+This is an **Infrastructure Observatory** (working name: orchon) - a comprehensive platform for monitoring CI/CD pipelines, infrastructure health, and service integrations across multiple projects and accounts.
 
 ## Development Guidelines
 
@@ -112,9 +112,9 @@ When asked to "get it live" for this project:
    ```
 6. **Deploy to Cloudflare Pages (production)**:
    ```bash
-   npm run build && npx wrangler pages deploy .svelte-kit/cloudflare --project-name=ci-monitor --branch=main
+   npm run build && npx wrangler pages deploy .svelte-kit/cloudflare --project-name=orchon --branch=main
    ```
-   Production URL: https://ci-monitor.pages.dev
+   Production URL: https://orchon.pages.dev
 
 ### Task Completion Protocol
 
@@ -141,7 +141,7 @@ When completing a task:
    ```
 7. **Deploy frontend**:
    ```bash
-   npm run build && npx wrangler pages deploy .svelte-kit/cloudflare --project-name=ci-monitor --branch=main
+   npm run build && npx wrangler pages deploy .svelte-kit/cloudflare --project-name=orchon --branch=main
    ```
 
 ### Deployment (Forked Workflow - No GitHub Actions)
@@ -161,10 +161,10 @@ Your Machine
 npm version patch --no-git-tag-version                                                            # Bump version
 git add -A && git commit -m "v0.x.x: ..."                                                         # Commit
 git push                                                                                           # Push to GitHub
-npm run build && npx wrangler pages deploy .svelte-kit/cloudflare --project-name=ci-monitor --branch=main  # Deploy to production
+npm run build && npx wrangler pages deploy .svelte-kit/cloudflare --project-name=orchon --branch=main  # Deploy to production
 ```
 
-**Production URL:** https://ci-monitor.pages.dev
+**Production URL:** https://orchon.pages.dev
 
 **Why forked?**
 - Deploys directly via Wrangler - no GitHub Actions minutes consumed
