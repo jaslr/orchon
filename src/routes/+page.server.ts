@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { repos, ownerPATEnvVar } from '$lib/config/repos';
 import { getLatestWorkflowRun, type RepoStatus, type DeploymentStatus, type HostingPlatform } from '$lib/github';
+import { getProjectInfrastructure } from '$lib/config/infrastructure';
 import { env } from '$env/dynamic/private';
 
 const BACKEND_URL = 'https://observatory-backend.fly.dev';
@@ -131,7 +132,30 @@ export const load: PageServerLoad = async ({ locals }) => {
 					};
 				}
 
-				return gitStatus;
+				// Fallback: For projects where CI = Deploy (GitHub Actions -> Fly.io/Cloudflare),
+				// use CI status as deploy status when no backend data available
+				const ciStatus = gitStatus.status;
+				let fallbackDeployStatus: DeploymentStatus = 'unknown';
+				if (ciStatus === 'success') fallbackDeployStatus = 'success';
+				else if (ciStatus === 'failure') fallbackDeployStatus = 'failure';
+				else if (ciStatus === 'in_progress') fallbackDeployStatus = 'deploying';
+
+				// Get platform from infrastructure config
+				const infra = getProjectInfrastructure(repo);
+				const hostingService = infra?.services.find(s => s.category === 'hosting');
+				let platform: HostingPlatform = 'local';
+				if (hostingService?.provider === 'flyio') platform = 'flyio';
+				else if (hostingService?.provider === 'cloudflare') platform = 'cloudflare';
+				else if (hostingService?.provider === 'vercel') platform = 'vercel';
+				else if (hostingService?.provider === 'netlify') platform = 'netlify';
+				else if (hostingService?.provider === 'gcp' || hostingService?.provider === 'firebase') platform = 'gcp';
+
+				return {
+					...gitStatus,
+					deployStatus: fallbackDeployStatus,
+					deployPlatform: platform,
+					deployedAt: gitStatus.run_date
+				};
 			})
 		);
 
