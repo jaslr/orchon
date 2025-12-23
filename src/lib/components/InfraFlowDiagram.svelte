@@ -103,9 +103,9 @@
 		};
 	});
 
-	// Default to 100% scale
-	let baseScale = $derived(1);
-	let scale = $state(1);
+	// Default to 200% scale for better mobile visibility
+	let baseScale = $derived(2);
+	let scale = $state(2);
 
 	// Initialize scale when nodes change
 	$effect(() => {
@@ -489,51 +489,48 @@
 </script>
 
 <div class="relative w-full h-full flex flex-col" bind:this={containerEl}>
-	<!-- Controls - inside diagram at top -->
-	<div class="flex items-center justify-end gap-3 pb-2 shrink-0">
+	<!-- Controls - positioned at top right, 32px touch targets -->
+	<div class="absolute top-0 right-0 flex items-center gap-1 z-20">
 		<!-- Logo Toggle -->
 		<button
 			onclick={toggleShowLogos}
-			class="flex items-center gap-1 px-1.5 py-0.5 hover:bg-gray-700/50 text-[10px] transition-colors {showLogos ? 'text-gray-200' : 'text-gray-500'}"
+			class="flex items-center justify-center w-8 h-8 hover:bg-gray-700/50 text-xs transition-colors {showLogos ? 'text-gray-200' : 'text-gray-500'}"
 			title={showLogos ? 'Hide logos' : 'Show logos'}
 		>
-			<span class="w-5 h-2.5 relative {showLogos ? 'bg-green-600' : 'bg-gray-600'} transition-colors">
-				<span class="absolute top-0.5 {showLogos ? 'right-0.5' : 'left-0.5'} w-1.5 h-1.5 bg-white transition-all"></span>
+			<span class="w-6 h-3 relative {showLogos ? 'bg-green-600' : 'bg-gray-600'} transition-colors">
+				<span class="absolute top-0.5 {showLogos ? 'right-0.5' : 'left-0.5'} w-2 h-2 bg-white transition-all"></span>
 			</span>
-			<span>Logos</span>
 		</button>
 
 		<!-- Zoom Controls -->
-		<div class="flex items-center gap-1">
 		<button
 			onclick={zoomOut}
-			class="p-0.5 hover:bg-gray-700/50 text-gray-400 hover:text-gray-200 transition-colors"
+			class="flex items-center justify-center w-8 h-8 hover:bg-gray-700/50 text-gray-400 hover:text-gray-200 transition-colors"
 			title="Zoom out"
 		>
-			<Minus class="w-3.5 h-3.5" />
+			<Minus class="w-5 h-5" />
 		</button>
 		<button
 			onclick={resetZoom}
-			class="px-1 hover:bg-gray-700/50 text-[10px] text-gray-400 hover:text-gray-200 transition-colors"
+			class="flex items-center justify-center min-w-[48px] h-8 hover:bg-gray-700/50 text-xs text-gray-400 hover:text-gray-200 transition-colors"
 			title="Reset zoom"
 		>
 			{Math.round(scale * 100)}%
 		</button>
 		<button
 			onclick={zoomIn}
-			class="p-0.5 hover:bg-gray-700/50 text-gray-400 hover:text-gray-200 transition-colors"
+			class="flex items-center justify-center w-8 h-8 hover:bg-gray-700/50 text-gray-400 hover:text-gray-200 transition-colors"
 			title="Zoom in"
 		>
-			<Plus class="w-3.5 h-3.5" />
+			<Plus class="w-5 h-5" />
 		</button>
 		<button
 			onclick={maximizeView}
-			class="p-0.5 hover:bg-gray-700/50 text-gray-400 hover:text-gray-200 transition-colors"
+			class="flex items-center justify-center w-8 h-8 hover:bg-gray-700/50 text-gray-400 hover:text-gray-200 transition-colors"
 			title="Maximize"
 		>
-			<Maximize2 class="w-3 h-3" />
+			<Maximize2 class="w-5 h-5" />
 		</button>
-		</div>
 	</div>
 
 	<!-- Diagram Canvas -->

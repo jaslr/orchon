@@ -845,7 +845,7 @@
 								{@const grouped = groupServicesByCategory(repoInfra.services)}
 								<div class="bg-gray-850">
 									<!-- Flow Diagram - Full width, larger -->
-									<div class="bg-gray-900 pt-8 pb-4 px-2 h-64">
+									<div class="bg-gray-900 py-2 px-2 h-72">
 										<InfraFlowDiagram
 											services={repoInfra.services}
 											projectName={repoInfra.displayName}
