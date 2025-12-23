@@ -843,21 +843,19 @@
 							<!-- Accordion Content -->
 							{#if isExpanded && repoInfra}
 								{@const grouped = groupServicesByCategory(repoInfra.services)}
-								<div class="px-4 pb-4 bg-gray-850">
-									<!-- Flow Diagram - Compact -->
-									<div class="py-3">
-										<div class="bg-gray-900 p-3 h-40">
-											<InfraFlowDiagram
-												services={repoInfra.services}
-												projectName={repoInfra.displayName}
-												isDeploying={status.deployStatus === 'deploying'}
-												deploymentTimestamps={deploymentTimestamps[status.repo]}
-											/>
-										</div>
+								<div class="bg-gray-850">
+									<!-- Flow Diagram - Full width, larger -->
+									<div class="bg-gray-900 pt-8 pb-4 px-2 h-64">
+										<InfraFlowDiagram
+											services={repoInfra.services}
+											projectName={repoInfra.displayName}
+											isDeploying={status.deployStatus === 'deploying'}
+											deploymentTimestamps={deploymentTimestamps[status.repo]}
+										/>
 									</div>
 
 									<!-- Services Grid -->
-									<div class="grid grid-cols-2 gap-3 text-xs">
+									<div class="grid grid-cols-2 gap-3 text-xs px-4 pb-4 pt-3">
 										{#each [...grouped.entries()] as [category, services]}
 											{@const IconComponent = categoryIcons[category] || Server}
 											<div class="bg-gray-800 p-2">

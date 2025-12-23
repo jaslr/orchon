@@ -488,17 +488,17 @@
 	}
 </script>
 
-<div class="relative w-full" bind:this={containerEl}>
-	<!-- Controls - outside diagram -->
-	<div class="absolute -top-6 right-0 flex items-center gap-3 z-20">
+<div class="relative w-full h-full flex flex-col" bind:this={containerEl}>
+	<!-- Controls - inside diagram at top -->
+	<div class="flex items-center justify-end gap-3 pb-2 shrink-0">
 		<!-- Logo Toggle -->
 		<button
 			onclick={toggleShowLogos}
-			class="flex items-center gap-1 px-1.5 py-0.5 hover:bg-gray-700/50 rounded text-[10px] transition-colors {showLogos ? 'text-gray-200' : 'text-gray-500'}"
+			class="flex items-center gap-1 px-1.5 py-0.5 hover:bg-gray-700/50 text-[10px] transition-colors {showLogos ? 'text-gray-200' : 'text-gray-500'}"
 			title={showLogos ? 'Hide logos' : 'Show logos'}
 		>
-			<span class="w-5 h-2.5 rounded-full relative {showLogos ? 'bg-green-600' : 'bg-gray-600'} transition-colors">
-				<span class="absolute top-0.5 {showLogos ? 'right-0.5' : 'left-0.5'} w-1.5 h-1.5 rounded-full bg-white transition-all"></span>
+			<span class="w-5 h-2.5 relative {showLogos ? 'bg-green-600' : 'bg-gray-600'} transition-colors">
+				<span class="absolute top-0.5 {showLogos ? 'right-0.5' : 'left-0.5'} w-1.5 h-1.5 bg-white transition-all"></span>
 			</span>
 			<span>Logos</span>
 		</button>
@@ -507,28 +507,28 @@
 		<div class="flex items-center gap-1">
 		<button
 			onclick={zoomOut}
-			class="p-0.5 hover:bg-gray-700/50 rounded text-gray-400 hover:text-gray-200 transition-colors"
+			class="p-0.5 hover:bg-gray-700/50 text-gray-400 hover:text-gray-200 transition-colors"
 			title="Zoom out"
 		>
 			<Minus class="w-3.5 h-3.5" />
 		</button>
 		<button
 			onclick={resetZoom}
-			class="px-1 hover:bg-gray-700/50 rounded text-[10px] text-gray-400 hover:text-gray-200 transition-colors"
+			class="px-1 hover:bg-gray-700/50 text-[10px] text-gray-400 hover:text-gray-200 transition-colors"
 			title="Reset zoom"
 		>
 			{Math.round(scale * 100)}%
 		</button>
 		<button
 			onclick={zoomIn}
-			class="p-0.5 hover:bg-gray-700/50 rounded text-gray-400 hover:text-gray-200 transition-colors"
+			class="p-0.5 hover:bg-gray-700/50 text-gray-400 hover:text-gray-200 transition-colors"
 			title="Zoom in"
 		>
 			<Plus class="w-3.5 h-3.5" />
 		</button>
 		<button
 			onclick={maximizeView}
-			class="p-0.5 hover:bg-gray-700/50 rounded text-gray-400 hover:text-gray-200 transition-colors"
+			class="p-0.5 hover:bg-gray-700/50 text-gray-400 hover:text-gray-200 transition-colors"
 			title="Maximize"
 		>
 			<Maximize2 class="w-3 h-3" />
@@ -538,7 +538,7 @@
 
 	<!-- Diagram Canvas -->
 	<div
-		class="w-full overflow-hidden select-none {isDragging ? 'cursor-grabbing' : 'cursor-grab'}"
+		class="flex-1 w-full overflow-hidden select-none {isDragging ? 'cursor-grabbing' : 'cursor-grab'}"
 		onwheel={handleWheel}
 		onmousedown={handleMouseDown}
 		onmousemove={handleMouseMove}
