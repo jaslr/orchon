@@ -940,6 +940,144 @@
 						</div>
 					</div>
 
+					<!-- Last Deployment Status -->
+					<div class="shrink-0 px-6 py-4 border-b border-gray-700">
+						<div class="text-xs text-gray-500 uppercase tracking-wider mb-3">Last Deployment</div>
+						<div class="bg-gray-900 rounded-lg p-4">
+							<!-- Status Banner -->
+							{#if selectedStatus.deployStatus === 'failure'}
+								<div class="flex items-center gap-3 mb-4 p-3 bg-red-900/30 border border-red-800 rounded">
+									<AlertTriangle class="w-5 h-5 text-red-400 shrink-0" />
+									<div class="flex-1 min-w-0">
+										<div class="text-red-400 font-medium">Deployment Failed</div>
+										<div class="text-sm text-red-300/70">
+											{selectedStatus.workflow_name || 'Unknown workflow'}
+											{#if selectedStatus.conclusion}
+												 - {selectedStatus.conclusion}
+											{/if}
+										</div>
+									</div>
+									{#if selectedStatus.html_url}
+										<a
+											href={selectedStatus.html_url}
+											target="_blank"
+											rel="noopener noreferrer"
+											class="px-3 py-1.5 bg-red-800 hover:bg-red-700 rounded text-sm text-red-100 transition-colors flex items-center gap-2 shrink-0"
+										>
+											View Logs
+											<ExternalLink class="w-3 h-3" />
+										</a>
+									{/if}
+								</div>
+							{:else if selectedStatus.deployStatus === 'deploying'}
+								<div class="flex items-center gap-3 mb-4 p-3 bg-cyan-900/30 border border-cyan-800 rounded">
+									<svg class="w-5 h-5 animate-spin text-cyan-400 shrink-0" viewBox="0 0 16 16">
+										<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="28" stroke-dashoffset="7" stroke-linecap="round" />
+									</svg>
+									<div class="flex-1 min-w-0">
+										<div class="text-cyan-400 font-medium">Deploying...</div>
+										<div class="text-sm text-cyan-300/70">{selectedStatus.workflow_name || 'Deployment in progress'}</div>
+									</div>
+									{#if selectedStatus.html_url}
+										<a
+											href={selectedStatus.html_url}
+											target="_blank"
+											rel="noopener noreferrer"
+											class="px-3 py-1.5 bg-cyan-800 hover:bg-cyan-700 rounded text-sm text-cyan-100 transition-colors flex items-center gap-2 shrink-0"
+										>
+											View Progress
+											<ExternalLink class="w-3 h-3" />
+										</a>
+									{/if}
+								</div>
+							{:else if selectedStatus.deployStatus === 'success'}
+								<div class="flex items-center gap-3 mb-4 p-3 bg-green-900/30 border border-green-800 rounded">
+									<div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+										<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+										</svg>
+									</div>
+									<div class="flex-1 min-w-0">
+										<div class="text-green-400 font-medium">Deployed Successfully</div>
+										<div class="text-sm text-green-300/70">{selectedStatus.workflow_name || 'Last deployment succeeded'}</div>
+									</div>
+								</div>
+							{/if}
+
+							<!-- Deployment Details Table -->
+							<div class="grid grid-cols-2 gap-4 text-sm">
+								<!-- Platform -->
+								<div>
+									<div class="text-gray-500 text-xs uppercase mb-1">Platform</div>
+									<div class="text-gray-300 capitalize">{selectedStatus.deployPlatform || 'Unknown'}</div>
+								</div>
+
+								<!-- Last Updated -->
+								<div>
+									<div class="text-gray-500 text-xs uppercase mb-1">Last Updated</div>
+									<div class="text-gray-300">
+										{#if selectedStatus.deployedAt || selectedStatus.run_date}
+											{formatRelativeTime(selectedStatus.deployedAt || selectedStatus.run_date)}
+											<span class="text-gray-500 text-xs ml-1">
+												({new Date(selectedStatus.deployedAt || selectedStatus.run_date || '').toLocaleString()})
+											</span>
+										{:else}
+											<span class="text-gray-500">Unknown</span>
+										{/if}
+									</div>
+								</div>
+
+								<!-- Commit -->
+								{#if selectedStatus.lastCommitSha}
+									<div>
+										<div class="text-gray-500 text-xs uppercase mb-1">Commit</div>
+										<a
+											href="{selectedStatus.repoUrl}/commit/{selectedStatus.lastCommitSha}"
+											target="_blank"
+											rel="noopener noreferrer"
+											class="text-blue-400 hover:text-blue-300 font-mono text-xs flex items-center gap-1"
+										>
+											{selectedStatus.lastCommitSha.slice(0, 7)}
+											<ExternalLink class="w-3 h-3" />
+										</a>
+									</div>
+								{/if}
+
+								<!-- Workflow Run -->
+								{#if selectedStatus.html_url}
+									<div>
+										<div class="text-gray-500 text-xs uppercase mb-1">CI Run</div>
+										<a
+											href={selectedStatus.html_url}
+											target="_blank"
+											rel="noopener noreferrer"
+											class="text-blue-400 hover:text-blue-300 flex items-center gap-1"
+										>
+											{selectedStatus.workflow_name || 'View Run'}
+											<ExternalLink class="w-3 h-3" />
+										</a>
+									</div>
+								{/if}
+
+								<!-- Deploy URL -->
+								{#if selectedStatus.deployUrl}
+									<div class="col-span-2">
+										<div class="text-gray-500 text-xs uppercase mb-1">Deploy Log</div>
+										<a
+											href={selectedStatus.deployUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											class="text-blue-400 hover:text-blue-300 flex items-center gap-1"
+										>
+											View deployment details
+											<ExternalLink class="w-3 h-3" />
+										</a>
+									</div>
+								{/if}
+							</div>
+						</div>
+					</div>
+
 					<!-- Flow Diagram -->
 					<div class="shrink-0 px-6 py-4 border-b border-gray-700">
 						<div class="flex items-center justify-between mb-2">
