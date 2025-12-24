@@ -11,6 +11,7 @@ export declare const env: {
     readonly cloudflareAccountId: string;
     readonly resendApiKey: string;
     readonly apiSecret: string;
+    readonly gcpServiceAccountKey: string;
 };
 export declare function validateEnv(): void;
 //# sourceMappingURL=env.d.ts.map

@@ -98,6 +98,96 @@ export const projects = [
             { id: 'workwithchip-hosting', category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', cfProjectName: 'workwithchip' },
         ],
     },
+    // Junipa - Main tenant app (GCP Cloud Build)
+    {
+        id: 'junipa-demo',
+        name: 'junipa',
+        displayName: 'Junipa Demo',
+        owner: 'jvp-ux',
+        alertLevel: 'business',
+        uptimeUrl: 'https://demo2.junipa.com.au',
+        services: [
+            { id: 'junipa-demo-ci', category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', gcpProjectId: 'junipa' },
+        ],
+    },
+    {
+        id: 'junipa-cedarcollege',
+        name: 'junipa',
+        displayName: 'Junipa - Cedar College',
+        owner: 'jvp-ux',
+        alertLevel: 'business',
+        uptimeUrl: 'https://cedarcollege.junipa.com.au',
+        services: [
+            { id: 'junipa-cedarcollege-ci', category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', gcpProjectId: 'cedarcollege-prod' },
+        ],
+    },
+    {
+        id: 'junipa-menofbusiness',
+        name: 'junipa',
+        displayName: 'Junipa - Men of Business',
+        owner: 'jvp-ux',
+        alertLevel: 'business',
+        uptimeUrl: 'https://menofbusiness.junipa.com.au',
+        services: [
+            { id: 'junipa-menofbusiness-ci', category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', gcpProjectId: 'menofbusiness-prod' },
+        ],
+    },
+    {
+        id: 'junipa-mjc',
+        name: 'junipa',
+        displayName: 'Junipa - MJC',
+        owner: 'jvp-ux',
+        alertLevel: 'business',
+        uptimeUrl: 'https://mjc.junipa.com.au',
+        services: [
+            { id: 'junipa-mjc-ci', category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', gcpProjectId: 'mjc-prod-2022b' },
+        ],
+    },
+    {
+        id: 'junipa-tuncurry',
+        name: 'junipa',
+        displayName: 'Junipa - Tuncurry',
+        owner: 'jvp-ux',
+        alertLevel: 'business',
+        uptimeUrl: 'https://tuncurry.junipa.com.au',
+        services: [
+            { id: 'junipa-tuncurry-ci', category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', gcpProjectId: 'mjc-tuncurry-prod' },
+        ],
+    },
+    {
+        id: 'junipa-central-demo',
+        name: 'junipa',
+        displayName: 'Junipa Central Demo',
+        owner: 'jvp-ux',
+        alertLevel: 'business',
+        uptimeUrl: 'https://junipacentral.junipa.com.au',
+        services: [
+            { id: 'junipa-central-ci', category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', gcpProjectId: 'junipa-central-demo' },
+        ],
+    },
+    {
+        id: 'junipa-west-demo',
+        name: 'junipa',
+        displayName: 'Junipa West Demo',
+        owner: 'jvp-ux',
+        alertLevel: 'business',
+        uptimeUrl: 'https://junipawest.junipa.com.au',
+        services: [
+            { id: 'junipa-west-ci', category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', gcpProjectId: 'junipa-west-demo' },
+        ],
+    },
+    // Junipa Organisations - Org hub (GitHub Actions)
+    {
+        id: 'junipa-organisations',
+        name: 'junipa-organisations',
+        displayName: 'Junipa Organisations',
+        owner: 'jvp-ux',
+        alertLevel: 'business',
+        uptimeUrl: 'https://organisation.junipa.com.au',
+        services: [
+            { id: 'junipa-org-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
+        ],
+    },
 ];
 // Helper to find project by repo name
 export function getProjectByRepo(repoName) {

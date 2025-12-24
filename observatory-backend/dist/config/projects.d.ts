@@ -11,11 +11,12 @@ export interface ProjectConfig {
 export interface ServiceConfig {
     id: string;
     category: 'hosting' | 'database' | 'auth' | 'storage' | 'dns' | 'ci' | 'monitoring';
-    provider: 'cloudflare' | 'flyio' | 'supabase' | 'github' | 'sentry' | 'aws';
+    provider: 'cloudflare' | 'flyio' | 'supabase' | 'github' | 'sentry' | 'aws' | 'gcp';
     serviceName: string;
     checkUrl?: string;
     cfProjectName?: string;
     flyAppName?: string;
+    gcpProjectId?: string;
 }
 export declare const projects: ProjectConfig[];
 export declare function getProjectByRepo(repoName: string): ProjectConfig | undefined;

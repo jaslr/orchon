@@ -32,7 +32,7 @@ const apiAuth = createMiddleware(async (c, next) => {
 // Middleware
 app.use('*', logger());
 app.use('*', cors({
-    origin: ['https://ci-monitor.pages.dev', 'http://localhost:4573', 'http://localhost:5173'],
+    origin: ['https://orchon.pages.dev', 'https://ci-monitor.pages.dev', 'http://localhost:4573', 'http://localhost:5173'],
     credentials: true,
 }));
 // Public routes (no auth required)

@@ -9,7 +9,10 @@
 		HardDrive,
 		GitBranch,
 		AlertTriangle,
-		ExternalLink
+		ExternalLink,
+		Plus,
+		Minus,
+		RotateCcw
 	} from '@lucide/svelte';
 
 	// Deployment timestamps for each stage
@@ -31,6 +34,15 @@
 	}
 
 	let { services, projectName, domain, animated = true, isDeploying = false, deploymentTimestamps }: Props = $props();
+
+	// Container reference for size calculations
+	let containerEl: HTMLDivElement | null = $state(null);
+
+	// Zoom state
+	let scale = $state(1);
+	const MIN_SCALE = 0.5;
+	const MAX_SCALE = 3;
+	const ZOOM_STEP = 0.1;
 
 	// Logo display state - persisted to localStorage
 	const SHOW_LOGOS_KEY = 'infra-diagram-show-logos';
@@ -60,13 +72,18 @@
 	let nodes = $derived(buildNodes(services, projectName, domain));
 	let edges = $derived(buildEdges(nodes));
 
-	// Calculate dynamic viewBox based on actual node positions
-	// ViewBox matches content bounds - SVG naturally fills container
-	let viewBox = $derived(() => {
-		if (nodes.length === 0) return { x: 0, y: 0, width: 200, height: 150 };
+	// Target: nodes should be ~80px diameter at 100% zoom on large viewport
+	// Node SVG radius is 12, diameter is 24
+	// Container is typically h-72 = 288px
+	// For 80px nodes: scale = 80/24 = 3.33x, so viewBox height = 288/3.33 = 86
+	// We use a compact viewBox so the SVG scales up to show nodes at ~80px
 
-		const padding = 30; // Space for labels below nodes
-		const sidePadding = 20; // Horizontal padding
+	// Calculate dynamic viewBox based on actual node positions
+	let viewBox = $derived(() => {
+		if (nodes.length === 0) return { x: 0, y: 0, width: 120, height: 90 };
+
+		const padding = 18; // Space for labels below nodes
+		const sidePadding = 12; // Horizontal padding
 
 		const minX = Math.min(...nodes.map(n => n.x ?? 0));
 		const maxX = Math.max(...nodes.map(n => n.x ?? 0));
@@ -79,10 +96,29 @@
 		return {
 			x: minX - sidePadding,
 			y: minY - padding,
-			width: Math.max(180, contentWidth),
-			height: Math.max(120, contentHeight)
+			width: Math.max(190, contentWidth),
+			height: Math.max(140, contentHeight)
 		};
 	});
+
+	// Zoom functions
+	function zoomIn() {
+		scale = Math.min(MAX_SCALE, scale + ZOOM_STEP);
+	}
+
+	function zoomOut() {
+		scale = Math.max(MIN_SCALE, scale - ZOOM_STEP);
+	}
+
+	function resetZoom() {
+		scale = 1;
+	}
+
+	function handleWheel(e: WheelEvent) {
+		e.preventDefault();
+		const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+		scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale + delta));
+	}
 
 	const nodeIcons: Record<string, typeof Cloud> = {
 		dns: Globe,
@@ -376,9 +412,10 @@
 	}
 </script>
 
-<div class="relative w-full h-full flex flex-col">
-	<!-- Logo Toggle Control -->
-	<div class="absolute top-0 right-0 z-20">
+<div class="relative w-full h-full flex flex-col" bind:this={containerEl}>
+	<!-- Controls - positioned at top right -->
+	<div class="absolute top-0 right-0 flex items-center gap-1 z-20">
+		<!-- Logo Toggle -->
 		<button
 			onclick={toggleShowLogos}
 			class="flex items-center justify-center w-8 h-8 hover:bg-gray-700/50 text-xs transition-colors {showLogos ? 'text-gray-200' : 'text-gray-500'}"
@@ -388,14 +425,41 @@
 				<span class="absolute top-0.5 {showLogos ? 'right-0.5' : 'left-0.5'} w-2 h-2 bg-white transition-all"></span>
 			</span>
 		</button>
+
+		<!-- Zoom Controls -->
+		<button
+			onclick={zoomOut}
+			class="flex items-center justify-center w-8 h-8 hover:bg-gray-700/50 text-gray-400 hover:text-gray-200 transition-colors"
+			title="Zoom out"
+		>
+			<Minus class="w-4 h-4" />
+		</button>
+		<button
+			onclick={resetZoom}
+			class="flex items-center justify-center min-w-[40px] h-8 hover:bg-gray-700/50 text-xs text-gray-400 hover:text-gray-200 transition-colors font-mono"
+			title="Reset zoom"
+		>
+			{Math.round(scale * 100)}%
+		</button>
+		<button
+			onclick={zoomIn}
+			class="flex items-center justify-center w-8 h-8 hover:bg-gray-700/50 text-gray-400 hover:text-gray-200 transition-colors"
+			title="Zoom in"
+		>
+			<Plus class="w-4 h-4" />
+		</button>
 	</div>
 
-	<!-- Diagram Canvas - SVG fills container naturally -->
-	<div class="flex-1 w-full flex items-center justify-center">
+	<!-- Diagram Canvas -->
+	<div
+		class="flex-1 w-full flex items-center justify-center overflow-hidden"
+		onwheel={handleWheel}
+	>
 		<svg
 			viewBox="{viewBox().x} {viewBox().y} {viewBox().width} {viewBox().height}"
-			class="w-full h-full max-h-full"
+			class="w-full h-full max-h-full transition-transform"
 			preserveAspectRatio="xMidYMid meet"
+			style="transform: scale({scale}); transform-origin: center;"
 		>
 			<defs>
 				<!-- Green arrow for data flow (site→backend) -->

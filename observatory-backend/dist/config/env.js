@@ -19,6 +19,8 @@ export const env = {
     resendApiKey: process.env.RESEND_API_KEY || '',
     // API Security
     apiSecret: process.env.API_SECRET || '',
+    // GCP Cloud Build
+    gcpServiceAccountKey: process.env.GCP_SERVICE_ACCOUNT_KEY || '',
 };
 // Validate required env vars in production
 export function validateEnv() {

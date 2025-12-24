@@ -23,14 +23,19 @@ export interface ProcessedDeployment {
     id: string;
     projectId: string;
     serviceId: string;
-    provider: 'github';
+    provider: 'github' | 'cloudflare' | 'flyio' | 'gcp';
     status: 'queued' | 'in_progress' | 'success' | 'failure';
-    workflowName: string;
+    workflowName?: string;
     commitSha: string;
     branch: string;
     runUrl: string;
     startedAt: string;
     completedAt?: string;
+    pushedAt?: string;
+    ciStartedAt?: string;
+    ciCompletedAt?: string;
+    deployStartedAt?: string;
+    deployCompletedAt?: string;
 }
 export declare function handleWorkflowRun(payload: WorkflowRunPayload): Promise<ProcessedDeployment | null>;
 //# sourceMappingURL=webhook-handler.d.ts.map
