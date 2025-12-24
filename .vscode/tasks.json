@@ -2,17 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Dev: Observatory (Full Stack)",
-      "dependsOn": ["Dev: PocketBase", "Dev: SvelteKit"],
-      "dependsOrder": "parallel",
-      "problemMatcher": [],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
-    },
-    {
-      "label": "Dev: SvelteKit (Port 4573)",
+      "label": "Run Orchon Local (with PROD connection)",
       "type": "shell",
       "command": "npm run dev -- --port 4573",
       "isBackground": true,
@@ -31,30 +21,11 @@
       },
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated",
-        "group": "observatory"
-      }
-    },
-    {
-      "label": "Dev: PocketBase (Port 4617)",
-      "type": "shell",
-      "command": "pocketbase serve --http=127.0.0.1:4617 --dir=./data/pb_data",
-      "isBackground": true,
-      "problemMatcher": {
-        "pattern": {
-          "regexp": "^(.*)$",
-          "message": 1
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "Server started",
-          "endsPattern": "REST API"
-        }
+        "panel": "dedicated"
       },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "group": "observatory"
+      "group": {
+        "kind": "build",
+        "isDefault": true
       }
     },
     {

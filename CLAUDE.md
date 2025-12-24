@@ -174,8 +174,6 @@ npm run build && npx wrangler pages deploy .svelte-kit/cloudflare --project-name
 
 ### VS Code Tasks
 
-- **Dev: Observatory (Full Stack)** - Starts SvelteKit + PocketBase
-- **Dev: SvelteKit (Port 4573)** - Starts app only
-- **Dev: PocketBase (Port 4617)** - Starts database only
+- **Run Orchon Local (with PROD connection)** - Runs dev server connecting to production backend
 - **Check: Active Ports** - Shows port usage
 - **Deploy: Get It Live** - Full deployment
