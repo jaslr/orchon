@@ -22,6 +22,7 @@ export interface ServiceConfig {
   cfProjectName?: string;  // Cloudflare Pages project name if different from project.name
   flyAppName?: string;     // Fly.io app name if different from project.name
   gcpProjectId?: string;   // GCP project ID for Cloud Build
+  supabaseProjectRef?: string;  // Supabase project reference (e.g., 'abc123' from abc123.supabase.co)
 }
 
 // Projects to monitor - matches ci-monitor/src/lib/config/repos.ts
@@ -35,7 +36,8 @@ export const projects: ProjectConfig[] = [
     uptimeUrl: 'https://livna.anvilenterprises.com.au',
     services: [
       { id: 'livna-hosting', category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', cfProjectName: 'livna' },
-      { id: 'livna-db', category: 'database', provider: 'supabase', serviceName: 'Supabase' },
+      { id: 'livna-db', category: 'database', provider: 'supabase', serviceName: 'Supabase Database', supabaseProjectRef: 'vtyfsrpupgrkkbnsiuqe' },
+      { id: 'livna-auth', category: 'auth', provider: 'supabase', serviceName: 'Supabase Auth', supabaseProjectRef: 'vtyfsrpupgrkkbnsiuqe' },
       { id: 'livna-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
       { id: 'livna-monitoring', category: 'monitoring', provider: 'sentry', serviceName: 'Sentry' },
     ],
@@ -49,7 +51,7 @@ export const projects: ProjectConfig[] = [
     uptimeUrl: 'https://ladderbox.fly.dev',
     services: [
       { id: 'ladderbox-hosting', category: 'hosting', provider: 'flyio', serviceName: 'Fly.io', flyAppName: 'ladderbox' },
-      { id: 'ladderbox-db', category: 'database', provider: 'supabase', serviceName: 'Supabase' },
+      { id: 'ladderbox-db', category: 'database', provider: 'supabase', serviceName: 'Supabase Database' }, // TODO: Add supabaseProjectRef
       { id: 'ladderbox-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
     ],
   },
@@ -74,7 +76,7 @@ export const projects: ProjectConfig[] = [
     uptimeUrl: 'https://littlelistoflights.com',
     services: [
       { id: 'littlelistoflights-hosting', category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', cfProjectName: 'littlelistoflights' },
-      { id: 'littlelistoflights-db', category: 'database', provider: 'supabase', serviceName: 'Supabase' },
+      { id: 'littlelistoflights-db', category: 'database', provider: 'supabase', serviceName: 'Supabase Database', supabaseProjectRef: 'hjrawccyhnvtwulzfbbo' },
       { id: 'littlelistoflights-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
     ],
   },

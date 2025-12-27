@@ -25,8 +25,11 @@ export interface DeploymentEvent {
 
 export interface StatusEvent {
 	serviceId: string;
+	category?: 'database' | 'auth' | 'hosting' | 'ci' | 'monitoring' | 'storage' | 'dns';
+	provider?: string;
 	status: 'healthy' | 'degraded' | 'down' | 'unknown';
 	message?: string;
+	responseTimeMs?: number;
 }
 
 export interface UptimeEvent {

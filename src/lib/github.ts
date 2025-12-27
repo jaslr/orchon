@@ -1,6 +1,12 @@
 export type WorkflowStatus = 'success' | 'failure' | 'in_progress' | 'unknown';
 export type DeploymentStatus = 'success' | 'failure' | 'deploying' | 'unknown';
 export type HostingPlatform = 'flyio' | 'cloudflare' | 'vercel' | 'netlify' | 'gcp' | 'local';
+export type ServiceHealthStatus = 'healthy' | 'degraded' | 'down' | 'unknown';
+
+export interface ServiceHealth {
+	database?: ServiceHealthStatus;
+	auth?: ServiceHealthStatus;
+}
 
 export interface RepoStatus {
 	owner: string;
@@ -21,6 +27,8 @@ export interface RepoStatus {
 	html_url: string | null;
 	workflow_name: string | null;
 	run_date: string | null;
+	// Service health (DB, Auth)
+	serviceHealth?: ServiceHealth;
 }
 
 interface WorkflowRun {

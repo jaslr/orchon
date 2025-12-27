@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { WorkflowStatus, RepoStatus, DeploymentStatus } from '$lib/github';
+	import type { WorkflowStatus, RepoStatus, DeploymentStatus, ServiceHealthStatus, ServiceHealth } from '$lib/github';
 	import type { InfraService, TechStack } from '$lib/types/infrastructure';
 	import type { StatusEvent } from '$lib/services/sse-client';
 	import { getProjectInfrastructure } from '$lib/config/infrastructure';
@@ -29,7 +29,8 @@
 		ChevronDown,
 		ChevronRight,
 		Network,
-		FolderGit2
+		FolderGit2,
+		Key
 	} from '@lucide/svelte';
 	import InfraFlowDiagram, { type DeploymentTimestamps } from '$lib/components/InfraFlowDiagram.svelte';
 
@@ -176,7 +177,20 @@
 	function updateRepoStatusFromHealth(projectId: string, healthData: StatusEvent & { provider?: string }): void {
 		statuses = statuses.map((status) => {
 			if (status.repo === projectId || status.repo.toLowerCase() === projectId.toLowerCase()) {
-				// Map health status to deployment status
+				// If this is a database or auth health event, update serviceHealth
+				if (healthData.category === 'database' || healthData.category === 'auth') {
+					const currentHealth = status.serviceHealth || {};
+					const newServiceHealth: ServiceHealth = {
+						...currentHealth,
+						[healthData.category]: healthData.status as ServiceHealthStatus
+					};
+					return {
+						...status,
+						serviceHealth: newServiceHealth
+					};
+				}
+
+				// For hosting/general health events, update deployment status
 				let newDeployStatus: DeploymentStatus;
 				switch (healthData.status) {
 					case 'healthy':
@@ -551,11 +565,11 @@
 					<ChevronRight class="w-4 h-4 text-blue-400 shrink-0" />
 				{/if}
 				<div class="flex-1 min-w-0">
-					<div class="font-medium text-sm text-white truncate">Projects</div>
+					<div class="font-medium text-sm text-white truncate">Deployments</div>
 				</div>
 			</button>
 
-			<!-- Projects content (collapsible) -->
+			<!-- Deployments content (collapsible) -->
 			{#if projectsExpanded}
 			<!-- Sort & Filter Options -->
 			<div class="shrink-0 px-4 py-2 border-b border-gray-800 flex justify-between items-center">
@@ -666,6 +680,11 @@
 								{#if !deployTime}
 									<div class="text-xs text-gray-500 truncate">{status.owner}</div>
 								{/if}
+								{#if status.deployStatus === 'failure'}
+									<div class="text-xs text-red-400 truncate">
+										{status.conclusion === 'cancelled' ? 'Cancelled' : status.conclusion === 'timed_out' ? 'Timed out' : 'Build failed'}
+									</div>
+								{/if}
 							</div>
 
 							<!-- Git Repo Status (grey icon) -->
@@ -695,6 +714,18 @@
 								>
 									<AlertTriangle class="w-4 h-4" />
 								</a>
+							{/if}
+
+							<!-- Service Health Indicators (only show when unhealthy) -->
+							{#if status.serviceHealth?.database && status.serviceHealth.database !== 'healthy'}
+								<div class="shrink-0" title="Database: {status.serviceHealth.database}">
+									<Database class="w-3.5 h-3.5 {status.serviceHealth.database === 'down' ? 'text-red-400' : 'text-yellow-400'}" />
+								</div>
+							{/if}
+							{#if status.serviceHealth?.auth && status.serviceHealth.auth !== 'healthy'}
+								<div class="shrink-0" title="Auth: {status.serviceHealth.auth}">
+									<Key class="w-3.5 h-3.5 {status.serviceHealth.auth === 'down' ? 'text-red-400' : 'text-yellow-400'}" />
+								</div>
 							{/if}
 
 							<!-- Service Count -->
@@ -820,6 +851,11 @@
 									{#if !deployTimeMobile}
 										<div class="text-xs text-gray-500 truncate">{status.owner}</div>
 									{/if}
+									{#if status.deployStatus === 'failure'}
+										<div class="text-xs text-red-400 truncate">
+											{status.conclusion === 'cancelled' ? 'Cancelled' : status.conclusion === 'timed_out' ? 'Timed out' : 'Build failed'}
+										</div>
+									{/if}
 								</div>
 
 								<!-- Git Repo Status (grey icon) -->
@@ -846,6 +882,18 @@
 									>
 										<AlertTriangle class="w-4 h-4" />
 									</a>
+								{/if}
+
+								<!-- Service Health Indicators (only show when unhealthy) -->
+								{#if status.serviceHealth?.database && status.serviceHealth.database !== 'healthy'}
+									<div class="shrink-0" title="Database: {status.serviceHealth.database}">
+										<Database class="w-3.5 h-3.5 {status.serviceHealth.database === 'down' ? 'text-red-400' : 'text-yellow-400'}" />
+									</div>
+								{/if}
+								{#if status.serviceHealth?.auth && status.serviceHealth.auth !== 'healthy'}
+									<div class="shrink-0" title="Auth: {status.serviceHealth.auth}">
+										<Key class="w-3.5 h-3.5 {status.serviceHealth.auth === 'down' ? 'text-red-400' : 'text-yellow-400'}" />
+									</div>
 								{/if}
 
 								<!-- Service Count & Expand Icon -->

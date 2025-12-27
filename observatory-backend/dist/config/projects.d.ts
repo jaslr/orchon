@@ -17,6 +17,7 @@ export interface ServiceConfig {
     cfProjectName?: string;
     flyAppName?: string;
     gcpProjectId?: string;
+    supabaseProjectRef?: string;
 }
 export declare const projects: ProjectConfig[];
 export declare function getProjectByRepo(repoName: string): ProjectConfig | undefined;
