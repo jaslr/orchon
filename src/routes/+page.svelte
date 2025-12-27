@@ -346,6 +346,15 @@
 		return date.toLocaleDateString();
 	}
 
+	// Format deployment time: "20 May 2025, 10:14 AM"
+	function formatDeploymentTime(isoString: string | null): { date: string; time: string } | null {
+		if (!isoString) return null;
+		const date = new Date(isoString);
+		const dateStr = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+		const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+		return { date: dateStr, time: timeStr };
+	}
+
 	const categoryIcons: Record<string, typeof Cloud> = {
 		hosting: Cloud,
 		database: Database,
@@ -625,6 +634,7 @@
 					{#each displayStatuses as status (status.repo)}
 						{@const repoInfra = getInfra(status.repo)}
 						{@const isSelected = selectedRepo === status.repo}
+						{@const deployTime = sortBy === 'recent' ? formatDeploymentTime(status.run_date) : null}
 						<button
 							onclick={() => selectRepo(status.repo)}
 							class="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer transition-colors {isSelected
@@ -645,10 +655,17 @@
 
 							<!-- Repo Info -->
 							<div class="flex-1 min-w-0">
+								{#if deployTime}
+									<div class="text-xs text-gray-500 truncate">
+										{deployTime.date}, <span class="text-gray-600">{deployTime.time}</span>
+									</div>
+								{/if}
 								<div class="font-medium text-sm truncate {isSelected ? 'text-white' : 'text-gray-300'}">
 									{status.repo}
 								</div>
-								<div class="text-xs text-gray-500 truncate">{status.owner}</div>
+								{#if !deployTime}
+									<div class="text-xs text-gray-500 truncate">{status.owner}</div>
+								{/if}
 							</div>
 
 							<!-- Git Repo Status (grey icon) -->
@@ -769,6 +786,7 @@
 					{#each displayStatuses as status (status.repo)}
 						{@const repoInfra = getInfra(status.repo)}
 						{@const isExpanded = selectedRepo === status.repo}
+						{@const deployTimeMobile = sortBy === 'recent' ? formatDeploymentTime(status.run_date) : null}
 						<div>
 							<!-- Accordion Header -->
 							<button
@@ -791,10 +809,17 @@
 
 								<!-- Repo Info -->
 								<div class="flex-1 min-w-0">
+									{#if deployTimeMobile}
+										<div class="text-xs text-gray-500 truncate">
+											{deployTimeMobile.date}, <span class="text-gray-600">{deployTimeMobile.time}</span>
+										</div>
+									{/if}
 									<div class="font-medium text-sm truncate {isExpanded ? 'text-white' : 'text-gray-300'}">
 										{status.repo}
 									</div>
-									<div class="text-xs text-gray-500 truncate">{status.owner}</div>
+									{#if !deployTimeMobile}
+										<div class="text-xs text-gray-500 truncate">{status.owner}</div>
+									{/if}
 								</div>
 
 								<!-- Git Repo Status (grey icon) -->
