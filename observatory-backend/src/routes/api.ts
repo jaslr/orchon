@@ -285,6 +285,22 @@ apiRoutes.get('/projects/:id/history', async (c) => {
   }
 });
 
+// =============================================================================
+// Deployment log endpoints
+// =============================================================================
+
+// Get global deployment log (recent deployments across all projects)
+apiRoutes.get('/deployments/recent', async (c) => {
+  try {
+    const limit = parseInt(c.req.query('limit') || '20', 10);
+    const deployments = await db.getGlobalRecentDeployments(Math.min(limit, 100));
+    return c.json({ deployments });
+  } catch (err) {
+    console.error('Error fetching recent deployments:', err);
+    return c.json({ error: 'Failed to fetch recent deployments' }, 500);
+  }
+});
+
 // Cost tracking endpoints
 apiRoutes.get('/costs', async (c) => {
   try {

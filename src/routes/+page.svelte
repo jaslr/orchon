@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { RepoStatus, DeploymentStatus } from '$lib/github';
+	import type { DeploymentLogEntry } from './+page.server';
 	import { browser } from '$app/environment';
 	import { sseClient, type SSEEvent, type DeploymentEvent } from '$lib/services/sse-client';
 	import { getCachedData, setCachedData } from '$lib/stores/dataCache';
@@ -23,17 +24,8 @@
 	let statuses = $state<RepoStatus[]>(cachedOnLoad?.statuses || data.statuses);
 	let lastUpdated = $state(cachedOnLoad?.lastUpdated || data.lastUpdated);
 
-	// Activity feed derived from statuses
-	let deploymentActivity = $derived(
-		[...statuses]
-			.filter(s => s.run_date || s.deployedAt)
-			.sort((a, b) => {
-				const dateA = new Date(a.deployedAt || a.run_date || 0).getTime();
-				const dateB = new Date(b.deployedAt || b.run_date || 0).getTime();
-				return dateB - dateA;
-			})
-			.slice(0, 20)
-	);
+	// Real deployment log from backend (actual deployment events, not derived)
+	let deploymentLog = $state<DeploymentLogEntry[]>(data.deploymentLog || []);
 
 	// Commits activity (derived from statuses for now - shows last push info)
 	let commitActivity = $derived(
@@ -53,6 +45,9 @@
 			statuses = data.statuses;
 			lastUpdated = data.lastUpdated;
 			setCachedData(data.statuses, data.lastUpdated);
+		}
+		if (data.deploymentLog) {
+			deploymentLog = data.deploymentLog;
 		}
 	});
 
@@ -158,25 +153,27 @@
 		</div>
 
 		<div class="flex-1 overflow-y-auto">
-			{#if deploymentActivity.length === 0}
+			{#if deploymentLog.length === 0}
 				<div class="p-8 text-center text-gray-500">
 					<Cloud class="w-8 h-8 mx-auto mb-2 opacity-50" />
 					<p class="text-sm">No recent deployments</p>
 				</div>
 			{:else}
 				<div class="divide-y divide-gray-800">
-					{#each deploymentActivity as status (status.repo + (status.deployedAt || status.run_date))}
+					{#each deploymentLog as deployment (deployment.id)}
+						{@const deployTime = deployment.deployCompletedAt || deployment.completedAt || deployment.startedAt}
+						{@const deployStatus = deployment.status === 'success' ? 'success' : deployment.status === 'failure' ? 'failure' : deployment.status === 'in_progress' ? 'deploying' : 'unknown'}
 						<a
-							href="/deployments?project={status.repo}"
+							href="/deployments?project={deployment.projectName}"
 							class="flex items-center gap-3 px-4 py-3 hover:bg-gray-800/50 transition-colors"
 						>
 							<!-- Status Icon -->
 							<div class="shrink-0">
-								{#if status.deployStatus === 'deploying'}
+								{#if deployStatus === 'deploying'}
 									<Loader class="w-5 h-5 text-cyan-400 animate-spin" />
-								{:else if status.deployStatus === 'success'}
+								{:else if deployStatus === 'success'}
 									<CheckCircle class="w-5 h-5 text-green-400" />
-								{:else if status.deployStatus === 'failure'}
+								{:else if deployStatus === 'failure'}
 									<XCircle class="w-5 h-5 text-red-400" />
 								{:else}
 									<Cloud class="w-5 h-5 text-gray-500" />
@@ -186,17 +183,17 @@
 							<!-- Content -->
 							<div class="flex-1 min-w-0">
 								<div class="flex items-center gap-2">
-									<span class="font-medium text-white truncate">{status.repo}</span>
-									<span class="text-xs {getStatusColor(status.deployStatus)}">{getStatusLabel(status.deployStatus)}</span>
+									<span class="font-medium text-white truncate">{deployment.projectDisplayName || deployment.projectName}</span>
+									<span class="text-xs {getStatusColor(deployStatus)}">{getStatusLabel(deployStatus)}</span>
 								</div>
 								<div class="text-xs text-gray-500 truncate">
-									{status.workflow_name || status.deployPlatform || 'Deployment'}
+									{deployment.provider} {deployment.branch ? `• ${deployment.branch}` : ''}
 								</div>
 							</div>
 
 							<!-- Time -->
 							<div class="shrink-0 text-xs text-gray-500">
-								{formatRelativeTime(status.deployedAt || status.run_date)}
+								{formatRelativeTime(deployTime)}
 							</div>
 						</a>
 					{/each}

@@ -37,6 +37,12 @@ export interface CostEntry {
 export declare function getLatestStatusForAllProjects(): Promise<ProjectStatus[]>;
 export declare function getLatestStatus(projectId: string): Promise<ProjectStatus | null>;
 export declare function getRecentDeployments(projectId: string, limit: number): Promise<Deployment[]>;
+export interface GlobalDeployment extends Deployment {
+    projectId: string;
+    projectName: string;
+    projectDisplayName: string;
+}
+export declare function getGlobalRecentDeployments(limit: number): Promise<GlobalDeployment[]>;
 export declare function getUptimeHistory(projectId: string, hours: number): Promise<UptimeCheck[]>;
 export declare function getStatusHistory(projectId: string, hours: number): Promise<ProjectStatus[]>;
 export declare function insertDeployment(deployment: Deployment): Promise<void>;

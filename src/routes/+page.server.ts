@@ -23,6 +23,27 @@ interface BackendResponse {
 	projects: BackendProject[];
 }
 
+// Deployment log entry from backend
+export interface DeploymentLogEntry {
+	id: string;
+	projectId: string;
+	projectName: string;
+	projectDisplayName: string;
+	provider: string;
+	status: 'queued' | 'in_progress' | 'success' | 'failure';
+	commitSha?: string;
+	branch?: string;
+	runUrl?: string;
+	startedAt?: string;
+	completedAt?: string;
+	deployStartedAt?: string;
+	deployCompletedAt?: string;
+}
+
+interface DeploymentsResponse {
+	deployments: DeploymentLogEntry[];
+}
+
 // Map backend status to DeploymentStatus
 function mapBackendStatus(status: string | undefined): DeploymentStatus {
 	switch (status) {
@@ -60,20 +81,30 @@ function getHostingPlatform(project: BackendProject): HostingPlatform {
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const statuses: RepoStatus[] = [];
+	const apiSecret = locals.apiSecret;
+	const authHeaders = apiSecret ? { 'Authorization': `Bearer ${apiSecret}` } : {};
 
-	// Fetch deployment status from backend
+	// Fetch deployment status and deployment log from backend in parallel
 	let backendProjects: BackendProject[] = [];
+	let deploymentLog: DeploymentLogEntry[] = [];
+
 	try {
-		const apiSecret = locals.apiSecret;
-		const response = await fetch(`${BACKEND_URL}/api/projects`, {
-			headers: apiSecret ? { 'Authorization': `Bearer ${apiSecret}` } : {}
-		});
-		if (response.ok) {
-			const data: BackendResponse = await response.json();
+		const [projectsRes, deploymentsRes] = await Promise.all([
+			fetch(`${BACKEND_URL}/api/projects`, { headers: authHeaders }),
+			fetch(`${BACKEND_URL}/api/deployments/recent?limit=20`, { headers: authHeaders })
+		]);
+
+		if (projectsRes.ok) {
+			const data: BackendResponse = await projectsRes.json();
 			backendProjects = data.projects || [];
 		}
+
+		if (deploymentsRes.ok) {
+			const data: DeploymentsResponse = await deploymentsRes.json();
+			deploymentLog = data.deployments || [];
+		}
 	} catch (err) {
-		console.warn('Failed to fetch backend status:', err);
+		console.warn('Failed to fetch backend data:', err);
 	}
 
 	for (const [owner, repoList] of Object.entries(repos)) {
@@ -221,6 +252,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		statuses,
+		deploymentLog,
 		lastUpdated: new Date().toISOString()
 	};
 };

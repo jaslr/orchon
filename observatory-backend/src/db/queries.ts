@@ -106,6 +106,46 @@ export async function getRecentDeployments(projectId: string, limit: number): Pr
   return result.rows;
 }
 
+// Global recent deployments interface (includes project info)
+export interface GlobalDeployment extends Deployment {
+  projectId: string;
+  projectName: string;
+  projectDisplayName: string;
+}
+
+// Get recent deployments across ALL projects (for the live deployment log)
+export async function getGlobalRecentDeployments(limit: number): Promise<GlobalDeployment[]> {
+  const result = await query<GlobalDeployment>(
+    `
+    SELECT
+      d.id,
+      d.service_id as "serviceId",
+      d.provider,
+      d.status,
+      d.commit_sha as "commitSha",
+      d.branch,
+      d.run_url as "runUrl",
+      d.started_at as "startedAt",
+      d.completed_at as "completedAt",
+      d.pushed_at as "pushedAt",
+      d.ci_started_at as "ciStartedAt",
+      d.ci_completed_at as "ciCompletedAt",
+      d.deploy_started_at as "deployStartedAt",
+      d.deploy_completed_at as "deployCompletedAt",
+      p.id as "projectId",
+      p.name as "projectName",
+      p.display_name as "projectDisplayName"
+    FROM deployments d
+    JOIN services s ON s.id = d.service_id
+    JOIN projects p ON p.id = s.project_id
+    ORDER BY COALESCE(d.deploy_completed_at, d.completed_at, d.created_at) DESC
+    LIMIT $1
+  `,
+    [limit]
+  );
+  return result.rows;
+}
+
 export async function getUptimeHistory(
   projectId: string,
   hours: number
