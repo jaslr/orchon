@@ -2,7 +2,77 @@
 
 ## Project Overview
 
-This is an **Infrastructure Observatory** (working name: orchon) - a comprehensive platform for monitoring CI/CD pipelines, infrastructure health, and service integrations across multiple projects and accounts.
+**ORCHON** (Infrastructure Observatory) - a comprehensive platform for monitoring CI/CD pipelines, infrastructure health, and service integrations across multiple projects and accounts.
+
+---
+
+## Integration: ORCHON ↔ DOA
+
+### MOU (Memorandum of Understanding)
+
+| Project | Role | Consumes | Provides |
+|---------|------|----------|----------|
+| **ORCHON** | Infrastructure Observatory | GitHub webhooks, provider APIs | Deployment status API |
+| **DOA** | DevOps Control Plane | ORCHON deployment data | Fix actions via Claude threads |
+
+**Data Flow:**
+```
+GitHub/Cloudflare/Fly.io → ORCHON (monitors) → DOA (displays + acts)
+                              ↑                      ↓
+                         Webhooks              Claude Code (fixes)
+```
+
+### Handshake Configuration
+
+| ORCHON Side | DOA Side | Notes |
+|-------------|----------|-------|
+| `API_SECRET` (Fly.io secret) | `ORCHON_API_SECRET` (dart-define) | **Must match** |
+| Backend URL | `ORCHON_URL` config | `https://observatory-backend.fly.dev` |
+
+**To update the shared secret:**
+1. Generate new secret: `openssl rand -hex 32`
+2. ORCHON: `fly secrets set API_SECRET=<new> -a observatory-backend`
+3. DOA: Rebuild Flutter app with `--dart-define=ORCHON_API_SECRET=<new>`
+
+### API Endpoints Provided to DOA
+
+| Endpoint | Purpose | Auth |
+|----------|---------|------|
+| `GET /api/deployments/recent?limit=N` | Recent deployments across all projects | Bearer token |
+| `GET /api/deployments/failures?limit=N` | Failed deployments only | Bearer token |
+| `GET /api/deployments/:id` | Single deployment details | Bearer token |
+| `GET /api/status/summary` | Overall health summary | Bearer token |
+
+### Files to Update When Changing Integration
+
+**ORCHON:**
+- `observatory-backend/.env.example` - Document API_SECRET
+- `observatory-backend/src/config/env.ts` - Secret validation
+- `observatory-backend/src/routes/api.ts` - Deployment endpoints
+- `observatory-backend/src/db/queries.ts` - Deployment data structure
+
+**DOA:**
+- `app/lib/core/config.dart` - ORCHON URL + secret config
+- `app/lib/core/orchon/orchon_service.dart` - API client + endpoints
+- `app/lib/models/deployment.dart` - Data model (must match ORCHON schema)
+
+---
+
+## Infrastructure Choices
+
+| Component | Platform | Why |
+|-----------|----------|-----|
+| Frontend | Cloudflare Pages | Free, global CDN, direct wrangler deploys |
+| Backend | Fly.io (`observatory-backend`) | Free tier, Postgres included, auto-sleep |
+| Database | Fly.io Postgres | Included with Fly, easy migrations |
+| DOA Backend | DigitalOcean Droplet | Persistent SSH, Claude Code sessions |
+| DOA App | Self-hosted OTA | Bypass Play Store, instant updates |
+
+**Why this split?**
+- ORCHON = monitoring (stateless queries, can auto-sleep)
+- DOA = actions (needs persistent SSH for Claude Code)
+
+---
 
 ## Development Guidelines
 
