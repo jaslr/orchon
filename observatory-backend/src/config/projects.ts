@@ -124,6 +124,16 @@ export const projects: ProjectConfig[] = [
       { id: 'workwithchip-hosting', category: 'hosting', provider: 'cloudflare', serviceName: 'Cloudflare Pages', cfProjectName: 'workwithchip' },
     ],
   },
+  {
+    id: 'doewah',
+    name: 'doewah',
+    displayName: 'Doewah',
+    owner: 'jaslr',
+    alertLevel: 'hobby',
+    services: [
+      { id: 'doewah-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
+    ],
+  },
   // Junipa - Main tenant app (GCP Cloud Build)
   {
     id: 'junipa-demo',
