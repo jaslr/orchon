@@ -140,4 +140,12 @@ export declare function updateService(serviceId: string, updates: Partial<{
     config: Record<string, unknown>;
 }>): Promise<ServiceRow | null>;
 export declare function deleteService(serviceId: string): Promise<boolean>;
+export declare function getFailedDeployments(limit: number): Promise<GlobalDeployment[]>;
+export interface ProjectStatusSummary {
+    healthy: number;
+    degraded: number;
+    down: number;
+    unknown: number;
+}
+export declare function getProjectStatusSummary(): Promise<ProjectStatusSummary>;
 //# sourceMappingURL=queries.d.ts.map

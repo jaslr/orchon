@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'core/auth/auth_service.dart';
+import 'features/auth/login_screen.dart';
 import 'features/deployments/deployments_screen.dart';
 
 // Global error log
@@ -34,11 +36,13 @@ void main() {
   runApp(const ProviderScope(child: OrchonApp()));
 }
 
-class OrchonApp extends StatelessWidget {
+class OrchonApp extends ConsumerWidget {
   const OrchonApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+
     return MaterialApp(
       title: 'ORCHON',
       debugShowCheckedModeBanner: false,
@@ -54,8 +58,29 @@ class OrchonApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      home: const DeploymentsScreen(),
+      home: _buildHome(authState),
     );
+  }
+
+  Widget _buildHome(AuthState authState) {
+    switch (authState.status) {
+      case AuthStatus.unknown:
+        // Show loading screen while checking stored auth
+        return const Scaffold(
+          backgroundColor: Color(0xFF0F0F23),
+          body: Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFF6366F1),
+            ),
+          ),
+        );
+      case AuthStatus.authenticated:
+        return const DeploymentsScreen();
+      case AuthStatus.unauthenticated:
+      case AuthStatus.checking:
+      case AuthStatus.error:
+        return const LoginScreen();
+    }
   }
 }
 

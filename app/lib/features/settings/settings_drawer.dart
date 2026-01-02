@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:http/http.dart' as http;
 import '../../core/updates/update_service.dart';
 import '../../core/orchon/orchon_service.dart';
+import '../../core/auth/auth_service.dart';
 import '../terminal/ssh_terminal_screen.dart';
 import '../terminal/quick_commands.dart';
 import '../threads/threads_screen.dart';
@@ -315,6 +316,9 @@ class SettingsDrawer extends ConsumerWidget {
                       // TODO: About screen
                     },
                   ),
+                  const Divider(color: Colors.grey, height: 32),
+                  // Sign Out
+                  _SignOutTile(ref: ref),
                 ],
               ),
             ),
@@ -855,6 +859,72 @@ class _SessionOption extends StatelessWidget {
       ),
       trailing: trailing ?? Icon(Icons.chevron_right, color: color),
       onTap: onTap,
+    );
+  }
+}
+
+class _SignOutTile extends StatelessWidget {
+  final WidgetRef ref;
+
+  const _SignOutTile({required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final userEmail = authState.user?.email ?? '';
+
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Icon(Icons.logout, color: Colors.red, size: 20),
+      ),
+      title: const Text(
+        'Sign Out',
+        style: TextStyle(
+          color: Colors.red,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        userEmail,
+        style: TextStyle(
+          color: Colors.grey[600],
+          fontSize: 12,
+        ),
+      ),
+      trailing: const Icon(Icons.chevron_right, color: Colors.red),
+      onTap: () async {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF1A1A2E),
+            title: const Text('Sign Out?'),
+            content: Text('Sign out of $userEmail?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Sign Out'),
+              ),
+            ],
+          ),
+        );
+
+        if (confirm == true) {
+          await ref.read(authProvider.notifier).signOut();
+          if (context.mounted) {
+            Navigator.pop(context); // Close drawer
+          }
+        }
+      },
     );
   }
 }

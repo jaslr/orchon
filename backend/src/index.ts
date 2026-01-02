@@ -10,6 +10,7 @@ import { healthRoutes } from './routes/health.js';
 import { webhookRoutes } from './routes/webhooks.js';
 import { eventsRoutes } from './routes/events.js';
 import { apiRoutes } from './routes/api.js';
+import { authRoutes } from './routes/auth.js';
 import { startScheduler } from './jobs/scheduler.js';
 import { initDb } from './db/client.js';
 
@@ -52,6 +53,11 @@ app.use(
 // Public routes (no auth required)
 app.route('/health', healthRoutes);
 app.route('/webhooks', webhookRoutes);
+
+// Auth routes - /auth/verify is public, /auth/users/* requires API secret
+app.use('/auth/users', apiAuth);
+app.use('/auth/users/*', apiAuth);
+app.route('/auth', authRoutes);
 
 // Protected routes (require API secret)
 app.use('/events/*', apiAuth);
