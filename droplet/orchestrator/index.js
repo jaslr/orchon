@@ -1,5 +1,5 @@
 /**
- * DOEWAH Orchestrator
+ * ORCHON Orchestrator
  *
  * The brain that understands all your projects and routes requests appropriately.
  *
@@ -16,7 +16,7 @@ const https = require('https');
 const { execSync, spawn } = require('child_process');
 const { queryLLM, queryLLMStreaming, healthCheck, LLM_PROVIDER } = require('./llm-adapter');
 
-const CONTEXTS_DIR = '/root/doewah/contexts';
+const CONTEXTS_DIR = '/root/orchon/droplet/contexts';
 const PROJECTS_DIR = '/root/projects';
 const LOGS_DIR = '/root/logs';
 
@@ -602,7 +602,7 @@ function buildSystemPrompt() {
   loadContexts();
   const projects = getAvailableProjects();
 
-  let prompt = `You are DOEWAH, a helpful assistant that manages multiple software projects remotely.
+  let prompt = `You are ORCHON, a helpful assistant that manages multiple software projects remotely.
 
 Available projects:
 ${projects.map(p => {
@@ -841,7 +841,7 @@ function executeClone(account, repoName) {
  * Get system status
  */
 function executeStatus() {
-  let status = '📊 *DOEWAH Status*\n\n';
+  let status = '📊 *ORCHON Status*\n\n';
 
   // Active tmux sessions
   try {
@@ -1018,7 +1018,7 @@ function runProjectTask(projectName, task, callback) {
   // Create execution script
   const scriptContent = `#!/bin/bash
 set -a
-source /root/doewah/.env
+source /root/orchon/.env
 set +a
 
 cd ${projectPath}

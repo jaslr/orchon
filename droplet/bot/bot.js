@@ -8,7 +8,7 @@ const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first');
 
 // =============================================================================
-// DOEWAH Telegram Bot v2
+// ORCHON Telegram Bot v2
 // =============================================================================
 // Now with:
 // - Natural language understanding via orchestrator
@@ -19,14 +19,14 @@ dns.setDefaultResultOrder('ipv4first');
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-const DOEWAH_DIR = '/root/doewah';
+const ORCHON_DIR = '/root/orchon';
 const PROJECTS_DIR = '/root/projects';
 const LOGS_DIR = '/root/logs';
 
-// Import orchestrator (use absolute path since bot runs from /root/claude-bot)
+// Import orchestrator
 let orchestrator = null;
 try {
-  orchestrator = require('/root/doewah/orchestrator');
+  orchestrator = require('/root/orchon/droplet/orchestrator');
   console.log('Orchestrator loaded, LLM provider:', orchestrator.LLM_PROVIDER);
 } catch (e) {
   console.log('Orchestrator not available yet:', e.message);
@@ -34,7 +34,7 @@ try {
 
 // Validate required env vars
 if (!BOT_TOKEN || !CHAT_ID) {
-  console.error('ERROR: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID must be set in /root/doewah/.env');
+  console.error('ERROR: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID must be set in /root/orchon/.env');
   process.exit(1);
 }
 
@@ -60,11 +60,11 @@ async function checkForUpdates() {
 
   try {
     // Fetch latest
-    execSync('git fetch origin main', { cwd: DOEWAH_DIR, stdio: 'pipe' });
+    execSync('git fetch origin main', { cwd: ORCHON_DIR, stdio: 'pipe' });
 
     // Check if we're behind
-    const localCommit = execSync('git rev-parse HEAD', { cwd: DOEWAH_DIR, encoding: 'utf8' }).trim();
-    const remoteCommit = execSync('git rev-parse origin/main', { cwd: DOEWAH_DIR, encoding: 'utf8' }).trim();
+    const localCommit = execSync('git rev-parse HEAD', { cwd: ORCHON_DIR, encoding: 'utf8' }).trim();
+    const remoteCommit = execSync('git rev-parse origin/main', { cwd: ORCHON_DIR, encoding: 'utf8' }).trim();
 
     if (localCommit !== remoteCommit && remoteCommit !== lastKnownCommit) {
       console.log(`Update available: ${localCommit.slice(0, 7)} -> ${remoteCommit.slice(0, 7)}`);
@@ -78,26 +78,19 @@ async function checkForUpdates() {
 async function applyUpdate(previousCommit) {
   try {
     // Pull changes
-    execSync('git pull origin main', { cwd: DOEWAH_DIR, stdio: 'pipe' });
+    execSync('git pull origin main', { cwd: ORCHON_DIR, stdio: 'pipe' });
 
-    // Copy updated bot file
-    execSync('cp bot/bot.js /root/claude-bot/', { cwd: DOEWAH_DIR, stdio: 'pipe' });
-
-    // Test if new bot starts (syntax check)
-    execSync('node -c /root/claude-bot/bot.js', { stdio: 'pipe' });
-
-    await sendMessage('🔄 *DOEWAH updated*\n\nRestarting with new version...');
+    await sendMessage('🔄 *ORCHON updated*\n\nRestarting with new version...');
 
     // Restart via systemd
-    spawn('systemctl', ['restart', 'claude-bot'], { detached: true, stdio: 'ignore' });
+    spawn('systemctl', ['restart', 'orchon-bot'], { detached: true, stdio: 'ignore' });
 
   } catch (e) {
     console.error('Update failed, reverting:', e.message);
 
     // Revert to previous commit
     try {
-      execSync(`git reset --hard ${previousCommit}`, { cwd: DOEWAH_DIR, stdio: 'pipe' });
-      execSync('cp bot/bot.js /root/claude-bot/', { cwd: DOEWAH_DIR, stdio: 'pipe' });
+      execSync(`git reset --hard ${previousCommit}`, { cwd: ORCHON_DIR, stdio: 'pipe' });
       await sendMessage(`⚠️ *Update failed, reverted*\n\n${e.message}`);
     } catch (revertError) {
       await sendMessage(`❌ *Critical: Update and revert both failed*\n\n${revertError.message}`);
@@ -180,7 +173,7 @@ function cloneProject(account, repoName) {
 // =============================================================================
 
 function handleStatus() {
-  let status = '📊 *DOEWAH Status*\n\n';
+  let status = '📊 *ORCHON Status*\n\n';
 
   // Active sessions
   try {
@@ -207,7 +200,7 @@ function handleStatus() {
   }
 
   // Contexts
-  const contextsDir = path.join(DOEWAH_DIR, 'contexts');
+  const contextsDir = path.join(ORCHON_DIR, 'droplet/contexts');
   if (fs.existsSync(contextsDir)) {
     const contexts = fs.readdirSync(contextsDir).filter(f => f.endsWith('.md') && !f.startsWith('_'));
     status += `\n*Context Files:* ${contexts.length}`;
@@ -270,11 +263,11 @@ function handleUpdate() {
 }
 
 function handleHelp() {
-  sendMessage(`🤖 *DOEWAH Commands*
+  sendMessage(`🤖 *ORCHON Commands*
 
 *Just talk to me naturally:*
 "Fix the pagination bug in Livna"
-"What's the status of Orkon?"
+"What's the status?"
 "Clone flashlight-db from jaslr"
 
 *Or use slash commands:*
@@ -283,7 +276,7 @@ function handleHelp() {
 \`/clone <account> <repo>\` - Clone repo
 \`/logs <session>\` - View logs
 \`/kill <session>\` - Kill session
-\`/update\` - Pull latest DOEWAH
+\`/update\` - Pull latest ORCHON
 \`/help\` - This message
 
 *LLM:* ${orchestrator ? orchestrator.LLM_PROVIDER : 'not loaded'}`);
@@ -445,7 +438,7 @@ function pollUpdates() {
 // Get version from package.json
 let version = 'unknown';
 try {
-  const pkg = JSON.parse(fs.readFileSync('/root/doewah/package.json', 'utf8'));
+  const pkg = JSON.parse(fs.readFileSync('/root/orchon/droplet/package.json', 'utf8'));
   version = pkg.version || 'unknown';
 } catch (e) {
   console.error('Could not read version:', e.message);
@@ -466,12 +459,12 @@ function formatStartupTime() {
   return now.toLocaleString('en-AU', options).replace(',', '');
 }
 
-console.log(`DOEWAH v${version} starting...`);
+console.log(`ORCHON v${version} starting...`);
 console.log(`Projects: ${PROJECTS_DIR}`);
 console.log(`Logs: ${LOGS_DIR}`);
 console.log(`Orchestrator: ${orchestrator ? 'loaded' : 'not available'}`);
 
-const startupMsg = `🟢 *DOEWAH v${version}*\n${formatStartupTime()}\n\nTalk naturally or /help`;
+const startupMsg = `🟢 *ORCHON v${version}*\n${formatStartupTime()}\n\nTalk naturally or /help`;
 sendMessage(startupMsg).then(() => {
   console.log('Startup message sent');
   pollUpdates();
