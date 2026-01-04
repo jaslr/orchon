@@ -118,7 +118,7 @@ const server = http.createServer((req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(html);
-  } else if (req.method === 'GET' && req.url === '/version') {
+  } else if (req.method === 'GET' && (req.url === '/version' || req.url?.startsWith('/version?'))) {
     // PROTECTED: Return current version info
     if (!isAuthorized(req)) return unauthorized(res);
 

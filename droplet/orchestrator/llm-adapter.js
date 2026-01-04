@@ -23,18 +23,18 @@ const LLM_PROVIDER = process.env.LLM_PROVIDER || 'claude';
 /**
  * Query the LLM with a prompt
  * @param {string} prompt - The prompt to send
- * @param {object} options - Options like timeout, workingDir
+ * @param {object} options - Options like timeout, workingDir, imageData
  * @returns {Promise<string>} - The LLM response
  */
 async function queryLLM(prompt, options = {}) {
-  const { timeout = 60000, workingDir = '/root' } = options;
+  const { timeout = 60000, workingDir = '/root', imageData = null } = options;
 
   switch (LLM_PROVIDER) {
     case 'claude':
-      return queryClaudeCode(prompt, { timeout, workingDir });
+      return queryClaudeCode(prompt, { timeout, workingDir, imageData });
 
     case 'anthropic':
-      return queryAnthropicAPI(prompt, { timeout });
+      return queryAnthropicAPI(prompt, { timeout, imageData });
 
     default:
       throw new Error(`Unknown LLM provider: ${LLM_PROVIDER}`);
@@ -60,7 +60,7 @@ function getClaudeOAuthToken() {
 /**
  * Query using Claude Code CLI
  */
-async function queryClaudeCode(prompt, { timeout, workingDir }) {
+async function queryClaudeCode(prompt, { timeout, workingDir, imageData = null }) {
   return new Promise((resolve, reject) => {
     try {
       const oauthToken = getClaudeOAuthToken();
@@ -69,19 +69,41 @@ async function queryClaudeCode(prompt, { timeout, workingDir }) {
         return;
       }
 
+      let imagePath = null;
+
+      // If we have image data, save it to a temp file
+      if (imageData && imageData.base64) {
+        const ext = imageData.mediaType === 'image/png' ? 'png' :
+                   imageData.mediaType === 'image/gif' ? 'gif' :
+                   imageData.mediaType === 'image/webp' ? 'webp' : 'jpg';
+        imagePath = `/tmp/orchon_image_${Date.now()}.${ext}`;
+        const buffer = Buffer.from(imageData.base64, 'base64');
+        fs.writeFileSync(imagePath, buffer);
+      }
+
       // Escape prompt for shell
       const escapedPrompt = prompt.replace(/'/g, "'\\''");
 
+      // Build command with optional image
+      let command = `IS_SANDBOX=1 CLAUDE_CODE_OAUTH_TOKEN='${oauthToken.trim()}' claude --dangerously-skip-permissions -p '${escapedPrompt}'`;
+      if (imagePath) {
+        // Add image as additional argument
+        command += ` '${imagePath}'`;
+      }
+
       // Set token in env and run claude with sandbox mode and skip permissions
-      const result = execSync(
-        `IS_SANDBOX=1 CLAUDE_CODE_OAUTH_TOKEN='${oauthToken.trim()}' claude --dangerously-skip-permissions -p '${escapedPrompt}'`,
-        {
-          cwd: workingDir,
-          timeout,
-          encoding: 'utf8',
-          stdio: ['pipe', 'pipe', 'pipe']  // Explicit stdio pipes
-        }
-      );
+      const result = execSync(command, {
+        cwd: workingDir,
+        timeout,
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe']  // Explicit stdio pipes
+      });
+
+      // Clean up temp image file
+      if (imagePath && fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+
       resolve(result.trim());
     } catch (error) {
       reject(new Error(`Claude Code error: ${error.message}`));
@@ -162,17 +184,38 @@ async function queryClaudeCodeStreaming(prompt, options = {}) {
 /**
  * Query using Anthropic API directly (fallback/alternative)
  */
-async function queryAnthropicAPI(prompt, { timeout }) {
+async function queryAnthropicAPI(prompt, { timeout, imageData = null }) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error('ANTHROPIC_API_KEY not set');
   }
 
   return new Promise((resolve, reject) => {
+    // Build message content - text only or multimodal with image
+    let content;
+    if (imageData && imageData.base64) {
+      content = [
+        {
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: imageData.mediaType,
+            data: imageData.base64
+          }
+        },
+        {
+          type: 'text',
+          text: prompt
+        }
+      ];
+    } else {
+      content = prompt;
+    }
+
     const data = JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content }]
     });
 
     const options = {

@@ -922,10 +922,34 @@ function executeVersion(projectName) {
 }
 
 /**
+ * Format conversation history for LLM prompt
+ */
+function formatHistoryForPrompt(history) {
+  if (!history || history.length === 0) return '';
+
+  // Take last N messages for context (avoid token overflow)
+  const recentHistory = history.slice(-10);
+
+  let formatted = '\n\n--- Previous conversation ---\n';
+  for (const msg of recentHistory) {
+    const role = msg.role === 'user' ? 'User' : 'Assistant';
+    const hasImage = msg.image ? ' [sent an image]' : '';
+    formatted += `${role}${hasImage}: ${msg.content}\n`;
+  }
+  formatted += '--- End of conversation history ---\n';
+
+  return formatted;
+}
+
+/**
  * Process a natural language message
  * Returns: { response: string, action?: 'task'|'status'|'chat', project?: string, task?: string }
+ * @param {string} message - The user's message
+ * @param {object} options - Options including history and imageData
  */
-async function processMessage(message) {
+async function processMessage(message, options = {}) {
+  const { history = [], imageData = null } = options;
+
   // First, check for actionable commands
   const detected = detectAction(message);
   if (detected) {
@@ -965,7 +989,10 @@ async function processMessage(message) {
     }
   }
 
-  const fullPrompt = `${systemPrompt}${projectContext}
+  // Include conversation history for context
+  const historyContext = formatHistoryForPrompt(history.slice(0, -1)); // Exclude current message
+
+  const fullPrompt = `${systemPrompt}${projectContext}${historyContext}
 
 User message: ${message}
 
@@ -974,7 +1001,8 @@ Respond helpfully and concisely.`;
   try {
     const response = await queryLLM(fullPrompt, {
       timeout: 120000,  // 2 minutes for complex queries
-      workingDir: project ? (project.localPath || path.join(PROJECTS_DIR, project.name)) : '/root'
+      workingDir: project ? (project.localPath || path.join(PROJECTS_DIR, project.name)) : '/root',
+      imageData  // Pass image data to LLM adapter
     });
 
     return {

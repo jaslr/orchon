@@ -8,13 +8,15 @@ const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first');
 
 // =============================================================================
-// ORCHON Telegram Bot v2
+// ORCHON Telegram Bot v3
 // =============================================================================
 // Now with:
 // - Natural language understanding via orchestrator
 // - Slash commands as rigid fallback
 // - Auto-pull from GitHub
 // - Self-healing on failed updates
+// - Conversation memory/context persistence
+// - Image attachment support
 // =============================================================================
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -22,6 +24,92 @@ const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const ORCHON_DIR = '/root/orchon';
 const PROJECTS_DIR = '/root/projects';
 const LOGS_DIR = '/root/logs';
+const HISTORY_FILE = '/root/orchon/droplet/bot/conversation_history.json';
+
+// =============================================================================
+// Conversation History Management
+// =============================================================================
+
+// Max messages to keep in history per chat
+const MAX_HISTORY_MESSAGES = 20;
+
+// In-memory conversation history (chatId -> messages[])
+let conversationHistory = {};
+
+/**
+ * Load conversation history from file
+ */
+function loadConversationHistory() {
+  try {
+    if (fs.existsSync(HISTORY_FILE)) {
+      const data = fs.readFileSync(HISTORY_FILE, 'utf8');
+      conversationHistory = JSON.parse(data);
+      console.log('Loaded conversation history:', Object.keys(conversationHistory).length, 'chats');
+    }
+  } catch (e) {
+    console.error('Failed to load conversation history:', e.message);
+    conversationHistory = {};
+  }
+}
+
+/**
+ * Save conversation history to file
+ */
+function saveConversationHistory() {
+  try {
+    fs.writeFileSync(HISTORY_FILE, JSON.stringify(conversationHistory, null, 2));
+  } catch (e) {
+    console.error('Failed to save conversation history:', e.message);
+  }
+}
+
+/**
+ * Add a message to conversation history
+ */
+function addToHistory(chatId, role, content, imageData = null) {
+  const id = chatId.toString();
+  if (!conversationHistory[id]) {
+    conversationHistory[id] = [];
+  }
+
+  const message = {
+    role,
+    content,
+    timestamp: new Date().toISOString()
+  };
+
+  if (imageData) {
+    message.image = imageData;
+  }
+
+  conversationHistory[id].push(message);
+
+  // Trim to max messages
+  if (conversationHistory[id].length > MAX_HISTORY_MESSAGES) {
+    conversationHistory[id] = conversationHistory[id].slice(-MAX_HISTORY_MESSAGES);
+  }
+
+  // Save periodically (every message for now, could debounce)
+  saveConversationHistory();
+}
+
+/**
+ * Get conversation history for a chat
+ */
+function getHistory(chatId) {
+  return conversationHistory[chatId.toString()] || [];
+}
+
+/**
+ * Clear conversation history for a chat
+ */
+function clearHistory(chatId) {
+  delete conversationHistory[chatId.toString()];
+  saveConversationHistory();
+}
+
+// Load history on startup
+loadConversationHistory();
 
 // Import orchestrator
 let orchestrator = null;
@@ -131,6 +219,92 @@ function sendMessage(text, parseMode = 'Markdown') {
     req.write(data);
     req.end();
   });
+}
+
+// =============================================================================
+// Image Handling
+// =============================================================================
+
+/**
+ * Get file info from Telegram
+ */
+function getFileInfo(fileId) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.telegram.org',
+      path: `/bot${BOT_TOKEN}/getFile?file_id=${fileId}`,
+      method: 'GET',
+      family: 4
+    };
+
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(body);
+          if (json.ok && json.result) {
+            resolve(json.result);
+          } else {
+            reject(new Error('Failed to get file info'));
+          }
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+/**
+ * Download file from Telegram and convert to base64
+ */
+function downloadFileAsBase64(filePath) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.telegram.org',
+      path: `/file/bot${BOT_TOKEN}/${filePath}`,
+      method: 'GET',
+      family: 4
+    };
+
+    const req = https.request(options, (res) => {
+      const chunks = [];
+      res.on('data', chunk => chunks.push(chunk));
+      res.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        const base64 = buffer.toString('base64');
+        // Detect media type from extension
+        const ext = filePath.split('.').pop().toLowerCase();
+        const mediaType = ext === 'png' ? 'image/png' :
+                         ext === 'gif' ? 'image/gif' :
+                         ext === 'webp' ? 'image/webp' : 'image/jpeg';
+        resolve({ base64, mediaType });
+      });
+    });
+
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+/**
+ * Process a photo message and get base64 data
+ */
+async function processPhoto(photo) {
+  try {
+    // Get the largest photo (last in array)
+    const largest = photo[photo.length - 1];
+    const fileInfo = await getFileInfo(largest.file_id);
+    const imageData = await downloadFileAsBase64(fileInfo.file_path);
+    return imageData;
+  } catch (e) {
+    console.error('Failed to process photo:', e.message);
+    return null;
+  }
 }
 
 // =============================================================================
@@ -270,6 +444,8 @@ function handleHelp() {
 "What's the status?"
 "Clone flashlight-db from jaslr"
 
+*Send images:* I can analyze images you send!
+
 *Or use slash commands:*
 \`/status\` - System status
 \`/projects\` - List projects
@@ -277,26 +453,40 @@ function handleHelp() {
 \`/logs <session>\` - View logs
 \`/kill <session>\` - Kill session
 \`/update\` - Pull latest ORCHON
+\`/clear\` - Clear conversation history
 \`/help\` - This message
 
-*LLM:* ${orchestrator ? orchestrator.LLM_PROVIDER : 'not loaded'}`);
+*LLM:* ${orchestrator ? orchestrator.LLM_PROVIDER : 'not loaded'}
+*Memory:* Conversation context is preserved`);
 }
 
 // =============================================================================
 // Natural Language Handler
 // =============================================================================
 
-async function handleNaturalLanguage(text) {
+async function handleNaturalLanguage(text, chatId, imageData = null) {
   if (!orchestrator) {
     sendMessage('🤖 Orchestrator not loaded. Use /help for commands.');
     return;
   }
 
+  // Add user message to history
+  addToHistory(chatId, 'user', text, imageData);
+
   // Quick acknowledgment - await to ensure it sends first
   await sendMessage('📨 On it...');
 
   try {
-    const result = await orchestrator.processMessage(text);
+    // Get conversation history for context
+    const history = getHistory(chatId);
+
+    const result = await orchestrator.processMessage(text, {
+      history,
+      imageData
+    });
+
+    // Add assistant response to history
+    addToHistory(chatId, 'assistant', result.response);
 
     if (result.success) {
       sendMessage(result.response);
@@ -312,7 +502,7 @@ async function handleNaturalLanguage(text) {
 // Message Router
 // =============================================================================
 
-async function handleMessage(text) {
+async function handleMessage(text, chatId, imageData = null) {
   const trimmed = text.trim();
   const parts = trimmed.split(/\s+/);
   const command = parts[0].toLowerCase();
@@ -363,6 +553,11 @@ async function handleMessage(text) {
       handleUpdate();
       return;
 
+    case '/clear':
+      clearHistory(chatId);
+      sendMessage('🧹 Conversation history cleared. Starting fresh!');
+      return;
+
     case '/help':
     case '/start':
       handleHelp();
@@ -376,7 +571,7 @@ async function handleMessage(text) {
   }
 
   // Natural language - route to orchestrator
-  await handleNaturalLanguage(trimmed);
+  await handleNaturalLanguage(trimmed, chatId, imageData);
 }
 
 // =============================================================================
@@ -384,6 +579,47 @@ async function handleMessage(text) {
 // =============================================================================
 
 let lastUpdateId = 0;
+
+async function processUpdate(update) {
+  const message = update.message;
+  if (!message) return;
+
+  const chatId = message.chat.id;
+  if (chatId.toString() !== CHAT_ID) return;
+
+  // Handle text message
+  if (message.text) {
+    await handleMessage(message.text, chatId, null);
+    return;
+  }
+
+  // Handle photo message
+  if (message.photo) {
+    const caption = message.caption || 'What is this image?';
+    const imageData = await processPhoto(message.photo);
+
+    if (imageData) {
+      await handleMessage(caption, chatId, imageData);
+    } else {
+      sendMessage('Failed to process the image. Please try again.');
+    }
+    return;
+  }
+
+  // Handle document (if it's an image)
+  if (message.document && message.document.mime_type?.startsWith('image/')) {
+    try {
+      const fileInfo = await getFileInfo(message.document.file_id);
+      const imageData = await downloadFileAsBase64(fileInfo.file_path);
+      const caption = message.caption || 'What is this image?';
+      await handleMessage(caption, chatId, imageData);
+    } catch (e) {
+      console.error('Failed to process document image:', e.message);
+      sendMessage('Failed to process the image file. Please try again.');
+    }
+    return;
+  }
+}
 
 function pollUpdates() {
   const options = {
@@ -396,19 +632,14 @@ function pollUpdates() {
   const req = https.request(options, (res) => {
     let data = '';
     res.on('data', chunk => data += chunk);
-    res.on('end', () => {
+    res.on('end', async () => {
       try {
         const json = JSON.parse(data);
         if (json.ok && json.result) {
-          json.result.forEach(update => {
+          for (const update of json.result) {
             lastUpdateId = update.update_id;
-
-            if (update.message &&
-              update.message.chat.id.toString() === CHAT_ID &&
-              update.message.text) {
-              handleMessage(update.message.text);
-            }
-          });
+            await processUpdate(update);
+          }
         }
       } catch (e) {
         console.error('Parse error:', e.message);
