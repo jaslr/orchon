@@ -21,6 +21,7 @@ ssh -i ~/.ssh/id_jaslr root@209.38.85.244
 | SSH | 22 | Shell access, Claude Code |
 | WebSocket | 8405 | Real-time app communication |
 | Updates | 8406 | OTA update server for app |
+| Proxy | 8407 | Claude Code + MCP scraping API |
 
 ### Systemd Services
 
@@ -29,16 +30,19 @@ ssh -i ~/.ssh/id_jaslr root@209.38.85.244
 systemctl status orchon-bot        # Telegram bot
 systemctl status orchon-updates    # Update server (port 8406)
 systemctl status orchon-ws         # WebSocket server (port 8405)
+systemctl status orchon-proxy      # Proxy server (port 8407)
 
 # Restart services
 systemctl restart orchon-bot
 systemctl restart orchon-updates
 systemctl restart orchon-ws
+systemctl restart orchon-proxy
 
 # View logs
 journalctl -u orchon-bot -f
 journalctl -u orchon-updates -f
 journalctl -u orchon-ws -f
+journalctl -u orchon-proxy -f
 ```
 
 ### Directory Structure on Droplet
@@ -49,6 +53,7 @@ journalctl -u orchon-ws -f
 │   ├── droplet/
 │   │   ├── bot/               # Telegram bot
 │   │   ├── ws/                # WebSocket + Updates servers
+│   │   ├── proxy/             # Claude Code + MCP proxy API
 │   │   └── contexts/          # Project context files
 │   └── releases/              # Published APKs
 │       ├── version.json       # Current version info
@@ -104,6 +109,115 @@ curl http://209.38.85.244:8406/version
 # {"version":"1.2.6","buildNumber":9,"apkFile":"orchon-1.2.6-release.apk",...}
 ```
 
+## Proxy API (Port 8407)
+
+The proxy server executes Claude Code with Chrome DevTools MCP (falling back to WebFetch) to scrape and analyze web pages. All endpoints require `Authorization: Bearer <API_SECRET>` or `?token=<API_SECRET>`.
+
+### Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/proxy/crawl` | POST | Execute a scraping task |
+| `/proxy/tasks` | GET | List available task templates |
+| `/proxy/jobs` | GET | List recent async jobs |
+| `/proxy/jobs/:id` | GET | Get job status/result |
+| `/health` | GET | Health check (no auth) |
+
+### POST /proxy/crawl
+
+Execute a web scraping/analysis task.
+
+**Request:**
+```json
+{
+  "url": "https://example.com/product/123",
+  "task": "extract_product",
+  "prompt": "Custom extraction instructions...",
+  "output_schema": { "type": "object", ... },
+  "timeout": 60000,
+  "callback_url": "https://your-app.com/webhook"
+}
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `url` | Yes | URL to scrape |
+| `task` | No | Task template (default: `extract_product`) |
+| `prompt` | For `custom` task | Custom extraction prompt |
+| `output_schema` | No | JSON schema for output |
+| `timeout` | No | Timeout in ms (default: 60000) |
+| `callback_url` | No | Webhook for async result |
+
+**Sync Response (< 30s timeout, no callback_url):**
+```json
+{
+  "status": "completed",
+  "data": { "name": "Product X", "price": { "current": 99.99 }, ... },
+  "metadata": {
+    "duration_ms": 12500,
+    "tool_used": "chrome-devtools",
+    "url_requested": "https://...",
+    "timestamp": "2026-01-04T..."
+  }
+}
+```
+
+**Async Response (> 30s timeout or callback_url provided):**
+```json
+{
+  "status": "processing",
+  "job_id": "abc123def456",
+  "poll_url": "/proxy/jobs/abc123def456",
+  "message": "Poll /proxy/jobs/abc123def456 for results"
+}
+```
+
+### Task Templates
+
+| Task | Description |
+|------|-------------|
+| `extract_product` | Generic e-commerce product extraction |
+| `extract_flashlight` | Flashlight specs for Little List of Lights |
+| `extract_links` | Get all links from a page |
+| `screenshot` | Take screenshot of page |
+| `custom` | Execute custom prompt |
+
+### Examples
+
+```bash
+# Sync product extraction
+curl -X POST http://209.38.85.244:8407/proxy/crawl \
+  -H "Authorization: Bearer $API_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/product", "task": "extract_product"}'
+
+# Custom extraction with schema
+curl -X POST http://209.38.85.244:8407/proxy/crawl \
+  -H "Authorization: Bearer $API_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/article",
+    "task": "custom",
+    "prompt": "Extract article title, author, and publish date",
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "title": {"type": "string"},
+        "author": {"type": "string"},
+        "published": {"type": "string"}
+      }
+    }
+  }'
+
+# List available tasks
+curl -H "Authorization: Bearer $API_SECRET" \
+  http://209.38.85.244:8407/proxy/tasks
+
+# Check job status
+curl -H "Authorization: Bearer $API_SECRET" \
+  http://209.38.85.244:8407/proxy/jobs/abc123def456
+```
+
 ## SSH Key Setup (If You Need to Regenerate)
 
 On the droplet:
@@ -128,7 +242,7 @@ systemctl restart orchon-updates
 
 ```bash
 # From local machine
-ssh droplet "cd /root/orchon && git pull && systemctl restart orchon-bot orchon-ws orchon-updates"
+ssh droplet "cd /root/orchon && git pull && systemctl restart orchon-bot orchon-ws orchon-updates orchon-proxy"
 ```
 
 ### Publish New App Version
@@ -225,6 +339,7 @@ DROPLET_IP="209.38.85.244"
 DROPLET_SSH_KEY="$HOME/.ssh/id_jaslr"
 WS_PORT="8405"
 UPDATES_PORT="8406"
+PROXY_PORT="8407"
 ```
 
 ## Threads and Project Directories
@@ -282,17 +397,18 @@ systemctl restart orchon-ws
 ┌─────────────────────────────────────────────────────────────────┐
 │                 DIGITALOCEAN DROPLET (209.38.85.244)            │
 │                                                                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │   SSH :22    │  │  WS :8405    │  │ Updates :8406│          │
-│  │              │  │              │  │              │          │
-│  │ • Shell      │  │ • Real-time  │  │ • /version   │          │
-│  │ • Claude     │  │   messaging  │  │ • /download  │          │
-│  │              │  │              │  │ • /termux-key│          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-│                                                                  │
-│  Systemd Services:                                               │
-│  • orchon-bot (Telegram bot)                                     │
-│  • orchon-ws (WebSocket server)                                  │
-│  • orchon-updates (Update server)                                │
-└─────────────────────────────────────────────────────────────────┘
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  │   SSH :22    │  │  WS :8405    │  │ Updates :8406│  │ Proxy :8407  │ │
+│  │              │  │              │  │              │  │              │ │
+│  │ • Shell      │  │ • Real-time  │  │ • /version   │  │ • /crawl     │ │
+│  │ • Claude     │  │   messaging  │  │ • /download  │  │ • Chrome MCP │ │
+│  │              │  │              │  │ • /termux-key│  │ • WebFetch   │ │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘ │
+│                                                                          │
+│  Systemd Services:                                                       │
+│  • orchon-bot (Telegram bot)                                             │
+│  • orchon-ws (WebSocket server)                                          │
+│  • orchon-updates (Update server)                                        │
+│  • orchon-proxy (Claude Code proxy)                                      │
+└──────────────────────────────────────────────────────────────────────────┘
 ```

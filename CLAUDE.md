@@ -49,6 +49,7 @@ orchon/
 | Backend API | Fly.io | https://observatory-backend.fly.dev | REST API + webhooks |
 | WebSocket | Droplet :8405 | ws://209.38.85.244:8405 | Real-time Claude threads |
 | OTA Server | Droplet :8406 | http://209.38.85.244:8406 | App updates |
+| Proxy API | Droplet :8407 | http://209.38.85.244:8407 | Claude Code + MCP scraping |
 | Telegram Bot | Droplet | @orchon_bot | Chat control |
 | Database | Fly.io Postgres | Internal | Deployment data |
 
@@ -87,7 +88,7 @@ cd backend && fly deploy --now
 ### Droplet Services
 
 ```bash
-ssh root@209.38.85.244 "cd /root/orchon && git pull && systemctl restart orchon-bot orchon-ws orchon-updates"
+ssh root@209.38.85.244 "cd /root/orchon && git pull && systemctl restart orchon-bot orchon-ws orchon-updates orchon-proxy"
 ```
 
 ### Flutter App (OTA)
@@ -192,18 +193,20 @@ All API endpoints require `Authorization: Bearer <API_SECRET>`.
 | `orchon-bot` | Telegram bot |
 | `orchon-ws` | WebSocket server |
 | `orchon-updates` | OTA update server |
+| `orchon-proxy` | Claude Code + MCP proxy API |
 
 ### Service Management
 
 ```bash
 # Check status
-systemctl status orchon-bot orchon-ws orchon-updates
+systemctl status orchon-bot orchon-ws orchon-updates orchon-proxy
 
 # View logs
 journalctl -u orchon-bot -f
+journalctl -u orchon-proxy -f
 
 # Restart all
-systemctl restart orchon-bot orchon-ws orchon-updates
+systemctl restart orchon-bot orchon-ws orchon-updates orchon-proxy
 ```
 
 ---

@@ -1,0 +1,20 @@
+[Unit]
+Description=ORCHON Proxy Server (Claude + MCP)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/orchon/droplet/proxy
+Environment="HOME=/root"
+Environment="PROXY_PORT=8407"
+ExecStart=/bin/bash -c 'source /root/orchon/.env && exec /usr/bin/node /root/orchon/droplet/proxy/server.js'
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
