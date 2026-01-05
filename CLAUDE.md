@@ -195,6 +195,29 @@ All API endpoints require `Authorization: Bearer <API_SECRET>`.
 | `orchon-updates` | OTA update server |
 | `orchon-proxy` | Claude Code + MCP proxy API |
 
+### Proxy API (LLOL Integration)
+
+The proxy service (`orchon-proxy`) provides AI-powered web scraping for [Little List of Lights](https://github.com/jaslr/littlelistoflights).
+
+**Architecture:**
+```
+LLOL Admin → https://proxy.littlelistoflights.com → Claude + WebFetch → Extract Flashlight Specs
+```
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/proxy/crawl` | POST | Start extraction job |
+| `/proxy/jobs/:id` | GET | Poll job status/progress |
+
+**Key files:**
+- `droplet/proxy/server.js` - Express server with job queue
+- `droplet/proxy/executor.js` - Claude execution with MCP tools
+- `droplet/proxy/tasks.js` - Extraction prompt templates
+
+**Cloudflare Tunnel:** `proxy.littlelistoflights.com` → `localhost:8407`
+
+**Related repo:** See [LLOL src/routes/admin/flashlights/proxyadd](https://github.com/jaslr/littlelistoflights) for the frontend UI.
+
 ### Service Management
 
 ```bash
