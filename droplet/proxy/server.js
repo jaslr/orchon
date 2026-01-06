@@ -129,6 +129,7 @@ async function handleCrawl(req, res) {
     const {
       url: targetUrl,
       task = 'extract_product',
+      method = 'chrome_devtools',
       prompt,
       output_schema,
       timeout = DEFAULT_TIMEOUT,
@@ -149,6 +150,7 @@ async function handleCrawl(req, res) {
           const result = await execute({
             url: targetUrl,
             task,
+            method,
             prompt,
             output_schema,
             timeout,
@@ -199,6 +201,7 @@ async function handleCrawl(req, res) {
       const result = await execute({
         url: targetUrl,
         task,
+        method,
         prompt,
         output_schema,
         timeout

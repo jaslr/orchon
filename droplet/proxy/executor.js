@@ -31,6 +31,7 @@ async function execute(options) {
   const {
     url,
     task = 'extract_product',
+    method = 'chrome_devtools',
     prompt: customPrompt,
     output_schema,
     timeout = DEFAULT_TIMEOUT,
@@ -45,8 +46,22 @@ async function execute(options) {
     output_schema
   });
 
-  // Add MCP instructions
-  const promptWithMcp = `
+  // Add MCP instructions based on method
+  let promptWithMcp;
+
+  if (method === 'webfetch') {
+    promptWithMcp = `
+You have access to WebFetch for web scraping. Use it to:
+1. Fetch the URL content
+2. Parse the HTML/content
+3. Extract the required data
+
+IMPORTANT: Return ONLY valid JSON. No markdown, no explanation, just the JSON object.
+
+${fullPrompt}
+`;
+  } else {
+    promptWithMcp = `
 You have access to Chrome DevTools MCP for web scraping. Use it to:
 1. Navigate to the URL
 2. Take a snapshot to see the page content
@@ -58,10 +73,12 @@ IMPORTANT: Return ONLY valid JSON. No markdown, no explanation, just the JSON ob
 
 ${fullPrompt}
 `;
+  }
 
   try {
-    // Try with Chrome DevTools MCP first
-    onProgress?.({ step: 'Starting Chrome DevTools...', tool: 'chrome-devtools' });
+    // Start extraction based on method
+    const toolName = method === 'webfetch' ? 'WebFetch' : 'Chrome DevTools';
+    onProgress?.({ step: `Starting ${toolName} extraction...`, tool: method === 'webfetch' ? 'webfetch' : 'chrome-devtools' });
 
     const result = await runClaude(promptWithMcp, {
       timeout,
