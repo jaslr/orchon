@@ -74,7 +74,9 @@ export async function getGlobalRecentDeployments(limit) {
       p.id as "projectId",
       p.name as "projectName",
       p.display_name as "projectDisplayName",
-      p.owner
+      p.owner,
+      p.repo_name as "repoName",
+      p.deploy_mechanism as "deployMechanism"
     FROM deployments d
     JOIN services s ON s.id = d.service_id
     JOIN projects p ON p.id = s.project_id
@@ -452,7 +454,10 @@ export async function getFailedDeployments(limit) {
         d.deploy_completed_at as "deployCompletedAt",
         p.id as "projectId",
         p.name as "projectName",
-        p.display_name as "projectDisplayName"
+        p.display_name as "projectDisplayName",
+        p.owner,
+        p.repo_name as "repoName",
+        p.deploy_mechanism as "deployMechanism"
       FROM deployments d
       JOIN services s ON s.id = d.service_id
       JOIN projects p ON p.id = s.project_id

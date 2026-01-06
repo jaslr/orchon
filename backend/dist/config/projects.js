@@ -77,11 +77,11 @@ export const projects = [
             { id: 'shippywhippy-ci', category: 'ci', provider: 'github', serviceName: 'GitHub Actions' },
         ],
     },
-    // loadmanagement - MCP server, no hosting needed
+    // loadmanagement (Blatblat) - MCP server, no hosting needed
     {
         id: 'loadmanagement',
         name: 'loadmanagement',
-        displayName: 'Load Management',
+        displayName: 'Blatblat',
         owner: 'jaslr',
         alertLevel: 'hobby',
         services: [

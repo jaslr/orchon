@@ -13,6 +13,7 @@ import { apiRoutes } from './routes/api.js';
 import { authRoutes } from './routes/auth.js';
 import { startScheduler } from './jobs/scheduler.js';
 import { initDb } from './db/client.js';
+import { syncProjectsToDb } from './db/sync.js';
 
 // Validate environment
 validateEnv();
@@ -79,6 +80,9 @@ app.get('/', (c) => {
 async function main() {
   // Initialize database
   await initDb();
+
+  // Sync projects from config to database
+  await syncProjectsToDb();
 
   // Start background jobs
   startScheduler();

@@ -42,6 +42,9 @@ export interface GlobalDeployment extends Deployment {
     projectName: string;
     projectDisplayName: string;
     owner: string;
+    repoName?: string;
+    deployMechanism?: string;
+    version?: string;
 }
 export declare function getGlobalRecentDeployments(limit: number): Promise<GlobalDeployment[]>;
 export declare function getUptimeHistory(projectId: string, hours: number): Promise<UptimeCheck[]>;

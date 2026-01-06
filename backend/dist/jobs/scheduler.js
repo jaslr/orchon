@@ -1,17 +1,20 @@
 import { pollFlyioApps } from '../services/flyio/poller.js';
 import { pollCloudflarePages } from '../services/cloudflare/poller.js';
 import { pollGCPCloudBuild } from '../services/gcp/poller.js';
+import { pollGitHubActions } from '../services/github/poller.js';
 import { pollSupabaseServices } from '../services/supabase/poller.js';
 import { runUptimeChecks } from '../services/uptime/checker.js';
 // Polling intervals
 const FLY_POLL_INTERVAL = 60 * 1000; // 1 minute
 const CF_POLL_INTERVAL = 60 * 1000; // 1 minute
 const GCP_POLL_INTERVAL = 60 * 1000; // 1 minute
+const GITHUB_POLL_INTERVAL = 60 * 1000; // 1 minute
 const SUPABASE_POLL_INTERVAL = 60 * 1000; // 1 minute
 const UPTIME_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 let flyInterval = null;
 let cfInterval = null;
 let gcpInterval = null;
+let githubInterval = null;
 let supabaseInterval = null;
 let uptimeInterval = null;
 export function startScheduler() {
@@ -22,6 +25,7 @@ export function startScheduler() {
         pollFlyioApps().catch((err) => console.error('Fly.io poll error:', err));
         pollCloudflarePages().catch((err) => console.error('Cloudflare poll error:', err));
         pollGCPCloudBuild().catch((err) => console.error('GCP Cloud Build poll error:', err));
+        pollGitHubActions().catch((err) => console.error('GitHub Actions poll error:', err));
         pollSupabaseServices().catch((err) => console.error('Supabase poll error:', err));
         runUptimeChecks().catch((err) => console.error('Uptime check error:', err));
     }, 5000);
@@ -35,6 +39,9 @@ export function startScheduler() {
     gcpInterval = setInterval(() => {
         pollGCPCloudBuild().catch((err) => console.error('GCP Cloud Build poll error:', err));
     }, GCP_POLL_INTERVAL);
+    githubInterval = setInterval(() => {
+        pollGitHubActions().catch((err) => console.error('GitHub Actions poll error:', err));
+    }, GITHUB_POLL_INTERVAL);
     supabaseInterval = setInterval(() => {
         pollSupabaseServices().catch((err) => console.error('Supabase poll error:', err));
     }, SUPABASE_POLL_INTERVAL);
@@ -45,6 +52,7 @@ export function startScheduler() {
   - Fly.io polling: every ${FLY_POLL_INTERVAL / 1000}s
   - Cloudflare polling: every ${CF_POLL_INTERVAL / 1000}s
   - GCP Cloud Build polling: every ${GCP_POLL_INTERVAL / 1000}s
+  - GitHub Actions polling: every ${GITHUB_POLL_INTERVAL / 1000}s
   - Supabase polling: every ${SUPABASE_POLL_INTERVAL / 1000}s
   - Uptime checks: every ${UPTIME_CHECK_INTERVAL / 1000}s`);
 }
@@ -60,6 +68,10 @@ export function stopScheduler() {
     if (gcpInterval) {
         clearInterval(gcpInterval);
         gcpInterval = null;
+    }
+    if (githubInterval) {
+        clearInterval(githubInterval);
+        githubInterval = null;
     }
     if (supabaseInterval) {
         clearInterval(supabaseInterval);
