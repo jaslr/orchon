@@ -143,6 +143,49 @@ curl -X POST https://proxy.littlelistoflights.com/proxy/crawl \
   -d '{"url": "https://fenixlighting.com/products/fenix-pd36r-pro", "task": "extract_flashlight"}'
 ```
 
+## Troubleshooting
+
+### Proxy Down (502 errors from tunnel, direct timeout)
+
+```bash
+# SSH to droplet
+ssh root@209.38.85.244
+
+# Check service status
+systemctl status orchon-proxy
+systemctl status cloudflared
+
+# View recent logs for errors
+journalctl -u orchon-proxy -n 100 --no-pager
+
+# Restart services
+systemctl restart orchon-proxy
+systemctl restart cloudflared
+
+# Kill stuck Chrome/Claude processes (if resource exhaustion)
+pkill -f chrome
+pkill -f chromium
+pkill -f claude
+
+# Verify recovery
+curl localhost:8407/health
+```
+
+### Common Issues
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| 502 from tunnel | Proxy crashed or cloudflared down | Restart both services |
+| Direct timeout | Proxy not running | `systemctl restart orchon-proxy` |
+| Extraction hangs | Chrome DevTools MCP stuck | Kill chrome processes, restart proxy |
+| Auth failures | Wrong API secret | Check `/root/orchon/.env` has correct `OBSERVATORY_API_SECRET` |
+
+### Check Everything at Once
+
+```bash
+ssh root@209.38.85.244 'systemctl status orchon-proxy cloudflared --no-pager; curl -s localhost:8407/health'
+```
+
 ## Related
 
 - **Frontend UI:** [LLOL /admin/flashlights/proxyadd](https://github.com/jaslr/littlelistoflights/tree/master/src/routes/admin/flashlights/proxyadd)
