@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../core/updates/update_service.dart';
 import '../../core/orchon/orchon_service.dart';
 import '../../core/auth/auth_service.dart';
+import '../../core/config.dart';
 import '../terminal/ssh_terminal_screen.dart';
 import '../terminal/quick_commands.dart';
 import '../threads/threads_screen.dart';
@@ -665,7 +666,11 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
     try {
       // Fetch tmux sessions from the update server
       final url = 'http://${config.dropletIp}:8406/tmux-sessions';
-      final response = await http.get(Uri.parse(url)).timeout(
+      final headers = <String, String>{};
+      if (AppConfig.orchonApiSecret.isNotEmpty) {
+        headers['Authorization'] = 'Bearer ${AppConfig.orchonApiSecret}';
+      }
+      final response = await http.get(Uri.parse(url), headers: headers).timeout(
         const Duration(seconds: 5),
         onTimeout: () => throw Exception('Connection timeout'),
       );
@@ -823,7 +828,11 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
 
     try {
       final url = 'http://${config.dropletIp}:8406/tmux-kill?session=$sessionName';
-      await http.post(Uri.parse(url));
+      final headers = <String, String>{};
+      if (AppConfig.orchonApiSecret.isNotEmpty) {
+        headers['Authorization'] = 'Bearer ${AppConfig.orchonApiSecret}';
+      }
+      await http.post(Uri.parse(url), headers: headers);
       _loadSessions(); // Refresh the list
     } catch (e) {
       if (mounted) {
