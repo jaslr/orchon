@@ -11,6 +11,7 @@ import { webhookRoutes } from './routes/webhooks.js';
 import { eventsRoutes } from './routes/events.js';
 import { apiRoutes } from './routes/api.js';
 import { authRoutes } from './routes/auth.js';
+import { adminRoutes } from './routes/admin.js';
 import { startScheduler } from './jobs/scheduler.js';
 import { initDb } from './db/client.js';
 import { syncProjectsToDb } from './db/sync.js';
@@ -46,7 +47,19 @@ app.use('*', logger());
 app.use(
   '*',
   cors({
-    origin: ['https://orchon.pages.dev', 'https://ci-monitor.pages.dev', 'http://localhost:4573', 'http://localhost:5173'],
+    origin: (origin) => {
+      // Allow production domains
+      const allowed = [
+        'https://orchon.pages.dev',
+        'https://ci-monitor.pages.dev',
+        'http://localhost:4573',
+        'http://localhost:5173',
+      ];
+      if (allowed.includes(origin)) return origin;
+      // Allow Cloudflare Pages preview deployments
+      if (origin?.match(/^https:\/\/[a-z0-9]+\.orchon-3tt\.pages\.dev$/)) return origin;
+      return null;
+    },
     credentials: true,
   })
 );
@@ -64,8 +77,10 @@ app.route('/auth', authRoutes);
 // Protected routes (require API secret)
 app.use('/events/*', apiAuth);
 app.use('/api/*', apiAuth);
+app.use('/admin/*', apiAuth);
 app.route('/events', eventsRoutes);
 app.route('/api', apiRoutes);
+app.route('/admin', adminRoutes);
 
 // Root
 app.get('/', (c) => {
