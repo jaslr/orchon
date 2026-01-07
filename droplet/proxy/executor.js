@@ -12,8 +12,8 @@ const { buildPrompt } = require('./tasks');
 
 // Configuration
 const CLAUDE_PATH = process.env.CLAUDE_PATH || 'claude';
-const DEFAULT_TIMEOUT = 60000; // 60 seconds
-const SYNC_THRESHOLD = 30000;  // Switch to async after 30s
+const DEFAULT_TIMEOUT = 120000; // 120 seconds (increased for JS-heavy sites)
+const SYNC_THRESHOLD = 30000;   // Switch to async after 30s
 
 /**
  * Execute a task with Claude

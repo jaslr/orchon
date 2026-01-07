@@ -3,53 +3,10 @@ import { p as page } from "../../chunks/index3.js";
 import { A as Activity } from "../../chunks/activity.js";
 import { L as Layers } from "../../chunks/layers.js";
 import { C as Cloud } from "../../chunks/cloud.js";
+import { S as Server } from "../../chunks/server.js";
 import { I as Icon } from "../../chunks/Icon.js";
 import { S as Settings } from "../../chunks/settings.js";
 import { j as escape_html } from "../../chunks/context.js";
-function Network($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      [
-        "rect",
-        { "x": "16", "y": "16", "width": "6", "height": "6", "rx": "1" }
-      ],
-      [
-        "rect",
-        { "x": "2", "y": "16", "width": "6", "height": "6", "rx": "1" }
-      ],
-      [
-        "rect",
-        { "x": "9", "y": "2", "width": "6", "height": "6", "rx": "1" }
-      ],
-      ["path", { "d": "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" }],
-      ["path", { "d": "M12 12V8" }]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "network" },
-      /**
-       * @component @name Network
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cmVjdCB4PSIxNiIgeT0iMTYiIHdpZHRoPSI2IiBoZWlnaHQ9IjYiIHJ4PSIxIiAvPgogIDxyZWN0IHg9IjIiIHk9IjE2IiB3aWR0aD0iNiIgaGVpZ2h0PSI2IiByeD0iMSIgLz4KICA8cmVjdCB4PSI5IiB5PSIyIiB3aWR0aD0iNiIgaGVpZ2h0PSI2IiByeD0iMSIgLz4KICA8cGF0aCBkPSJNNSAxNnYtM2ExIDEgMCAwIDEgMS0xaDEyYTEgMSAwIDAgMSAxIDF2MyIgLz4KICA8cGF0aCBkPSJNMTIgMTJWOCIgLz4KPC9zdmc+Cg==) - https://lucide.dev/icons/network
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: ($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        },
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
 function Radio($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { $$slots, $$events, ...props } = $$props;
@@ -100,11 +57,11 @@ function MainNav($$renderer, $$props) {
     Cloud($$renderer2, {
       class: `w-3.5 h-3.5 ${stringify(currentPath === "/deployments" || currentPath.startsWith("/deployments") ? "text-blue-400" : "text-gray-500")} shrink-0`
     });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(currentPath === "/deployments" || currentPath.startsWith("/deployments") ? "text-white" : "text-gray-400")} truncate`)}>Deployments</div></div></a> <a href="/ecosystem"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(currentPath === "/ecosystem" ? "bg-gray-800 border-l-2 border-blue-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
-    Network($$renderer2, {
-      class: `w-4 h-4 ${stringify(currentPath === "/ecosystem" ? "text-blue-400" : "text-gray-500")} shrink-0`
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(currentPath === "/deployments" || currentPath.startsWith("/deployments") ? "text-white" : "text-gray-400")} truncate`)}>Deployments</div></div></a> <a href="/admin/infra"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(currentPath.startsWith("/admin/infra") ? "bg-gray-800 border-l-2 border-blue-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
+    Server($$renderer2, {
+      class: `w-4 h-4 ${stringify(currentPath.startsWith("/admin/infra") ? "text-blue-400" : "text-gray-500")} shrink-0`
     });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(currentPath === "/ecosystem" ? "text-white" : "text-gray-300")} truncate`)}>Ecosystem</div></div></a></nav>`);
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(currentPath.startsWith("/admin/infra") ? "text-white" : "text-gray-300")} truncate`)}>Infrastructure</div></div></a></nav>`);
   });
 }
 function _layout($$renderer, $$props) {
@@ -132,7 +89,7 @@ function _layout($$renderer, $$props) {
       Settings($$renderer2, { class: "w-5 h-5" });
       $$renderer2.push(`<!----></a></div></div></header> <div class="flex-1 flex flex-col lg:flex-row min-h-0"><aside class="hidden lg:flex lg:flex-col w-[12rem] shrink-0 border-r border-gray-800 bg-gray-900">`);
       MainNav($$renderer2);
-      $$renderer2.push(`<!----></aside> <div class="lg:hidden border-b border-gray-800 bg-gray-900"><div class="flex"><a href="/"${attr_class(`flex-1 py-2 text-center text-sm ${stringify(page.url.pathname === "/" ? "text-white border-b-2 border-blue-500" : "text-gray-400")}`)}>Console</a> <a href="/projects"${attr_class(`flex-1 py-2 text-center text-sm ${stringify(page.url.pathname.startsWith("/projects") ? "text-white border-b-2 border-blue-500" : "text-gray-400")}`)}>Projects</a> <a href="/deployments"${attr_class(`flex-1 py-2 text-center text-sm ${stringify(page.url.pathname.startsWith("/deployments") ? "text-white border-b-2 border-blue-500" : "text-gray-400")}`)}>Deploys</a> <a href="/ecosystem"${attr_class(`flex-1 py-2 text-center text-sm ${stringify(page.url.pathname === "/ecosystem" ? "text-white border-b-2 border-blue-500" : "text-gray-400")}`)}>Ecosystem</a></div></div> <main class="flex-1 flex flex-col overflow-hidden min-w-0">`);
+      $$renderer2.push(`<!----></aside> <div class="lg:hidden border-b border-gray-800 bg-gray-900"><div class="flex"><a href="/"${attr_class(`flex-1 py-2 text-center text-sm ${stringify(page.url.pathname === "/" ? "text-white border-b-2 border-blue-500" : "text-gray-400")}`)}>Console</a> <a href="/projects"${attr_class(`flex-1 py-2 text-center text-sm ${stringify(page.url.pathname.startsWith("/projects") ? "text-white border-b-2 border-blue-500" : "text-gray-400")}`)}>Projects</a> <a href="/deployments"${attr_class(`flex-1 py-2 text-center text-sm ${stringify(page.url.pathname.startsWith("/deployments") ? "text-white border-b-2 border-blue-500" : "text-gray-400")}`)}>Deploys</a> <a href="/admin/infra"${attr_class(`flex-1 py-2 text-center text-sm ${stringify(page.url.pathname.startsWith("/admin/infra") ? "text-white border-b-2 border-blue-500" : "text-gray-400")}`)}>Infra</a></div></div> <main class="flex-1 flex flex-col overflow-hidden min-w-0">`);
       children($$renderer2);
       $$renderer2.push(`<!----></main></div></div>`);
     }

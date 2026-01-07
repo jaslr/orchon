@@ -13,7 +13,7 @@
     "dev:backend": "cd backend && npm run dev",
     "build:web": "cd web && npm run build",
     "build:backend": "cd backend && npm run build",
-    "deploy:web": "cd web && npm run build && wrangler pages deploy .svelte-kit/cloudflare --project-name=orchon",
+    "deploy:web": "cd web && npm run build && CLOUDFLARE_API_TOKEN=$(grep CLOUDFLARE_API_TOKEN ../.env | cut -d= -f2) CLOUDFLARE_ACCOUNT_ID=$(grep CLOUDFLARE_ACCOUNT_ID ../.env | cut -d= -f2) npx wrangler pages deploy .svelte-kit/cloudflare --project-name=orchon",
     "deploy:backend": "cd backend && fly deploy --now",
     "deploy:droplet": "ssh root@209.38.85.244 'cd /root/orchon && git pull && systemctl restart orchon-bot orchon-ws orchon-updates'",
     "deploy:all": "npm run deploy:web && npm run deploy:backend && npm run deploy:droplet",

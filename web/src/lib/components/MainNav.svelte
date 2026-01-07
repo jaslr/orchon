@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { Activity, Layers, Network, Cloud } from '@lucide/svelte';
+	import { Activity, Layers, Cloud, Server } from '@lucide/svelte';
 
 	// Determine active route
 	let currentPath = $derived(page.url.pathname);
@@ -45,14 +45,14 @@
 	</a>
 
 	<a
-		href="/ecosystem"
-		class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors {currentPath === '/ecosystem'
+		href="/admin/infra"
+		class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors {currentPath.startsWith('/admin/infra')
 			? 'bg-gray-800 border-l-2 border-blue-500'
 			: 'hover:bg-gray-800/50 border-l-2 border-transparent'}"
 	>
-		<Network class="w-4 h-4 {currentPath === '/ecosystem' ? 'text-blue-400' : 'text-gray-500'} shrink-0" />
+		<Server class="w-4 h-4 {currentPath.startsWith('/admin/infra') ? 'text-blue-400' : 'text-gray-500'} shrink-0" />
 		<div class="flex-1 min-w-0">
-			<div class="font-medium text-sm {currentPath === '/ecosystem' ? 'text-white' : 'text-gray-300'} truncate">Ecosystem</div>
+			<div class="font-medium text-sm {currentPath.startsWith('/admin/infra') ? 'text-white' : 'text-gray-300'} truncate">Infrastructure</div>
 		</div>
 	</a>
 </nav>

@@ -326,6 +326,7 @@
       "_activity.js",
       "_layers.js",
       "_cloud.js",
+      "_server.js",
       "_Icon.js",
       "_settings.js",
       "_context.js"

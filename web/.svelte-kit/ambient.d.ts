@@ -38,6 +38,7 @@ declare module '$env/static/private' {
 	export const SHLVL: string;
 	export const WT_PROFILE_ID: string;
 	export const npm_config_noproxy: string;
+	export const VIPSHOME: string;
 	export const HOME: string;
 	export const OLDPWD: string;
 	export const TERM_PROGRAM_VERSION: string;
@@ -139,6 +140,7 @@ declare module '$env/dynamic/private' {
 		SHLVL: string;
 		WT_PROFILE_ID: string;
 		npm_config_noproxy: string;
+		VIPSHOME: string;
 		HOME: string;
 		OLDPWD: string;
 		TERM_PROGRAM_VERSION: string;

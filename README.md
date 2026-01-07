@@ -1,54 +1,107 @@
-# CI Monitor
+# ORCHON
 
-A glanceable GitHub Actions status dashboard for monitoring multiple repos across multiple accounts.
+Infrastructure Observatory - deployment monitoring, health checks, and recovery actions across multiple platforms.
 
-**Live:** https://ci-monitor.pages.dev
+**Live:** https://orchon.pages.dev
 
 ## Features
 
-- Status indicators: green (success), red (failure), yellow (in progress), grey (unknown)
-- Toggle to show last run dates
-- Sort by: A-Z, Account, or Most Recent
-- Click any repo to go directly to its GitHub Actions page
+- **Deployment Dashboard** - Real-time status of deployments across GitHub Actions, Cloudflare, Fly.io
+- **Infrastructure Control Panel** - Monitor service health and trigger recovery actions
+- **Project Management** - Configure repos, groups, and tech stack detection
+- **Media Management** - Upload and manage project logos
 
 ## Tech Stack
 
-- SvelteKit
-- Tailwind CSS
-- Cloudflare Pages
+- **Frontend:** SvelteKit + Tailwind CSS (Cloudflare Pages)
+- **Backend:** Node.js + Hono (Fly.io)
+- **Database:** PostgreSQL (Fly.io Postgres)
 
-## Configuration
+## Project Structure
 
-Edit `src/lib/config/repos.ts` to add/remove repos:
-
-```ts
-export const repos: Record<string, string[]> = {
-  jaslr: ['repo1', 'repo2'],
-  'jvp-ux': ['repo3', 'repo4']
-};
+```
+orchon/
+├── web/           # SvelteKit frontend
+├── backend/       # Hono API server
+├── .env           # Environment variables (not committed)
+└── package.json   # Monorepo scripts
 ```
 
 ## Environment Variables
 
-Set these in Cloudflare Pages (Settings > Environment Variables):
+Create `.env` in the root directory:
 
-- `GITHUB_PAT_JASLR` - GitHub PAT for jaslr account
-- `GITHUB_PAT_JVP_UX` - GitHub PAT for jvp-ux account
+```bash
+# GitHub Personal Access Tokens
+GITHUB_PAT_JASLR=ghp_xxx
+GITHUB_PAT_JVP_UX=ghp_xxx
 
-PATs need `repo` and `workflow` scopes.
+# Authentication
+AUTH_USERNAME_HASH=your@email.com
+AUTH_PASSWORD_HASH=your-password
+
+# Backend API Secret (must match Fly.io secret)
+API_SECRET=your-api-secret
+
+# Cloudflare (for frontend deployment)
+CLOUDFLARE_API_TOKEN=xxx
+CLOUDFLARE_ACCOUNT_ID=e9af2f15702b07294053971e6cf5cf39
+```
 
 ## Development
 
 ```bash
+# Install dependencies
 npm install
-cp .env.example .env
-# Edit .env with your PATs
-npm run dev
+
+# Run frontend (http://localhost:5173)
+npm run dev:web
+
+# Run backend (http://localhost:3000)
+npm run dev:backend
 ```
 
 ## Deployment
 
+### Frontend (Cloudflare Pages)
+
+**Important:** The deploy script reads credentials from `.env` to avoid wrangler account detection issues.
+
 ```bash
-npm run build
-wrangler pages deploy .svelte-kit/cloudflare --project-name ci-monitor
+npm run deploy:web
 ```
+
+This runs:
+```bash
+cd web && npm run build && \
+CLOUDFLARE_API_TOKEN=$(grep CLOUDFLARE_API_TOKEN ../.env | cut -d= -f2) \
+CLOUDFLARE_ACCOUNT_ID=$(grep CLOUDFLARE_ACCOUNT_ID ../.env | cut -d= -f2) \
+npx wrangler pages deploy .svelte-kit/cloudflare --project-name=orchon
+```
+
+### Backend (Fly.io)
+
+```bash
+npm run deploy:backend
+```
+
+### Deploy All
+
+```bash
+npm run deploy:all
+```
+
+## Cloudflare API Token Permissions
+
+The `CLOUDFLARE_API_TOKEN` needs these permissions:
+- **Account:** Cloudflare Pages (Edit)
+- **Account:** Account Settings (Read)
+
+Create at: https://dash.cloudflare.com/profile/api-tokens
+
+## Admin Routes
+
+- `/admin/infra` - Infrastructure health & recovery actions
+- `/admin/media` - Logo upload and management
+- `/admin/projects` - Repository and group configuration
+- `/admin/repos` - Tech stack detection config
