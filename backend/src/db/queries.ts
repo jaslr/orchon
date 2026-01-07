@@ -743,3 +743,211 @@ export async function getProjectStatusSummary(): Promise<ProjectStatusSummary> {
   }
   return summary;
 }
+
+// =============================================================================
+// Recovery Actions (Infrastructure Control)
+// =============================================================================
+
+export interface RecoveryAction {
+  id: string;
+  serviceId: string;
+  name: string;
+  actionType: 'fly-api' | 'github-workflow' | 'gcp-api' | 'ssh-command';
+  config: Record<string, unknown>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ActionExecution {
+  id: string;
+  actionId: string;
+  triggeredBy: 'manual' | 'auto-heal';
+  status: 'pending' | 'running' | 'success' | 'failure';
+  output?: string;
+  startedAt: Date;
+  completedAt?: Date;
+}
+
+export async function getAllRecoveryActions(): Promise<RecoveryAction[]> {
+  const result = await query<RecoveryAction>(`
+    SELECT
+      id,
+      service_id as "serviceId",
+      name,
+      action_type as "actionType",
+      config,
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+    FROM recovery_actions
+    ORDER BY service_id, name
+  `);
+  return result.rows;
+}
+
+export async function getRecoveryActionsByService(serviceId: string): Promise<RecoveryAction[]> {
+  const result = await query<RecoveryAction>(
+    `
+    SELECT
+      id,
+      service_id as "serviceId",
+      name,
+      action_type as "actionType",
+      config,
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+    FROM recovery_actions
+    WHERE service_id = $1
+    ORDER BY name
+  `,
+    [serviceId]
+  );
+  return result.rows;
+}
+
+export async function getRecoveryActionById(id: string): Promise<RecoveryAction | null> {
+  const result = await query<RecoveryAction>(
+    `
+    SELECT
+      id,
+      service_id as "serviceId",
+      name,
+      action_type as "actionType",
+      config,
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+    FROM recovery_actions
+    WHERE id = $1
+  `,
+    [id]
+  );
+  return result.rows[0] || null;
+}
+
+export async function createRecoveryAction(action: {
+  serviceId: string;
+  name: string;
+  actionType: RecoveryAction['actionType'];
+  config: Record<string, unknown>;
+}): Promise<RecoveryAction> {
+  const result = await query<RecoveryAction>(
+    `
+    INSERT INTO recovery_actions (service_id, name, action_type, config)
+    VALUES ($1, $2, $3, $4)
+    RETURNING
+      id,
+      service_id as "serviceId",
+      name,
+      action_type as "actionType",
+      config,
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+  `,
+    [action.serviceId, action.name, action.actionType, JSON.stringify(action.config)]
+  );
+  return result.rows[0];
+}
+
+export async function updateRecoveryAction(
+  id: string,
+  updates: Partial<{
+    name: string;
+    actionType: RecoveryAction['actionType'];
+    config: Record<string, unknown>;
+  }>
+): Promise<RecoveryAction | null> {
+  const result = await query<RecoveryAction>(
+    `
+    UPDATE recovery_actions SET
+      name = COALESCE($2, name),
+      action_type = COALESCE($3, action_type),
+      config = COALESCE($4, config),
+      updated_at = NOW()
+    WHERE id = $1
+    RETURNING
+      id,
+      service_id as "serviceId",
+      name,
+      action_type as "actionType",
+      config,
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+  `,
+    [id, updates.name, updates.actionType, updates.config ? JSON.stringify(updates.config) : undefined]
+  );
+  return result.rows[0] || null;
+}
+
+export async function deleteRecoveryAction(id: string): Promise<boolean> {
+  const result = await query(`DELETE FROM recovery_actions WHERE id = $1`, [id]);
+  return (result.rowCount ?? 0) > 0;
+}
+
+export async function createActionExecution(execution: {
+  actionId: string;
+  triggeredBy: 'manual' | 'auto-heal';
+}): Promise<ActionExecution> {
+  const result = await query<ActionExecution>(
+    `
+    INSERT INTO action_executions (action_id, triggered_by, status)
+    VALUES ($1, $2, 'running')
+    RETURNING
+      id,
+      action_id as "actionId",
+      triggered_by as "triggeredBy",
+      status,
+      output,
+      started_at as "startedAt",
+      completed_at as "completedAt"
+  `,
+    [execution.actionId, execution.triggeredBy]
+  );
+  return result.rows[0];
+}
+
+export async function updateActionExecution(
+  id: string,
+  updates: { status: ActionExecution['status']; output?: string }
+): Promise<ActionExecution | null> {
+  const result = await query<ActionExecution>(
+    `
+    UPDATE action_executions SET
+      status = $2,
+      output = COALESCE($3, output),
+      completed_at = CASE WHEN $2 IN ('success', 'failure') THEN NOW() ELSE completed_at END
+    WHERE id = $1
+    RETURNING
+      id,
+      action_id as "actionId",
+      triggered_by as "triggeredBy",
+      status,
+      output,
+      started_at as "startedAt",
+      completed_at as "completedAt"
+  `,
+    [id, updates.status, updates.output]
+  );
+  return result.rows[0] || null;
+}
+
+export async function getRecentExecutions(limit: number): Promise<(ActionExecution & { actionName: string; serviceId: string })[]> {
+  const result = await query<ActionExecution & { actionName: string; serviceId: string }>(
+    `
+    SELECT
+      e.id,
+      e.action_id as "actionId",
+      e.triggered_by as "triggeredBy",
+      e.status,
+      e.output,
+      e.started_at as "startedAt",
+      e.completed_at as "completedAt",
+      a.name as "actionName",
+      a.service_id as "serviceId"
+    FROM action_executions e
+    JOIN recovery_actions a ON a.id = e.action_id
+    ORDER BY e.started_at DESC
+    LIMIT $1
+  `,
+    [limit]
+  );
+  return result.rows;
+}

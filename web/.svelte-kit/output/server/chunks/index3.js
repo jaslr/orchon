@@ -1,10 +1,13 @@
 import "./client.js";
-import { k as getContext } from "./context.js";
+import { l as getContext } from "./context.js";
 import "clsx";
 function context() {
   return getContext("__request__");
 }
 const page$1 = {
+  get data() {
+    return context().page.data;
+  },
   get error() {
     return context().page.error;
   },

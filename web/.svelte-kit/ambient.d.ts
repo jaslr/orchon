@@ -26,11 +26,6 @@
  * ```
  */
 declare module '$env/static/private' {
-	export const GITHUB_PAT_JASLR: string;
-	export const GITHUB_PAT_JVP_UX: string;
-	export const AUTH_USERNAME_HASH: string;
-	export const AUTH_PASSWORD_HASH: string;
-	export const API_SECRET: string;
 	export const LESSOPEN: string;
 	export const TMUX: string;
 	export const USER: string;
@@ -132,11 +127,6 @@ declare module '$env/static/public' {
  */
 declare module '$env/dynamic/private' {
 	export const env: {
-		GITHUB_PAT_JASLR: string;
-		GITHUB_PAT_JVP_UX: string;
-		AUTH_USERNAME_HASH: string;
-		AUTH_PASSWORD_HASH: string;
-		API_SECRET: string;
 		LESSOPEN: string;
 		TMUX: string;
 		USER: string;

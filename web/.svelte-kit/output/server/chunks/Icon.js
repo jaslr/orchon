@@ -1,4 +1,4 @@
-import { N as attributes, K as clsx, F as ensure_array_like, O as element } from "./index2.js";
+import { N as attributes, J as clsx, F as ensure_array_like, O as element } from "./index2.js";
 const defaultAttributes = {
   xmlns: "http://www.w3.org/2000/svg",
   width: 24,

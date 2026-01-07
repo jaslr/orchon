@@ -41,12 +41,28 @@
 		}
 	});
 
-	// Filter deployments by selected project
-	let filteredDeployments = $derived(
-		selectedProject
+	// Filter and sort deployments by selected project
+	// In-progress/queued deployments always appear at the top
+	let filteredDeployments = $derived.by(() => {
+		const filtered = selectedProject
 			? data.deployments.filter(d => d.projectName === selectedProject)
-			: data.deployments
-	);
+			: data.deployments;
+
+		// Sort: active deployments first, then by time descending
+		return [...filtered].sort((a, b) => {
+			const aActive = a.status === 'in_progress' || a.status === 'queued';
+			const bActive = b.status === 'in_progress' || b.status === 'queued';
+
+			// Active deployments come first
+			if (aActive && !bActive) return -1;
+			if (!aActive && bActive) return 1;
+
+			// Within same category, sort by time descending
+			const aTime = new Date(a.deployCompletedAt || a.completedAt || a.startedAt || 0).getTime();
+			const bTime = new Date(b.deployCompletedAt || b.completedAt || b.startedAt || 0).getTime();
+			return bTime - aTime;
+		});
+	});
 
 	// Get display name for a project
 	function getProjectDisplayName(projectName: string): string {
@@ -154,8 +170,60 @@
 		}
 	}
 
+	// Format duration in human-readable format
+	function formatDuration(ms: number): string {
+		const seconds = Math.floor(ms / 1000);
+		const minutes = Math.floor(seconds / 60);
+		const hours = Math.floor(minutes / 60);
+
+		if (hours > 0) {
+			return `${hours}h ${minutes % 60}m`;
+		} else if (minutes > 0) {
+			return `${minutes}m ${seconds % 60}s`;
+		} else {
+			return `${seconds}s`;
+		}
+	}
+
+	// Get duration text for a deployment
+	function getDurationText(deployment: DeploymentLogEntry): { text: string; color: string } | null {
+		const status = deployment.status;
+		const startTime = deployment.ciStartedAt || deployment.startedAt;
+		const endTime = deployment.deployCompletedAt || deployment.completedAt;
+
+		if (status === 'in_progress' || status === 'queued') {
+			// Show elapsed time for in-progress deployments
+			if (!startTime) return null;
+			const start = new Date(startTime).getTime();
+			const elapsed = Date.now() - start;
+			return { text: `running ${formatDuration(elapsed)}`, color: 'text-cyan-400' };
+		} else if (status === 'success' || status === 'failure') {
+			// Show total duration for completed deployments
+			if (!startTime || !endTime) return null;
+			const start = new Date(startTime).getTime();
+			const end = new Date(endTime).getTime();
+			const duration = end - start;
+			if (duration < 0) return null;
+			const prefix = status === 'failure' ? 'failed after' : 'took';
+			const color = status === 'failure' ? 'text-red-400' : 'text-green-400';
+			return { text: `${prefix} ${formatDuration(duration)}`, color };
+		}
+		return null;
+	}
+
 	// Selected deployment for detail view
 	let selectedDeployment = $state<DeploymentLogEntry | null>(null);
+
+	// Re-render every 10 seconds for live elapsed time
+	let tick = $state(0);
+	$effect(() => {
+		if (browser) {
+			const interval = setInterval(() => {
+				tick += 1;
+			}, 10000);
+			return () => clearInterval(interval);
+		}
+	});
 </script>
 
 <svelte:head>
@@ -230,6 +298,7 @@
 				{#each filteredDeployments as deployment (deployment.id)}
 					{@const deployTime = deployment.deployCompletedAt || deployment.completedAt || deployment.startedAt}
 					{@const deployStatus = deployment.status}
+					{@const duration = getDurationText(deployment)}
 					<div class="px-4 py-4 hover:bg-gray-800/30 transition-colors">
 						<div class="flex items-start gap-4">
 							<!-- Status Icon -->
@@ -296,9 +365,17 @@
 									<Clock class="w-3.5 h-3.5" />
 									{formatRelativeTime(deployTime)}
 								</div>
-								<div class="text-xs text-gray-600 mt-0.5">
-									{formatFullTime(deployTime)}
-								</div>
+								{#if duration}
+									{#key tick}
+										<div class="text-xs font-medium mt-0.5 {duration.color}">
+											{duration.text}
+										</div>
+									{/key}
+								{:else}
+									<div class="text-xs text-gray-600 mt-0.5">
+										{formatFullTime(deployTime)}
+									</div>
+								{/if}
 							</div>
 						</div>
 					</div>

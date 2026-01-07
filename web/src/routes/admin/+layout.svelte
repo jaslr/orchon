@@ -5,12 +5,14 @@
 		Image,
 		FolderGit2,
 		Settings,
-		LogOut
+		LogOut,
+		Server
 	} from '@lucide/svelte';
 
 	let { children } = $props();
 
 	const navItems = [
+		{ href: '/admin/infra', label: 'Infrastructure', icon: Server, description: 'Health & recovery' },
 		{ href: '/admin/media', label: 'Media', icon: Image, description: 'Upload & manage logos' },
 		{ href: '/admin/projects', label: 'Projects', icon: FolderGit2, description: 'Repos & groups' },
 		{ href: '/admin/repos', label: 'Config', icon: Settings, description: 'Tech stack detection' }

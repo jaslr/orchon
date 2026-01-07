@@ -7,7 +7,8 @@ import "../../../chunks/state.svelte.js";
 import { I as Icon } from "../../../chunks/Icon.js";
 import { X } from "../../../chunks/x.js";
 import { C as Cloud } from "../../../chunks/cloud.js";
-import { L as Loader, C as Circle_check_big, a as Circle_x } from "../../../chunks/loader.js";
+import { L as Loader } from "../../../chunks/loader.js";
+import { C as Circle_check_big, a as Circle_x } from "../../../chunks/circle-x.js";
 import { G as Git_branch } from "../../../chunks/git-branch.js";
 import { E as External_link } from "../../../chunks/external-link.js";
 import { C as Clock } from "../../../chunks/clock.js";
@@ -53,7 +54,18 @@ function _page($$renderer, $$props) {
     let { data } = $$props;
     let selectedProject = data.projectFilter;
     let recentSelections = [];
-    let filteredDeployments = selectedProject ? data.deployments.filter((d) => d.projectName === selectedProject) : data.deployments;
+    let filteredDeployments = (() => {
+      const filtered = selectedProject ? data.deployments.filter((d) => d.projectName === selectedProject) : data.deployments;
+      return [...filtered].sort((a, b) => {
+        const aActive = a.status === "in_progress" || a.status === "queued";
+        const bActive = b.status === "in_progress" || b.status === "queued";
+        if (aActive && !bActive) return -1;
+        if (!aActive && bActive) return 1;
+        const aTime = new Date(a.deployCompletedAt || a.completedAt || a.startedAt || 0).getTime();
+        const bTime = new Date(b.deployCompletedAt || b.completedAt || b.startedAt || 0).getTime();
+        return bTime - aTime;
+      });
+    })();
     function getProjectDisplayName(projectName) {
       const project = data.projects.find((p) => p.id === projectName);
       return project?.name || projectName;
@@ -104,6 +116,42 @@ function _page($$renderer, $$props) {
         default:
           return "Unknown";
       }
+    }
+    function formatDuration(ms) {
+      const seconds = Math.floor(ms / 1e3);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      if (hours > 0) {
+        return `${hours}h ${minutes % 60}m`;
+      } else if (minutes > 0) {
+        return `${minutes}m ${seconds % 60}s`;
+      } else {
+        return `${seconds}s`;
+      }
+    }
+    function getDurationText(deployment) {
+      const status = deployment.status;
+      const startTime = deployment.ciStartedAt || deployment.startedAt;
+      const endTime = deployment.deployCompletedAt || deployment.completedAt;
+      if (status === "in_progress" || status === "queued") {
+        if (!startTime) return null;
+        const start = new Date(startTime).getTime();
+        const elapsed = Date.now() - start;
+        return {
+          text: `running ${formatDuration(elapsed)}`,
+          color: "text-cyan-400"
+        };
+      } else if (status === "success" || status === "failure") {
+        if (!startTime || !endTime) return null;
+        const start = new Date(startTime).getTime();
+        const end = new Date(endTime).getTime();
+        const duration = end - start;
+        if (duration < 0) return null;
+        const prefix = status === "failure" ? "failed after" : "took";
+        const color = status === "failure" ? "text-red-400" : "text-green-400";
+        return { text: `${prefix} ${formatDuration(duration)}`, color };
+      }
+      return null;
     }
     head("1tckhxz", $$renderer2, ($$renderer3) => {
       $$renderer3.title(($$renderer4) => {
@@ -177,6 +225,7 @@ function _page($$renderer, $$props) {
         let deployment = each_array_2[$$index_2];
         const deployTime = deployment.deployCompletedAt || deployment.completedAt || deployment.startedAt;
         const deployStatus = deployment.status;
+        const duration = getDurationText(deployment);
         $$renderer2.push(`<div class="px-4 py-4 hover:bg-gray-800/30 transition-colors"><div class="flex items-start gap-4"><div class="shrink-0 mt-0.5">`);
         if (deployStatus === "in_progress") {
           $$renderer2.push("<!--[-->");
@@ -226,7 +275,19 @@ function _page($$renderer, $$props) {
         }
         $$renderer2.push(`<!--]--></div></div> <div class="shrink-0 text-right"><div class="flex items-center gap-1.5 text-sm text-gray-400">`);
         Clock($$renderer2, { class: "w-3.5 h-3.5" });
-        $$renderer2.push(`<!----> ${escape_html(formatRelativeTime(deployTime))}</div> <div class="text-xs text-gray-600 mt-0.5">${escape_html(formatFullTime(deployTime))}</div></div></div></div>`);
+        $$renderer2.push(`<!----> ${escape_html(formatRelativeTime(deployTime))}</div> `);
+        if (duration) {
+          $$renderer2.push("<!--[-->");
+          $$renderer2.push(`<!---->`);
+          {
+            $$renderer2.push(`<div${attr_class(`text-xs font-medium mt-0.5 ${stringify(duration.color)}`)}>${escape_html(duration.text)}</div>`);
+          }
+          $$renderer2.push(`<!---->`);
+        } else {
+          $$renderer2.push("<!--[!-->");
+          $$renderer2.push(`<div class="text-xs text-gray-600 mt-0.5">${escape_html(formatFullTime(deployTime))}</div>`);
+        }
+        $$renderer2.push(`<!--]--></div></div></div>`);
       }
       $$renderer2.push(`<!--]--></div>`);
     }

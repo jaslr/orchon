@@ -1,49 +1,127 @@
-import { w as spread_props, z as head, x as attr_class, G as attr, F as ensure_array_like, y as stringify } from "../../../chunks/index2.js";
+import { G as attr, y as stringify, x as attr_class, F as ensure_array_like, K as attr_style, z as head } from "../../../chunks/index2.js";
+import { p as page } from "../../../chunks/index3.js";
 import { a as getProvidersByCategory, b as getAllProjects, I as INFRASTRUCTURE } from "../../../chunks/infrastructure.js";
-import { I as Icon } from "../../../chunks/Icon.js";
-import { A as Arrow_down_a_z, C as Chevron_down, D as Database, T as Triangle_alert } from "../../../chunks/triangle-alert.js";
-import { C as Cloud } from "../../../chunks/cloud.js";
-import { G as Git_branch } from "../../../chunks/git-branch.js";
-import { S as Server } from "../../../chunks/server.js";
-import { j as escape_html } from "../../../chunks/context.js";
-function List($$renderer, $$props) {
+import { k as ssr_context, j as escape_html } from "../../../chunks/context.js";
+import "clsx";
+import { R as Refresh_cw } from "../../../chunks/refresh-cw.js";
+import { A as Activity } from "../../../chunks/activity.js";
+function onDestroy(fn) {
+  /** @type {SSRContext} */
+  ssr_context.r.on_destroy(fn);
+}
+function InfrastructureMap($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      ["path", { "d": "M3 5h.01" }],
-      ["path", { "d": "M3 12h.01" }],
-      ["path", { "d": "M3 19h.01" }],
-      ["path", { "d": "M8 5h13" }],
-      ["path", { "d": "M8 12h13" }],
-      ["path", { "d": "M8 19h13" }]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "list" },
-      /**
-       * @component @name List
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMyA1aC4wMSIgLz4KICA8cGF0aCBkPSJNMyAxMmguMDEiIC8+CiAgPHBhdGggZD0iTTMgMTloLjAxIiAvPgogIDxwYXRoIGQ9Ik04IDVoMTMiIC8+CiAgPHBhdGggZD0iTTggMTJoMTMiIC8+CiAgPHBhdGggZD0iTTggMTloMTMiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/list
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: ($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        },
-        $$slots: { default: true }
+    let nodes = [];
+    let links = [];
+    let loading = true;
+    let selectedNode = null;
+    let transform = { x: 0, y: 0, k: 1 };
+    const statusColors = {
+      healthy: {
+        border: "#22c55e",
+        bg: "rgba(34, 197, 94, 0.1)",
+        glow: "#22c55e"
+      },
+      degraded: {
+        border: "#eab308",
+        bg: "rgba(234, 179, 8, 0.1)",
+        glow: "#eab308"
+      },
+      down: {
+        border: "#ef4444",
+        bg: "rgba(239, 68, 68, 0.1)",
+        glow: "#ef4444"
+      },
+      unknown: {
+        border: "#6b7280",
+        bg: "rgba(107, 114, 128, 0.1)",
+        glow: "#6b7280"
       }
-    ]));
+    };
+    const nodeSizes = { platform: 45, service: 30, external: 35, app: 28 };
+    function getLinkPath(link) {
+      const source = typeof link.source === "string" ? nodes.find((n) => n.id === link.source) : link.source;
+      const target = typeof link.target === "string" ? nodes.find((n) => n.id === link.target) : link.target;
+      if (!source?.x || !source?.y || !target?.x || !target?.y) return "";
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const dr = Math.sqrt(dx * dx + dy * dy) * 0.8;
+      return `M${source.x},${source.y}A${dr},${dr} 0 0,1 ${target.x},${target.y}`;
+    }
+    onDestroy(() => {
+    });
+    $$renderer2.push(`<div class="relative w-full h-full min-h-[400px] bg-gray-900 rounded-lg overflow-hidden">`);
+    if (nodes.length === 0) {
+      $$renderer2.push("<!--[-->");
+      $$renderer2.push(`<div class="absolute inset-0 flex items-center justify-center bg-gray-900/80 z-10"><div class="flex items-center gap-2 text-gray-400">`);
+      Refresh_cw($$renderer2, { class: "w-5 h-5 animate-spin" });
+      $$renderer2.push(`<!----> <span>Loading infrastructure status...</span></div></div>`);
+    } else {
+      $$renderer2.push("<!--[!-->");
+    }
+    $$renderer2.push(`<!--]--> `);
+    {
+      $$renderer2.push("<!--[!-->");
+    }
+    $$renderer2.push(`<!--]--> <div class="absolute top-4 right-4 flex items-center gap-2 z-10"><button${attr("disabled", loading, true)} class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded text-xs text-gray-300 transition-colors disabled:opacity-50 cursor-pointer">`);
+    Refresh_cw($$renderer2, {
+      class: `w-3.5 h-3.5 ${stringify("animate-spin")}`
+    });
+    $$renderer2.push(`<!----> Refresh</button> `);
+    {
+      $$renderer2.push("<!--[!-->");
+    }
+    $$renderer2.push(`<!--]--></div> <svg role="img" aria-label="Infrastructure map visualization"${attr_class(`w-full h-full cursor-grab ${stringify("")}`)}><g${attr("transform", `translate(${stringify(transform.x)}, ${stringify(transform.y)}) scale(${stringify(transform.k)})`)}><!--[-->`);
+    const each_array = ensure_array_like(links);
+    for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+      let link = each_array[$$index];
+      const path = getLinkPath(link);
+      if (path) {
+        $$renderer2.push("<!--[-->");
+        $$renderer2.push(`<path${attr("d", path)} fill="none" stroke="#374151" stroke-width="1.5" stroke-opacity="0.5" marker-end="url(#arrowhead)"></path>`);
+      } else {
+        $$renderer2.push("<!--[!-->");
+      }
+      $$renderer2.push(`<!--]-->`);
+    }
+    $$renderer2.push(`<!--]--><!--[-->`);
+    const each_array_1 = ensure_array_like(nodes);
+    for (let $$index_1 = 0, $$length = each_array_1.length; $$index_1 < $$length; $$index_1++) {
+      let node = each_array_1[$$index_1];
+      const size = nodeSizes[node.type];
+      const colors = statusColors[node.status];
+      const isSelected = selectedNode?.id === node.id;
+      if (node.x !== void 0 && node.y !== void 0) {
+        $$renderer2.push("<!--[-->");
+        $$renderer2.push(`<g${attr("transform", `translate(${stringify(node.x)}, ${stringify(node.y)})`)} class="cursor-pointer" role="button" tabindex="0"${attr("aria-label", `${stringify(node.label)} - ${stringify(node.status)}`)}>`);
+        if (node.status === "healthy") {
+          $$renderer2.push("<!--[-->");
+          $$renderer2.push(`<circle${attr("r", size + 4)}${attr("fill", colors.glow)} opacity="0.15"></circle>`);
+        } else {
+          $$renderer2.push("<!--[!-->");
+        }
+        $$renderer2.push(`<!--]--><circle${attr("r", size)}${attr("fill", colors.bg)}${attr("stroke", colors.border)}${attr("stroke-width", isSelected ? 3 : 2)} class="transition-all duration-150"></circle><circle${attr("cx", size - 5)}${attr("cy", -size + 5)} r="5"${attr("fill", colors.border)}></circle><text${attr("y", size + 14)} text-anchor="middle" class="text-[11px] fill-gray-300 font-medium pointer-events-none">${escape_html(node.label)}</text><text${attr("y", size + 26)} text-anchor="middle" class="text-[9px] fill-gray-500 uppercase pointer-events-none">${escape_html(node.type)}</text></g>`);
+      } else {
+        $$renderer2.push("<!--[!-->");
+      }
+      $$renderer2.push(`<!--]-->`);
+    }
+    $$renderer2.push(`<!--]--></g><defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#374151"></polygon></marker></defs></svg> `);
+    {
+      $$renderer2.push("<!--[!-->");
+    }
+    $$renderer2.push(`<!--]--> <div${attr_class(`absolute bottom-4 left-4 bg-gray-800/90 border border-gray-700 rounded px-3 py-2 text-xs ${stringify("")}`)}><div class="flex items-center gap-4"><!--[-->`);
+    const each_array_3 = ensure_array_like(["healthy", "degraded", "down", "unknown"]);
+    for (let $$index_3 = 0, $$length = each_array_3.length; $$index_3 < $$length; $$index_3++) {
+      let status = each_array_3[$$index_3];
+      $$renderer2.push(`<div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full"${attr_style(`background-color: ${stringify(statusColors[status].border)}`)}></div> <span class="text-gray-400 capitalize">${escape_html(status)}</span></div>`);
+    }
+    $$renderer2.push(`<!--]--></div></div></div>`);
   });
 }
 function _page($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
+    page.data.apiSecret || "";
     getProvidersByCategory();
     const projects = getAllProjects();
     let ownerFilters = { jaslr: true, vp: true };
@@ -94,7 +172,7 @@ function _page($$renderer, $$props) {
         return false;
       });
     }
-    let displayProjects = (() => {
+    (() => {
       const filtered = filterByOwner(projectsWithServices);
       const sorted = [...filtered];
       {
@@ -102,99 +180,29 @@ function _page($$renderer, $$props) {
       }
       return sorted;
     })();
-    const providerColors = {
-      cloudflare: "text-orange-400",
-      supabase: "text-green-400",
-      sentry: "text-purple-400",
-      github: "text-gray-300",
-      aws: "text-yellow-400",
-      vercel: "text-white",
-      flyio: "text-violet-400",
-      google: "text-blue-400",
-      gcp: "text-blue-400",
-      netlify: "text-teal-400",
-      pocketbase: "text-gray-300"
-    };
-    const providerFallbackIcons = {
-      cloudflare: Cloud,
-      flyio: Cloud,
-      supabase: Database,
-      github: Git_branch,
-      sentry: Triangle_alert,
-      firebase: Database,
-      gcp: Cloud,
-      aws: Cloud,
-      pocketbase: Database,
-      vercel: Cloud,
-      netlify: Cloud
-    };
     head("1ny0ztv", $$renderer2, ($$renderer3) => {
       $$renderer3.title(($$renderer4) => {
         $$renderer4.push(`<title>Ecosystem | Orchon</title>`);
       });
     });
-    $$renderer2.push(`<div class="flex-1 flex flex-col overflow-hidden"><div class="shrink-0 border-b border-gray-800 bg-gray-900 px-4 sm:px-6 py-3"><div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div class="flex gap-1"><button${attr_class(`px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded-t ${stringify(
-      "text-white bg-gray-800 border-b-2 border-blue-500"
-    )}`)}>Projects</button> <button${attr_class(`px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded-t ${stringify("text-gray-400 hover:text-gray-200")}`)}>Flow Diagram</button></div> `);
+    $$renderer2.push(`<div class="flex-1 flex flex-col overflow-hidden"><div class="shrink-0 border-b border-gray-800 bg-gray-900 px-4 sm:px-6 py-3"><div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div class="flex gap-1"><button${attr_class(`px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded-t flex items-center gap-1.5 ${stringify(
+      "text-white bg-gray-800 border-b-2 border-green-500"
+    )}`)}>`);
+    Activity($$renderer2, { class: "w-4 h-4" });
+    $$renderer2.push(`<!----> Infrastructure</button> <button${attr_class(`px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded-t ${stringify("text-gray-400 hover:text-gray-200")}`)}>Projects</button> <button${attr_class(`px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded-t ${stringify("text-gray-400 hover:text-gray-200")}`)}>Flow Diagram</button></div> `);
     {
-      $$renderer2.push("<!--[-->");
-      $$renderer2.push(`<div class="flex items-center gap-3 sm:gap-4"><button class="p-2 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer rounded hover:bg-gray-800"${attr("title", "Show service names")}>`);
-      {
-        $$renderer2.push("<!--[-->");
-        List($$renderer2, { class: "w-4 h-4" });
-      }
-      $$renderer2.push(`<!--]--></button> <div class="relative sort-dropdown"><button class="flex items-center gap-1 p-1.5 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors"${attr("title", "Sorted A-Z")}>`);
-      {
-        $$renderer2.push("<!--[-->");
-        Arrow_down_a_z($$renderer2, { class: "w-4 h-4" });
-      }
-      $$renderer2.push(`<!--]--> `);
-      Chevron_down($$renderer2, { class: "w-3 h-3" });
-      $$renderer2.push(`<!----></button> `);
+      $$renderer2.push("<!--[!-->");
       {
         $$renderer2.push("<!--[!-->");
       }
-      $$renderer2.push(`<!--]--></div> <div class="flex gap-1 sm:gap-2"><button${attr_class(`px-2 py-1 text-xs cursor-pointer transition-colors rounded ${stringify(
-        "text-gray-200 bg-gray-800"
-      )}`)} title="Show jaslr projects">jaslr</button> <button${attr_class(`px-2 py-1 text-xs cursor-pointer transition-colors rounded ${stringify(
-        "text-gray-200 bg-gray-800"
-      )}`)} title="Show Vast Puddle projects">VP</button> <button${attr_class(`px-2 py-1 text-xs cursor-pointer transition-colors rounded ${stringify(
-        "text-gray-200 bg-gray-800"
-      )}`)} title="Show Junipa projects only">Junipa</button></div></div>`);
+      $$renderer2.push(`<!--]-->`);
     }
     $$renderer2.push(`<!--]--></div></div> `);
     {
       $$renderer2.push("<!--[-->");
-      $$renderer2.push(`<div class="flex-1 overflow-y-auto p-4 sm:p-6">`);
-      if (displayProjects.length === 0) {
-        $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<div class="text-center text-gray-500 py-8"><p>No projects match the current filters.</p></div>`);
-      } else {
-        $$renderer2.push("<!--[!-->");
-        $$renderer2.push(`<div class="space-y-2"><!--[-->`);
-        const each_array = ensure_array_like(displayProjects);
-        for (let $$index_1 = 0, $$length = each_array.length; $$index_1 < $$length; $$index_1++) {
-          let project = each_array[$$index_1];
-          $$renderer2.push(`<div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 py-3 bg-gray-800 hover:bg-gray-750 rounded-lg transition-colors"><a${attr("href", `/projects?project=${stringify(project.id)}`)} class="font-medium text-gray-200 hover:text-white sm:min-w-[160px] truncate shrink-0">${escape_html(project.displayName)}</a> <div class="flex flex-wrap gap-1.5 sm:gap-2 flex-1"><!--[-->`);
-          const each_array_1 = ensure_array_like(project.services);
-          for (let i = 0, $$length2 = each_array_1.length; i < $$length2; i++) {
-            let service = each_array_1[i];
-            const logoUrl = `/api/logos/infra/${service.provider}.svg`;
-            const FallbackIcon = providerFallbackIcons[service.provider] || Server;
-            const fallbackColor = providerColors[service.provider] || "text-gray-400";
-            $$renderer2.push(`<div${attr_class(`inline-flex items-center gap-1.5 px-2 py-1 bg-gray-700 rounded text-xs ${stringify("px-1.5")}`)}${attr("title", service.serviceName)}><img${attr("src", logoUrl)}${attr("alt", service.provider)} class="w-4 h-4 object-contain" onerror="this.__e=event"/> <span${attr_class(`hidden ${stringify(fallbackColor)}`, "svelte-1ny0ztv")}><!---->`);
-            FallbackIcon($$renderer2, { class: "w-4 h-4" });
-            $$renderer2.push(`<!----></span> `);
-            {
-              $$renderer2.push("<!--[!-->");
-            }
-            $$renderer2.push(`<!--]--></div>`);
-          }
-          $$renderer2.push(`<!--]--></div></div>`);
-        }
-        $$renderer2.push(`<!--]--></div>`);
-      }
-      $$renderer2.push(`<!--]--></div>`);
+      $$renderer2.push(`<div class="flex-1 overflow-hidden p-4 sm:p-6">`);
+      InfrastructureMap($$renderer2);
+      $$renderer2.push(`<!----></div>`);
     }
     $$renderer2.push(`<!--]--></div>`);
   });

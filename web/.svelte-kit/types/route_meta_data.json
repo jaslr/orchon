@@ -9,6 +9,10 @@
 		"src/routes/+layout.server.ts",
 		"src/routes/+layout.server.ts"
 	],
+	"/admin/infra": [
+		"src/routes/admin/infra/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
 	"/admin/media": [
 		"src/routes/admin/media/+page.server.ts",
 		"src/routes/+layout.server.ts"

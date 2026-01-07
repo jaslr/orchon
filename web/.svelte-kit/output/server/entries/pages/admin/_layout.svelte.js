@@ -2,6 +2,7 @@ import { w as spread_props, F as ensure_array_like, G as attr, x as attr_class, 
 import { p as page } from "../../../chunks/index3.js";
 import { A as Arrow_left } from "../../../chunks/arrow-left.js";
 import { I as Icon } from "../../../chunks/Icon.js";
+import { S as Server } from "../../../chunks/server.js";
 import { F as Folder_git_2 } from "../../../chunks/folder-git-2.js";
 import { S as Settings } from "../../../chunks/settings.js";
 import { j as escape_html } from "../../../chunks/context.js";
@@ -85,6 +86,12 @@ function _layout($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { children } = $$props;
     const navItems = [
+      {
+        href: "/admin/infra",
+        label: "Infrastructure",
+        icon: Server,
+        description: "Health & recovery"
+      },
       {
         href: "/admin/media",
         label: "Media",

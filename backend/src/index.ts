@@ -51,6 +51,7 @@ app.use(
       // Allow production domains
       const allowed = [
         'https://orchon.pages.dev',
+        'https://orchon-3tt.pages.dev',
         'https://ci-monitor.pages.dev',
         'http://localhost:4573',
         'http://localhost:5173',

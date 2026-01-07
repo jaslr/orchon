@@ -10,7 +10,7 @@ return {
 	assets: new Set(["favicon.svg","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","logo.svg","manifest.json","robots.txt","sw.js"]),
 	mimeTypes: {".svg":"image/svg+xml",".png":"image/png",".json":"application/json",".txt":"text/plain",".js":"text/javascript"},
 	_: {
-		client: {start:"_app/immutable/entry/start.x50hv4ln.js",app:"_app/immutable/entry/app.DzC72v7z.js",imports:["_app/immutable/entry/start.x50hv4ln.js","_app/immutable/chunks/Dnr1q622.js","_app/immutable/chunks/CugbxRx9.js","_app/immutable/chunks/jd5WV0Du.js","_app/immutable/chunks/GwumCs-T.js","_app/immutable/entry/app.DzC72v7z.js","_app/immutable/chunks/jd5WV0Du.js","_app/immutable/chunks/GwumCs-T.js","_app/immutable/chunks/DsnmJJEf.js","_app/immutable/chunks/CugbxRx9.js","_app/immutable/chunks/CFL_xKr-.js","_app/immutable/chunks/DaAn4gK4.js","_app/immutable/chunks/BJKkoUms.js","_app/immutable/chunks/CPgivW-j.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.Ce8IS3lX.js",app:"_app/immutable/entry/app.C2dgTJOY.js",imports:["_app/immutable/entry/start.Ce8IS3lX.js","_app/immutable/chunks/BYv6PIKQ.js","_app/immutable/chunks/B-8_DJw-.js","_app/immutable/chunks/3lJB4T0S.js","_app/immutable/chunks/BqZwnDtf.js","_app/immutable/entry/app.C2dgTJOY.js","_app/immutable/chunks/3lJB4T0S.js","_app/immutable/chunks/BqZwnDtf.js","_app/immutable/chunks/DsnmJJEf.js","_app/immutable/chunks/B-8_DJw-.js","_app/immutable/chunks/BkU7iF2q.js","_app/immutable/chunks/CAKD87xN.js","_app/immutable/chunks/CE3FrX7Z.js","_app/immutable/chunks/53_MOYEh.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),
@@ -24,7 +24,8 @@ return {
 			__memo(() => import('./nodes/9.js')),
 			__memo(() => import('./nodes/10.js')),
 			__memo(() => import('./nodes/11.js')),
-			__memo(() => import('./nodes/12.js'))
+			__memo(() => import('./nodes/12.js')),
+			__memo(() => import('./nodes/13.js'))
 		],
 		remotes: {
 			
@@ -45,24 +46,31 @@ return {
 				endpoint: null
 			},
 			{
+				id: "/admin/infra",
+				pattern: /^\/admin\/infra\/?$/,
+				params: [],
+				page: { layouts: [0,2,], errors: [1,,], leaf: 5 },
+				endpoint: null
+			},
+			{
 				id: "/admin/media",
 				pattern: /^\/admin\/media\/?$/,
 				params: [],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 5 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 6 },
 				endpoint: null
 			},
 			{
 				id: "/admin/projects",
 				pattern: /^\/admin\/projects\/?$/,
 				params: [],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 6 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 7 },
 				endpoint: null
 			},
 			{
 				id: "/admin/repos",
 				pattern: /^\/admin\/repos\/?$/,
 				params: [],
-				page: { layouts: [0,2,], errors: [1,,], leaf: 7 },
+				page: { layouts: [0,2,], errors: [1,,], leaf: 8 },
 				endpoint: null
 			},
 			{
@@ -83,35 +91,35 @@ return {
 				id: "/deployments",
 				pattern: /^\/deployments\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 8 },
+				page: { layouts: [0,], errors: [1,], leaf: 9 },
 				endpoint: null
 			},
 			{
 				id: "/ecosystem",
 				pattern: /^\/ecosystem\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 9 },
+				page: { layouts: [0,], errors: [1,], leaf: 10 },
 				endpoint: null
 			},
 			{
 				id: "/login",
 				pattern: /^\/login\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 10 },
+				page: { layouts: [0,], errors: [1,], leaf: 11 },
 				endpoint: null
 			},
 			{
 				id: "/logout",
 				pattern: /^\/logout\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 11 },
+				page: { layouts: [0,], errors: [1,], leaf: 12 },
 				endpoint: null
 			},
 			{
 				id: "/projects",
 				pattern: /^\/projects\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 12 },
+				page: { layouts: [0,], errors: [1,], leaf: 13 },
 				endpoint: null
 			}
 		],
