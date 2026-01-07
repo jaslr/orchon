@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { page } from '$app/state';
 	import { getProvidersByCategory, getAllProjects, INFRASTRUCTURE } from '$lib/config/infrastructure';
 	import {
 		Cloud,
@@ -17,23 +18,29 @@
 		Clock,
 		ChevronDown,
 		List,
-		LayoutGrid
+		LayoutGrid,
+		Activity
 	} from '@lucide/svelte';
 	import EcosystemFlowDiagram from '$lib/components/EcosystemFlowDiagram.svelte';
+	import InfrastructureMap from '$lib/components/InfrastructureMap.svelte';
+
+	// API config
+	const BACKEND_URL = 'https://observatory-backend.fly.dev';
+	let apiSecret = $derived(page.data.apiSecret || '');
 
 	// Get ecosystem data
 	const categories = getProvidersByCategory();
 	const projects = getAllProjects();
 
 	// === TAB STATE ===
-	type TabId = 'projects' | 'diagram';
-	let activeTab = $state<TabId>('projects');
+	type TabId = 'projects' | 'diagram' | 'infrastructure';
+	let activeTab = $state<TabId>('infrastructure');
 
 	// Load tab preference from localStorage
 	$effect(() => {
 		if (!browser) return;
 		const savedTab = localStorage.getItem('ecosystem-active-tab');
-		if (savedTab === 'projects' || savedTab === 'diagram') {
+		if (savedTab === 'projects' || savedTab === 'diagram' || savedTab === 'infrastructure') {
 			activeTab = savedTab;
 		}
 	});
@@ -284,6 +291,16 @@
 			<!-- Tabs -->
 			<div class="flex gap-1">
 				<button
+					onclick={() => setActiveTab('infrastructure')}
+					class="px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded-t flex items-center gap-1.5 {activeTab ===
+					'infrastructure'
+						? 'text-white bg-gray-800 border-b-2 border-green-500'
+						: 'text-gray-400 hover:text-gray-200'}"
+				>
+					<Activity class="w-4 h-4" />
+					Infrastructure
+				</button>
+				<button
 					onclick={() => setActiveTab('projects')}
 					class="px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded-t {activeTab ===
 					'projects'
@@ -412,7 +429,12 @@
 	</div>
 
 	<!-- Tab Content -->
-	{#if activeTab === 'projects'}
+	{#if activeTab === 'infrastructure'}
+		<!-- Infrastructure Live Status Map -->
+		<div class="flex-1 overflow-hidden p-4 sm:p-6">
+			<InfrastructureMap apiSecret={apiSecret} apiUrl={BACKEND_URL} />
+		</div>
+	{:else if activeTab === 'projects'}
 		<!-- Projects List View -->
 		<div class="flex-1 overflow-y-auto p-4 sm:p-6">
 			{#if displayProjects.length === 0}

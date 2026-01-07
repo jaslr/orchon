@@ -27,6 +27,8 @@
 		"vite": "^7.2.6"
 	},
 	"dependencies": {
-		"@lucide/svelte": "^0.562.0"
+		"@lucide/svelte": "^0.562.0",
+		"@types/d3-force": "^3.0.10",
+		"d3-force": "^3.0.0"
 	}
 }
