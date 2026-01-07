@@ -12,7 +12,7 @@ const { buildPrompt } = require('./tasks');
 
 // Configuration
 const CLAUDE_PATH = process.env.CLAUDE_PATH || 'claude';
-const DEFAULT_TIMEOUT = 120000; // 120 seconds (increased for JS-heavy sites)
+const DEFAULT_TIMEOUT = 180000; // 180 seconds (3 min for Chrome + rendering + Claude extraction)
 const SYNC_THRESHOLD = 30000;   // Switch to async after 30s
 
 /**
@@ -82,7 +82,8 @@ ${fullPrompt}
 
     const result = await runClaude(promptWithMcp, {
       timeout,
-      onProgress
+      onProgress,
+      useMcp: method !== 'webfetch' // WebFetch is built-in, no MCP needed
     });
 
     const duration = Date.now() - startTime;
@@ -110,7 +111,8 @@ ${fullPrompt}
 
         const result = await runClaude(fallbackPrompt, {
           timeout: timeout - (Date.now() - startTime),
-          onProgress
+          onProgress,
+          useMcp: false // WebFetch fallback doesn't need MCP
         });
 
         const duration = Date.now() - startTime;
@@ -140,19 +142,25 @@ ${fullPrompt}
  */
 function runClaude(prompt, options = {}) {
   return new Promise((resolve, reject) => {
-    const { timeout = DEFAULT_TIMEOUT, onProgress } = options;
+    const { timeout = DEFAULT_TIMEOUT, onProgress, useMcp = true } = options;
 
     let output = '';
     let errorOutput = '';
     let tool_used = 'unknown';
     let timedOut = false;
 
-    // Spawn Claude with --print flag for non-interactive mode
-    const proc = spawn(CLAUDE_PATH, [
+    // Build args - skip MCP for webfetch (built-in tool, much faster startup)
+    const args = [
       '--dangerously-skip-permissions',
       '--print',
-      '-p', prompt
-    ], {
+    ];
+    if (!useMcp) {
+      args.push('--strict-mcp-config'); // Only use explicitly specified MCP (none = no MCP servers)
+    }
+    args.push('-p', prompt);
+
+    // Spawn Claude with --print flag for non-interactive mode
+    const proc = spawn(CLAUDE_PATH, args, {
       cwd: process.env.HOME || '/root',
       env: {
         ...process.env,
