@@ -1,12 +1,6 @@
-import { w as spread_props, z as head, G as attr, K as attr_style, F as ensure_array_like, y as stringify } from "../../../../chunks/index2.js";
-import "panzoom";
+import { w as spread_props, z as head, G as attr, F as ensure_array_like, K as attr_style, y as stringify } from "../../../../chunks/index2.js";
+import "d3-zoom";
 import { I as Icon } from "../../../../chunks/Icon.js";
-import { E as External_link } from "../../../../chunks/external-link.js";
-import { C as Cloud } from "../../../../chunks/cloud.js";
-import { M as Mail, G as Globe, H as Hard_drive, S as Shield } from "../../../../chunks/shield.js";
-import { A as Activity } from "../../../../chunks/activity.js";
-import { G as Git_branch } from "../../../../chunks/git-branch.js";
-import { D as Database } from "../../../../chunks/database.js";
 import { j as escape_html } from "../../../../chunks/context.js";
 function Arrow_up_a_z($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
@@ -25,48 +19,6 @@ function Arrow_up_a_z($$renderer, $$props) {
        * @description Lucide SVG icon component, renders SVG Element with children.
        *
        * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJtMyA4IDQtNCA0IDQiIC8+CiAgPHBhdGggZD0iTTcgNHYxNiIgLz4KICA8cGF0aCBkPSJNMjAgOGgtNSIgLz4KICA8cGF0aCBkPSJNMTUgMTBWNi41YTIuNSAyLjUgMCAwIDEgNSAwVjEwIiAvPgogIDxwYXRoIGQ9Ik0xNSAxNGg1bC01IDZoNSIgLz4KPC9zdmc+Cg==) - https://lucide.dev/icons/arrow-up-a-z
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: ($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        },
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function Link($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      [
-        "path",
-        {
-          "d": "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
-        }
-      ],
-      [
-        "path",
-        {
-          "d": "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-        }
-      ]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "link" },
-      /**
-       * @component @name Link
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTAgMTNhNSA1IDAgMCAwIDcuNTQuNTRsMy0zYTUgNSAwIDAgMC03LjA3LTcuMDdsLTEuNzIgMS43MSIgLz4KICA8cGF0aCBkPSJNMTQgMTFhNSA1IDAgMCAwLTcuNTQtLjU0bC0zIDNhNSA1IDAgMCAwIDcuMDcgNy4wN2wxLjcxLTEuNzEiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/link
        * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
        *
        * @param {Object} props - Lucide icons props and any valid SVG attribute
@@ -198,9 +150,10 @@ function _page($$renderer, $$props) {
     let sortedProjects = [...data.projects].sort((a, b) => a.displayName.localeCompare(b.displayName));
     let currentZoom = 1;
     const COLS = 4;
-    const PROJECT_WIDTH = 320;
-    const PROJECT_HEIGHT = 380;
-    const GAP = 50;
+    const CARD_WIDTH = 300;
+    const CARD_HEIGHT = 340;
+    const GAP = 40;
+    const PADDING = 50;
     const providerColors = {
       cloudflare: "#f38020",
       supabase: "#3ecf8e",
@@ -217,34 +170,12 @@ function _page($$renderer, $$props) {
       mailgun: "#f06b66",
       digitalocean: "#0080ff"
     };
-    function getCategoryIcon(category) {
-      switch (category) {
-        case "hosting":
-          return Cloud;
-        case "database":
-          return Database;
-        case "auth":
-          return Shield;
-        case "storage":
-          return Hard_drive;
-        case "ci":
-          return Git_branch;
-        case "monitoring":
-          return Activity;
-        case "dns":
-          return Globe;
-        case "email":
-          return Mail;
-        default:
-          return Cloud;
-      }
-    }
     function getCategoryLabel(category) {
       const labels = {
         hosting: "Host",
         database: "DB",
         auth: "Auth",
-        storage: "Storage",
+        storage: "Store",
         ci: "CI/CD",
         monitoring: "Monitor",
         dns: "DNS",
@@ -252,36 +183,54 @@ function _page($$renderer, $$props) {
       };
       return labels[category] || category;
     }
+    function getCategoryIcon(category) {
+      const icons = {
+        hosting: "☁",
+        // cloud
+        database: "🗄",
+        // file cabinet / cylinder-ish
+        auth: "🛡",
+        // shield
+        storage: "💾",
+        // floppy
+        ci: "⚙",
+        // gear
+        monitoring: "📊",
+        // chart
+        dns: "🌐",
+        // globe
+        email: "✉"
+        // envelope
+      };
+      return icons[category] || "●";
+    }
     const identityColors = { jaslr: "#3b82f6", "jvp-ux": "#8b5cf6" };
     function getHostingProvider(services) {
       const hosting = services.find((s) => s.category === "hosting");
       return hosting?.provider || "unknown";
     }
-    let rows = Math.ceil(sortedProjects.length / COLS);
-    let canvasWidth = COLS * PROJECT_WIDTH + (COLS - 1) * GAP + 100;
-    let canvasHeight = rows * PROJECT_HEIGHT + (rows - 1) * GAP + 100;
-    function getProjectPosition(index) {
-      const col = index % COLS;
-      const row = Math.floor(index / COLS);
-      return {
-        x: 50 + col * (PROJECT_WIDTH + GAP),
-        y: 50 + row * (PROJECT_HEIGHT + GAP)
-      };
-    }
     function getDisplayUrl(url) {
       try {
-        const u = new URL(url);
-        return u.hostname;
+        return new URL(url).hostname;
       } catch {
         return url;
       }
+    }
+    Math.ceil(sortedProjects.length / COLS);
+    function getCardPosition(index) {
+      const col = index % COLS;
+      const row = Math.floor(index / COLS);
+      return {
+        x: PADDING + col * (CARD_WIDTH + GAP),
+        y: PADDING + row * (CARD_HEIGHT + GAP)
+      };
     }
     head("hoqwi7", $$renderer2, ($$renderer3) => {
       $$renderer3.title(($$renderer4) => {
         $$renderer4.push(`<title>Infrastructure Map | Orchon</title>`);
       });
     });
-    $$renderer2.push(`<div class="h-full flex flex-col bg-gray-950 overflow-hidden"><div class="shrink-0 flex items-center justify-between px-4 py-2 bg-gray-900/80 border-b border-gray-800 backdrop-blur-sm z-10"><div class="flex items-center gap-4"><h1 class="text-lg font-semibold text-white">Infrastructure Map</h1> <span class="text-xs text-gray-500">${escape_html(sortedProjects.length)} projects</span> <span class="text-xs text-gray-600">|</span> <span class="text-xs text-gray-500">Data source: <code class="text-gray-400">lib/config/infrastructure.ts</code></span></div> <div class="flex items-center gap-2"><button class="flex items-center gap-1.5 px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs text-gray-300 transition-colors"${attr("title", "Sort Z-A")}>`);
+    $$renderer2.push(`<div class="h-full flex flex-col bg-gray-950 overflow-hidden"><div class="shrink-0 flex items-center justify-between px-4 py-2 bg-gray-900/80 border-b border-gray-800 backdrop-blur-sm z-10"><div class="flex items-center gap-4"><h1 class="text-lg font-semibold text-white">Infrastructure Map</h1> <span class="text-xs text-gray-500">${escape_html(sortedProjects.length)} projects</span> <span class="text-xs text-gray-600">|</span> <span class="text-xs text-gray-500">Data: <code class="text-gray-400">lib/config/infrastructure.ts</code></span></div> <div class="flex items-center gap-2"><button class="flex items-center gap-1.5 px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs text-gray-300 transition-colors"${attr("title", "Sort Z-A")}>`);
     {
       $$renderer2.push("<!--[-->");
       Arrow_up_a_z($$renderer2, { class: "w-3.5 h-3.5" });
@@ -292,54 +241,47 @@ function _page($$renderer, $$props) {
     Zoom_in($$renderer2, { class: "w-4 h-4" });
     $$renderer2.push(`<!----></button> <button class="p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors ml-1" title="Reset view">`);
     Maximize_2($$renderer2, { class: "w-4 h-4" });
-    $$renderer2.push(`<!----></button></div></div></div> <div class="shrink-0 px-4 py-1 text-xs text-gray-500 bg-gray-900/50">Ctrl + scroll to zoom | Drag to pan | Click service badges to open dashboards</div> <div class="flex-1 overflow-hidden relative bg-gray-950"><div class="absolute inset-0 pointer-events-none" style="background-image: linear-gradient(rgba(55, 65, 81, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(55, 65, 81, 0.2) 1px, transparent 1px); background-size: 40px 40px;"></div> <div class="absolute origin-top-left cursor-grab active:cursor-grabbing"${attr_style(` width: ${stringify(canvasWidth)}px; height: ${stringify(canvasHeight)}px; transform-origin: 0 0; will-change: transform; backface-visibility: hidden; `)}><!--[-->`);
+    $$renderer2.push(`<!----></button></div></div></div> <div class="shrink-0 px-4 py-1 text-xs text-gray-500 bg-gray-900/50">Scroll to zoom | Drag to pan | Click links to open dashboards</div> <div class="flex-1 overflow-hidden relative bg-gray-950"><svg class="w-full h-full svelte-hoqwi7" style="cursor: grab;"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(55, 65, 81, 0.3)" stroke-width="0.5"></path></pattern><filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="rgba(0,0,0,0.5)"></feDropShadow></filter></defs><rect width="100%" height="100%" fill="url(#grid)"></rect><g><!--[-->`);
     const each_array = ensure_array_like(sortedProjects);
     for (let index = 0, $$length = each_array.length; index < $$length; index++) {
       let project = each_array[index];
-      const pos = getProjectPosition(index);
+      const pos = getCardPosition(index);
       const identityColor = identityColors[project.identity] || "#6b7280";
       const hostProvider = getHostingProvider(project.services);
       const hostColor = providerColors[hostProvider] || "#6b7280";
-      $$renderer2.push(`<div class="absolute select-none"${attr_style(` left: ${stringify(pos.x)}px; top: ${stringify(pos.y)}px; width: ${stringify(PROJECT_WIDTH)}px; transform: translateZ(0); `)}><div class="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden shadow-xl hover:border-gray-500 transition-colors"${attr_style(`border-left: 4px solid ${stringify(identityColor)};`)}><div class="px-3 py-2.5 bg-gray-800/70 border-b border-gray-700"><div class="flex items-center justify-between gap-2"><span class="font-semibold text-white text-sm">${escape_html(project.displayName)}</span> <div class="px-1.5 py-0.5 rounded text-[10px] font-medium"${attr_style(`background-color: ${stringify(hostColor)}30; color: ${stringify(hostColor)};`)}>${escape_html(hostProvider)}</div></div> `);
+      $$renderer2.push(`<g${attr("transform", `translate(${stringify(pos.x)}, ${stringify(pos.y)})`)}><rect${attr("width", CARD_WIDTH)}${attr("height", CARD_HEIGHT)} rx="8" fill="#111827" stroke="#374151" stroke-width="1" filter="url(#cardShadow)"></rect><rect x="0" y="0" width="4"${attr("height", CARD_HEIGHT)} rx="2"${attr("fill", identityColor)}></rect><rect x="4" y="0"${attr("width", CARD_WIDTH - 4)} height="70" rx="8" fill="#1f2937"></rect><text x="16" y="24" font-size="14" font-weight="600" fill="white" font-family="system-ui, -apple-system, sans-serif" class="svelte-hoqwi7">${escape_html(project.displayName)}</text><rect${attr("x", CARD_WIDTH - 70)} y="8" width="58" height="20" rx="4"${attr("fill", `${stringify(hostColor)}30`)}></rect><text${attr("x", CARD_WIDTH - 41)} y="22" font-size="10" font-weight="500"${attr("fill", hostColor)} text-anchor="middle" font-family="system-ui, sans-serif" class="svelte-hoqwi7">${escape_html(hostProvider)}</text>`);
       if (project.productionUrl) {
         $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<a${attr("href", project.productionUrl)} target="_blank" rel="noopener noreferrer" class="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mt-1 group">`);
-        Link($$renderer2, { class: "w-3 h-3" });
-        $$renderer2.push(`<!----> <span class="truncate">${escape_html(getDisplayUrl(project.productionUrl))}</span> `);
-        External_link($$renderer2, {
-          class: "w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity"
-        });
-        $$renderer2.push(`<!----></a>`);
+        $$renderer2.push(`<g class="cursor-pointer"><text x="16" y="42" font-size="11" fill="#60a5fa" font-family="system-ui, sans-serif" class="svelte-hoqwi7">${escape_html(getDisplayUrl(project.productionUrl))}</text></g>`);
       } else {
         $$renderer2.push("<!--[!-->");
-        $$renderer2.push(`<div class="text-xs text-gray-500 mt-1">No production URL</div>`);
+        $$renderer2.push(`<text x="16" y="42" font-size="11" fill="#6b7280" font-family="system-ui, sans-serif" class="svelte-hoqwi7">No production URL</text>`);
       }
-      $$renderer2.push(`<!--]--> <div class="text-[10px] text-gray-500 mt-1 font-mono">${escape_html(project.id)}</div></div> <div class="p-2 space-y-1"><!--[-->`);
+      $$renderer2.push(`<!--]--><text x="16" y="58" font-size="10" fill="#6b7280" font-family="ui-monospace, monospace" class="svelte-hoqwi7">${escape_html(project.id)}</text><!--[-->`);
       const each_array_1 = ensure_array_like(project.services);
       for (let svcIdx = 0, $$length2 = each_array_1.length; svcIdx < $$length2; svcIdx++) {
         let service = each_array_1[svcIdx];
-        const Icon2 = getCategoryIcon(service.category);
+        const svcY = 80 + svcIdx * 28;
         const color = providerColors[service.provider] || "#6b7280";
-        if (service.dashboardUrl) {
+        if (svcY + 28 < CARD_HEIGHT - 10) {
           $$renderer2.push("<!--[-->");
-          $$renderer2.push(`<a${attr("href", service.dashboardUrl)} target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-2 py-1.5 bg-gray-800/40 hover:bg-gray-800 rounded text-xs transition-colors group"><div class="w-6 h-6 rounded flex items-center justify-center shrink-0"${attr_style(`background-color: ${stringify(color)}20;`)}><!---->`);
-          Icon2($$renderer2, { class: "w-3.5 h-3.5", style: `color: ${stringify(color)};` });
-          $$renderer2.push(`<!----></div> <div class="flex-1 min-w-0 flex items-center gap-2"><span class="text-gray-500 w-12 shrink-0">${escape_html(getCategoryLabel(service.category))}</span> <span class="text-gray-200 group-hover:text-white font-medium">${escape_html(service.provider)}</span></div> `);
-          External_link($$renderer2, {
-            class: "w-3 h-3 text-gray-600 group-hover:text-gray-400 shrink-0"
-          });
-          $$renderer2.push(`<!----></a>`);
+          $$renderer2.push(`<rect x="8"${attr("y", svcY)}${attr("width", CARD_WIDTH - 16)} height="24" rx="4" fill="#1f293780"></rect><circle cx="22"${attr("cy", svcY + 12)} r="10"${attr("fill", `${stringify(color)}20`)}></circle><text x="22"${attr("y", svcY + 16)} font-size="10"${attr("fill", color)} text-anchor="middle" font-family="system-ui, sans-serif" class="svelte-hoqwi7">${escape_html(getCategoryIcon(service.category))}</text><text x="40"${attr("y", svcY + 16)} font-size="10" fill="#9ca3af" font-family="system-ui, sans-serif" class="svelte-hoqwi7">${escape_html(getCategoryLabel(service.category))}</text>`);
+          if (service.dashboardUrl) {
+            $$renderer2.push("<!--[-->");
+            $$renderer2.push(`<g class="cursor-pointer"><text x="95"${attr("y", svcY + 16)} font-size="11" font-weight="500" fill="#e5e7eb" font-family="system-ui, sans-serif" class="svelte-hoqwi7">${escape_html(service.provider)}</text><text${attr("x", CARD_WIDTH - 24)}${attr("y", svcY + 16)} font-size="10" fill="#6b7280" class="svelte-hoqwi7">↗</text></g>`);
+          } else {
+            $$renderer2.push("<!--[!-->");
+            $$renderer2.push(`<text x="95"${attr("y", svcY + 16)} font-size="11" font-weight="500" fill="#d1d5db" font-family="system-ui, sans-serif" class="svelte-hoqwi7">${escape_html(service.provider)}</text>`);
+          }
+          $$renderer2.push(`<!--]-->`);
         } else {
           $$renderer2.push("<!--[!-->");
-          $$renderer2.push(`<div class="flex items-center gap-2 px-2 py-1.5 bg-gray-800/40 rounded text-xs"><div class="w-6 h-6 rounded flex items-center justify-center shrink-0"${attr_style(`background-color: ${stringify(color)}20;`)}><!---->`);
-          Icon2($$renderer2, { class: "w-3.5 h-3.5", style: `color: ${stringify(color)};` });
-          $$renderer2.push(`<!----></div> <div class="flex-1 min-w-0 flex items-center gap-2"><span class="text-gray-500 w-12 shrink-0">${escape_html(getCategoryLabel(service.category))}</span> <span class="text-gray-300 font-medium">${escape_html(service.provider)}</span></div></div>`);
         }
         $$renderer2.push(`<!--]-->`);
       }
-      $$renderer2.push(`<!--]--></div></div></div>`);
+      $$renderer2.push(`<!--]--></g>`);
     }
-    $$renderer2.push(`<!--]--></div></div> <div class="shrink-0 px-4 py-2 bg-gray-900/90 border-t border-gray-800 flex items-center gap-6 flex-wrap"><div class="flex items-center gap-3"><span class="text-xs text-gray-500">Identity:</span> <!--[-->`);
+    $$renderer2.push(`<!--]--></g></svg></div> <div class="shrink-0 px-4 py-2 bg-gray-900/90 border-t border-gray-800 flex items-center gap-6 flex-wrap"><div class="flex items-center gap-3"><span class="text-xs text-gray-500">Identity:</span> <!--[-->`);
     const each_array_2 = ensure_array_like(Object.entries(identityColors));
     for (let $$index_2 = 0, $$length = each_array_2.length; $$index_2 < $$length; $$index_2++) {
       let [identity, color] = each_array_2[$$index_2];

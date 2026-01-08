@@ -86,14 +86,6 @@
     "file": "chunks/context.js",
     "name": "context"
   },
-  "_database.js": {
-    "file": "chunks/database.js",
-    "name": "database",
-    "imports": [
-      "_index2.js",
-      "_Icon.js"
-    ]
-  },
   "_environment.js": {
     "file": "chunks/environment.js",
     "name": "environment"
@@ -238,14 +230,6 @@
       "_utils.js"
     ]
   },
-  "_shield.js": {
-    "file": "chunks/shield.js",
-    "name": "shield",
-    "imports": [
-      "_index2.js",
-      "_Icon.js"
-    ]
-  },
   "_state.svelte.js": {
     "file": "chunks/state.svelte.js",
     "name": "state.svelte",
@@ -348,7 +332,7 @@
       "_context.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.CMJ6QxaW.css"
+      "_app/immutable/assets/_layout.CWP7jIVk.css"
     ]
   },
   "src/routes/+page.server.ts": {
@@ -426,9 +410,8 @@
       "_utils.js",
       "_state.svelte.js",
       "_refresh-cw.js",
-      "_database.js",
-      "_circle-x.js",
       "_triangle-alert.js",
+      "_circle-x.js",
       "_clock.js",
       "_plus.js",
       "_Icon.js",
@@ -595,16 +578,10 @@
     "imports": [
       "_index2.js",
       "_Icon.js",
-      "_external-link.js",
-      "_cloud.js",
-      "_shield.js",
-      "_activity.js",
-      "_git-branch.js",
-      "_database.js",
       "_context.js"
     ],
     "css": [
-      "_app/immutable/assets/_page.C-JsIZs1.css"
+      "_app/immutable/assets/_page.DtomnKOL.css"
     ]
   },
   "src/routes/login/+page.server.ts": {
@@ -668,8 +645,6 @@
       "_server.js",
       "_triangle-alert.js",
       "_git-branch.js",
-      "_shield.js",
-      "_database.js",
       "_cloud.js",
       "_external-link.js",
       "_context.js",
