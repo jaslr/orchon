@@ -132,15 +132,29 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
       if (widget.initialCommand != null) {
         _session?.write(Uint8List.fromList(utf8.encode('${widget.initialCommand}\n')));
       } else if (widget.launchMode == LaunchMode.claude) {
-        // Change to project directory if specified
-        if (widget.projectDirectory != null) {
-          terminal.write('[Changing to ${widget.projectDirectory}...]\r\n');
-          _session?.write(Uint8List.fromList(utf8.encode('cd ${widget.projectDirectory}\n')));
-          await Future.delayed(const Duration(milliseconds: 300));
-        }
+        // Generate a unique session name for tracking
+        // Format: orchon_PROJECT_TIMESTAMP so it shows up in session resume
+        final projectName = widget.projectDirectory?.split('/').last ?? 'general';
+        final timestamp = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
+        final sessionName = 'orchon_${projectName}_$timestamp';
 
-        terminal.write('[Launching Claude...]\r\n');
-        _session?.write(Uint8List.fromList(utf8.encode('${config.claudeCommand}\n')));
+        terminal.write('[Creating session: $sessionName]\r\n');
+
+        // Create a named tmux session so it's tracked properly
+        String tmuxCmd = 'tmux new-session -d -s "$sessionName"';
+        if (widget.projectDirectory != null) {
+          tmuxCmd += ' -c "${widget.projectDirectory}"';
+        }
+        _session?.write(Uint8List.fromList(utf8.encode('$tmuxCmd\n')));
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Send claude command to the tmux session
+        terminal.write('[Launching Claude in session...]\r\n');
+        _session?.write(Uint8List.fromList(utf8.encode('tmux send-keys -t "$sessionName" "${config.claudeCommand}" Enter\n')));
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        // Attach to the session
+        _session?.write(Uint8List.fromList(utf8.encode('tmux attach -t "$sessionName"\n')));
 
         // If context message provided, wait for Claude to start then type it
         if (widget.contextMessage != null) {
@@ -286,42 +300,47 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
           top: BorderSide(color: Colors.grey[800]!),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Escape key
-          _buildToolbarButton('ESC', () => _sendSpecialKey('\x1b')),
-          // Tab key
-          _buildToolbarButton('TAB', () => _sendSpecialKey('\t')),
-          // Ctrl modifier
-          _buildToolbarButton(
-            'CTRL',
-            () => setState(() => _ctrlPressed = !_ctrlPressed),
-            isActive: _ctrlPressed,
-          ),
-          // Divider
-          Container(width: 1, height: 24, color: Colors.grey[700]),
-          // Arrow keys
-          _buildToolbarButton('↑', () => _sendSpecialKey('\x1b[A')),
-          _buildToolbarButton('↓', () => _sendSpecialKey('\x1b[B')),
-          _buildToolbarButton('←', () => _sendSpecialKey('\x1b[D')),
-          _buildToolbarButton('→', () => _sendSpecialKey('\x1b[C')),
-          // Divider
-          Container(width: 1, height: 24, color: Colors.grey[700]),
-          // Common ctrl shortcuts
-          _buildToolbarButton('C', () => _sendCtrlKey('c'), isCtrl: true),
-          _buildToolbarButton('D', () => _sendCtrlKey('d'), isCtrl: true),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            // Escape key
+            _buildToolbarButton('ESC', () => _sendSpecialKey('\x1b')),
+            // Tab key
+            _buildToolbarButton('TAB', () => _sendSpecialKey('\t')),
+            // Ctrl modifier
+            _buildToolbarButton(
+              'CTRL',
+              () => setState(() => _ctrlPressed = !_ctrlPressed),
+              isActive: _ctrlPressed,
+            ),
+            // Divider
+            Container(width: 1, height: 24, color: Colors.grey[700]),
+            // Arrow keys
+            _buildToolbarButton('↑', () => _sendSpecialKey('\x1b[A')),
+            _buildToolbarButton('↓', () => _sendSpecialKey('\x1b[B')),
+            _buildToolbarButton('←', () => _sendSpecialKey('\x1b[D')),
+            _buildToolbarButton('→', () => _sendSpecialKey('\x1b[C')),
+            // Divider
+            Container(width: 1, height: 24, color: Colors.grey[700]),
+            // Common ctrl shortcuts
+            _buildToolbarButton('C', () => _sendCtrlKey('c'), isCtrl: true),
+            _buildToolbarButton('D', () => _sendCtrlKey('d'), isCtrl: true),
+            _buildToolbarButton('Q', () => _sendCtrlKey('q'), isCtrl: true, highlight: true),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildToolbarButton(String label, VoidCallback onPressed, {bool isActive = false, bool isCtrl = false}) {
+  Widget _buildToolbarButton(String label, VoidCallback onPressed, {bool isActive = false, bool isCtrl = false, bool highlight = false}) {
     final showAsCtrl = isCtrl && !_ctrlPressed;
     final displayLabel = showAsCtrl ? '^$label' : label;
+    final highlightColor = const Color(0xFF10B981); // Green for agent-deck shortcut
 
     return Material(
-      color: isActive ? const Color(0xFF6366F1) : Colors.transparent,
+      color: isActive ? const Color(0xFF6366F1) : (highlight ? highlightColor.withOpacity(0.2) : Colors.transparent),
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: () {
@@ -332,10 +351,14 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
         borderRadius: BorderRadius.circular(6),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: highlight && !isActive ? BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: highlightColor.withOpacity(0.5)),
+          ) : null,
           child: Text(
             displayLabel,
             style: TextStyle(
-              color: isActive ? Colors.white : Colors.grey[400],
+              color: isActive ? Colors.white : (highlight ? highlightColor : Colors.grey[400]),
               fontSize: 13,
               fontWeight: FontWeight.w600,
               fontFamily: 'monospace',

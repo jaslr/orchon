@@ -206,7 +206,7 @@ class _DeploymentsScreenState extends ConsumerState<DeploymentsScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showNewThreadSheet(context),
         icon: const Icon(Icons.add),
-        label: const Text('New Thread'),
+        label: const Text('New Terminal Session'),
       ),
     );
   }

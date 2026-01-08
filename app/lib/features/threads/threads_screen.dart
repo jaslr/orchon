@@ -7,6 +7,7 @@ import '../../core/updates/update_dialog.dart';
 import '../settings/settings_drawer.dart';
 import '../settings/terminal_config_screen.dart';
 import '../terminal/quick_commands.dart';
+import '../terminal/ssh_terminal_screen.dart';
 import 'threads_provider.dart';
 import 'chat_screen.dart';
 
@@ -98,9 +99,9 @@ class _ThreadsScreenState extends ConsumerState<ThreadsScreen> {
                   child: _buildThreadsList(threadsState.threads),
                 ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _createNewThread(context),
+        onPressed: () => _startNewTerminalSession(context),
         icon: const Icon(Icons.add),
-        label: const Text('New Thread'),
+        label: const Text('New Terminal Session'),
       ),
     );
   }
@@ -200,6 +201,13 @@ class _ThreadsScreenState extends ConsumerState<ThreadsScreen> {
           onClose: () => _closeThread(thread.id),
         );
       },
+    );
+  }
+
+  void _startNewTerminalSession(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => _NewTerminalSessionSheet(ref: ref),
     );
   }
 
@@ -395,6 +403,101 @@ class _NewThreadSheetState extends ConsumerState<_NewThreadSheet> {
                 widget.onCreateThread(hint);
               },
               child: const Text('Create Thread'),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+}
+
+class _NewTerminalSessionSheet extends ConsumerStatefulWidget {
+  final WidgetRef ref;
+
+  const _NewTerminalSessionSheet({required this.ref});
+
+  @override
+  ConsumerState<_NewTerminalSessionSheet> createState() => _NewTerminalSessionSheetState();
+}
+
+class _NewTerminalSessionSheetState extends ConsumerState<_NewTerminalSessionSheet> {
+  String? _selectedProject;
+
+  @override
+  Widget build(BuildContext context) {
+    final config = ref.watch(terminalConfigProvider);
+    final projectNames = ['General', ...config.projects.map((p) => p.name)];
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'New Terminal Session',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Select a project to set the working directory',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[400],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: projectNames.map((project) {
+              final isSelected = _selectedProject == project;
+              return FilterChip(
+                label: Text(project),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    _selectedProject = selected ? project : null;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () {
+                Navigator.pop(context); // Close bottom sheet
+
+                // Find the project directory
+                String? projectDirectory;
+                if (_selectedProject != null && _selectedProject != 'General') {
+                  final project = config.projects.firstWhere(
+                    (p) => p.name == _selectedProject,
+                    orElse: () => ProjectConfig(name: '', directory: ''),
+                  );
+                  if (project.directory.isNotEmpty) {
+                    projectDirectory = project.directory;
+                  }
+                }
+
+                // Launch SSH terminal with Claude
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SshTerminalScreen(
+                      launchMode: LaunchMode.claude,
+                      projectDirectory: projectDirectory,
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Start Terminal Session'),
             ),
           ),
           const SizedBox(height: 16),
