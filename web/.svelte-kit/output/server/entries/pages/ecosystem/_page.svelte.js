@@ -1,10 +1,14 @@
 import { G as attr, y as stringify, x as attr_class, F as ensure_array_like, K as attr_style, z as head } from "../../../chunks/index2.js";
 import { p as page } from "../../../chunks/index3.js";
 import { a as getProvidersByCategory, b as getAllProjects, I as INFRASTRUCTURE } from "../../../chunks/infrastructure.js";
-import { o as onDestroy } from "../../../chunks/index-server.js";
+import { k as ssr_context, j as escape_html } from "../../../chunks/context.js";
+import "clsx";
 import { R as Refresh_cw } from "../../../chunks/refresh-cw.js";
-import { j as escape_html } from "../../../chunks/context.js";
 import { A as Activity } from "../../../chunks/activity.js";
+function onDestroy(fn) {
+  /** @type {SSRContext} */
+  ssr_context.r.on_destroy(fn);
+}
 function InfrastructureMap($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let nodes = [];
