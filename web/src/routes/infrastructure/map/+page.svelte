@@ -1,9 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { browser } from '$app/environment';
-	import { onMount } from 'svelte';
-	import { zoom, zoomIdentity } from 'd3-zoom';
-	import { select } from 'd3-selection';
+	import { onMount, onDestroy } from 'svelte';
 	import {
 		ZoomIn,
 		ZoomOut,
@@ -22,13 +20,13 @@
 			: [...data.projects].sort((a, b) => b.displayName.localeCompare(a.displayName))
 	);
 
-	// SVG refs
-	let svgRef: SVGSVGElement;
-	let gRef: SVGGElement;
+	// Canvas ref and PixiJS app
+	let canvasContainer: HTMLDivElement;
+	let pixiApp: import('pixi.js').Application | null = null;
+	let worldContainer: import('pixi.js').Container | null = null;
 	let currentZoom = $state(1);
-	let zoomBehavior: ReturnType<typeof zoom<SVGSVGElement, unknown>> | null = null;
 
-	// Grid config - 4 columns
+	// Grid config
 	const COLS = 4;
 	const CARD_WIDTH = 300;
 	const CARD_HEIGHT = 340;
@@ -36,24 +34,30 @@
 	const PADDING = 50;
 
 	// Provider colors
-	const providerColors: Record<string, string> = {
-		cloudflare: '#f38020',
-		supabase: '#3ecf8e',
-		flyio: '#7c3aed',
-		firebase: '#ffca28',
-		gcp: '#4285f4',
-		github: '#6e7681',
-		pocketbase: '#b8dbe4',
-		sentry: '#362d59',
-		vercel: '#000000',
-		netlify: '#00c7b7',
-		resend: '#000000',
-		sendgrid: '#1a82e2',
-		mailgun: '#f06b66',
-		digitalocean: '#0080ff',
+	const providerColors: Record<string, number> = {
+		cloudflare: 0xf38020,
+		supabase: 0x3ecf8e,
+		flyio: 0x7c3aed,
+		firebase: 0xffca28,
+		gcp: 0x4285f4,
+		github: 0x6e7681,
+		pocketbase: 0xb8dbe4,
+		sentry: 0x362d59,
+		vercel: 0x000000,
+		netlify: 0x00c7b7,
+		resend: 0x000000,
+		sendgrid: 0x1a82e2,
+		mailgun: 0xf06b66,
+		digitalocean: 0x0080ff,
 	};
 
-	// Category labels and icons (using unicode for SVG)
+	// Identity colors
+	const identityColors: Record<string, number> = {
+		jaslr: 0x3b82f6,
+		'jvp-ux': 0x8b5cf6,
+	};
+
+	// Category labels
 	function getCategoryLabel(category: string): string {
 		const labels: Record<string, string> = {
 			hosting: 'Host',
@@ -67,26 +71,6 @@
 		};
 		return labels[category] || category;
 	}
-
-	function getCategoryIcon(category: string): string {
-		const icons: Record<string, string> = {
-			hosting: '\u2601', // cloud
-			database: '\u{1F5C4}', // file cabinet / cylinder-ish
-			auth: '\u{1F6E1}', // shield
-			storage: '\u{1F4BE}', // floppy
-			ci: '\u2699', // gear
-			monitoring: '\u{1F4CA}', // chart
-			dns: '\u{1F310}', // globe
-			email: '\u2709', // envelope
-		};
-		return icons[category] || '\u25CF';
-	}
-
-	// Identity colors
-	const identityColors: Record<string, string> = {
-		jaslr: '#3b82f6',
-		'jvp-ux': '#8b5cf6',
-	};
 
 	// Get hosting provider
 	function getHostingProvider(services: typeof data.projects[0]['services']): string {
@@ -103,11 +87,7 @@
 		}
 	}
 
-	// Calculate positions
-	let rows = $derived(Math.ceil(sortedProjects.length / COLS));
-	let canvasWidth = $derived(COLS * CARD_WIDTH + (COLS - 1) * GAP + PADDING * 2);
-	let canvasHeight = $derived(rows * CARD_HEIGHT + (rows - 1) * GAP + PADDING * 2);
-
+	// Card position
 	function getCardPosition(index: number) {
 		const col = index % COLS;
 		const row = Math.floor(index / COLS);
@@ -117,52 +97,369 @@
 		};
 	}
 
-	// Initialize d3-zoom
-	onMount(() => {
-		if (!browser || !svgRef || !gRef) return;
+	// Pan/zoom state
+	let isDragging = false;
+	let lastPointerPos = { x: 0, y: 0 };
 
-		const svg = select(svgRef);
+	// Initialize PixiJS
+	onMount(async () => {
+		if (!browser || !canvasContainer) return;
 
-		zoomBehavior = zoom<SVGSVGElement, unknown>()
-			.scaleExtent([0.25, 4])
-			.on('zoom', (event) => {
-				select(gRef).attr('transform', event.transform.toString());
-				currentZoom = event.transform.k;
+		const PIXI = await import('pixi.js');
+
+		// Create application with WebGL
+		pixiApp = new PIXI.Application();
+		await pixiApp.init({
+			resizeTo: canvasContainer,
+			backgroundColor: 0x030712,
+			antialias: true,
+			resolution: window.devicePixelRatio || 1,
+			autoDensity: true,
+		});
+
+		canvasContainer.appendChild(pixiApp.canvas);
+
+		// Create world container for pan/zoom
+		worldContainer = new PIXI.Container();
+		worldContainer.x = 20;
+		worldContainer.y = 20;
+		pixiApp.stage.addChild(worldContainer);
+
+		// Draw grid background
+		const gridGraphics = new PIXI.Graphics();
+		const gridSize = 40;
+		const gridWidth = 3000;
+		const gridHeight = 3000;
+		gridGraphics.setStrokeStyle({ width: 0.5, color: 0x374151, alpha: 0.3 });
+		for (let x = 0; x <= gridWidth; x += gridSize) {
+			gridGraphics.moveTo(x, 0);
+			gridGraphics.lineTo(x, gridHeight);
+		}
+		for (let y = 0; y <= gridHeight; y += gridSize) {
+			gridGraphics.moveTo(0, y);
+			gridGraphics.lineTo(gridWidth, y);
+		}
+		gridGraphics.stroke();
+		worldContainer.addChild(gridGraphics);
+
+		// Render cards
+		renderCards(PIXI);
+
+		// Setup interaction
+		setupInteraction();
+	});
+
+	function renderCards(PIXI: typeof import('pixi.js')) {
+		if (!worldContainer) return;
+
+		// Clear existing cards (except grid)
+		while (worldContainer.children.length > 1) {
+			worldContainer.removeChildAt(1);
+		}
+
+		sortedProjects.forEach((project, index) => {
+			const pos = getCardPosition(index);
+			const identityColor = identityColors[project.identity] || 0x6b7280;
+			const hostProvider = getHostingProvider(project.services);
+			const hostColor = providerColors[hostProvider] || 0x6b7280;
+
+			// Card container
+			const cardContainer = new PIXI.Container();
+			cardContainer.x = pos.x;
+			cardContainer.y = pos.y;
+
+			// Card background with shadow
+			const shadow = new PIXI.Graphics();
+			shadow.roundRect(4, 4, CARD_WIDTH, CARD_HEIGHT, 8);
+			shadow.fill({ color: 0x000000, alpha: 0.3 });
+			cardContainer.addChild(shadow);
+
+			const cardBg = new PIXI.Graphics();
+			cardBg.roundRect(0, 0, CARD_WIDTH, CARD_HEIGHT, 8);
+			cardBg.fill(0x111827);
+			cardBg.stroke({ width: 1, color: 0x374151 });
+			cardContainer.addChild(cardBg);
+
+			// Identity accent bar
+			const accentBar = new PIXI.Graphics();
+			accentBar.roundRect(0, 0, 4, CARD_HEIGHT, 2);
+			accentBar.fill(identityColor);
+			cardContainer.addChild(accentBar);
+
+			// Header background
+			const headerBg = new PIXI.Graphics();
+			headerBg.roundRect(4, 0, CARD_WIDTH - 4, 70, 8);
+			headerBg.fill(0x1f2937);
+			cardContainer.addChild(headerBg);
+
+			// Project name - using resolution for crisp text
+			const nameText = new PIXI.Text({
+				text: project.displayName,
+				style: {
+					fontFamily: 'system-ui, -apple-system, sans-serif',
+					fontSize: 14,
+					fontWeight: '600',
+					fill: 0xffffff,
+				}
+			});
+			nameText.x = 16;
+			nameText.y = 10;
+			cardContainer.addChild(nameText);
+
+			// Host badge background
+			const badgeBg = new PIXI.Graphics();
+			badgeBg.roundRect(CARD_WIDTH - 70, 8, 58, 20, 4);
+			badgeBg.fill({ color: hostColor, alpha: 0.2 });
+			cardContainer.addChild(badgeBg);
+
+			// Host badge text
+			const badgeText = new PIXI.Text({
+				text: hostProvider,
+				style: {
+					fontFamily: 'system-ui, sans-serif',
+					fontSize: 10,
+					fontWeight: '500',
+					fill: hostColor,
+				}
+			});
+			badgeText.x = CARD_WIDTH - 41 - badgeText.width / 2;
+			badgeText.y = 12;
+			cardContainer.addChild(badgeText);
+
+			// Production URL
+			if (project.productionUrl) {
+				const urlText = new PIXI.Text({
+					text: getDisplayUrl(project.productionUrl),
+					style: {
+						fontFamily: 'system-ui, sans-serif',
+						fontSize: 11,
+						fill: 0x60a5fa,
+					}
+				});
+				urlText.x = 16;
+				urlText.y = 32;
+				urlText.eventMode = 'static';
+				urlText.cursor = 'pointer';
+				urlText.on('pointerdown', (e) => {
+					e.stopPropagation();
+					window.open(project.productionUrl, '_blank', 'noopener,noreferrer');
+				});
+				cardContainer.addChild(urlText);
+			}
+
+			// Repo ID
+			const idText = new PIXI.Text({
+				text: project.id,
+				style: {
+					fontFamily: 'ui-monospace, monospace',
+					fontSize: 10,
+					fill: 0x6b7280,
+				}
+			});
+			idText.x = 16;
+			idText.y = 50;
+			cardContainer.addChild(idText);
+
+			// Services
+			project.services.forEach((service, svcIdx) => {
+				const svcY = 80 + svcIdx * 28;
+				if (svcY + 28 > CARD_HEIGHT - 10) return;
+
+				const svcColor = providerColors[service.provider] || 0x6b7280;
+
+				// Service row background
+				const rowBg = new PIXI.Graphics();
+				rowBg.roundRect(8, svcY, CARD_WIDTH - 16, 24, 4);
+				rowBg.fill({ color: 0x1f2937, alpha: 0.5 });
+				cardContainer.addChild(rowBg);
+
+				// Category circle
+				const circle = new PIXI.Graphics();
+				circle.circle(22, svcY + 12, 10);
+				circle.fill({ color: svcColor, alpha: 0.15 });
+				cardContainer.addChild(circle);
+
+				// Category label
+				const catText = new PIXI.Text({
+					text: getCategoryLabel(service.category),
+					style: {
+						fontFamily: 'system-ui, sans-serif',
+						fontSize: 10,
+						fill: 0x9ca3af,
+					}
+				});
+				catText.x = 40;
+				catText.y = svcY + 6;
+				cardContainer.addChild(catText);
+
+				// Provider name
+				const providerText = new PIXI.Text({
+					text: service.provider,
+					style: {
+						fontFamily: 'system-ui, sans-serif',
+						fontSize: 11,
+						fontWeight: '500',
+						fill: service.dashboardUrl ? 0xe5e7eb : 0xd1d5db,
+					}
+				});
+				providerText.x = 95;
+				providerText.y = svcY + 5;
+
+				if (service.dashboardUrl) {
+					providerText.eventMode = 'static';
+					providerText.cursor = 'pointer';
+					providerText.on('pointerdown', (e) => {
+						e.stopPropagation();
+						window.open(service.dashboardUrl, '_blank', 'noopener,noreferrer');
+					});
+
+					// Arrow indicator
+					const arrow = new PIXI.Text({
+						text: '↗',
+						style: {
+							fontFamily: 'system-ui, sans-serif',
+							fontSize: 10,
+							fill: 0x6b7280,
+						}
+					});
+					arrow.x = CARD_WIDTH - 24;
+					arrow.y = svcY + 6;
+					cardContainer.addChild(arrow);
+				}
+				cardContainer.addChild(providerText);
 			});
 
-		svg.call(zoomBehavior);
+			worldContainer!.addChild(cardContainer);
+		});
+	}
 
-		// Set initial transform
-		svg.call(zoomBehavior.transform, zoomIdentity.translate(20, 20));
-	});
+	function setupInteraction() {
+		if (!pixiApp || !worldContainer) return;
+
+		const canvas = pixiApp.canvas;
+
+		// Wheel zoom
+		canvas.addEventListener('wheel', (e) => {
+			e.preventDefault();
+			if (!worldContainer) return;
+
+			const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+			const newScale = Math.max(0.25, Math.min(4, worldContainer.scale.x * zoomFactor));
+
+			// Zoom toward mouse position
+			const rect = canvas.getBoundingClientRect();
+			const mouseX = e.clientX - rect.left;
+			const mouseY = e.clientY - rect.top;
+
+			const worldPos = {
+				x: (mouseX - worldContainer.x) / worldContainer.scale.x,
+				y: (mouseY - worldContainer.y) / worldContainer.scale.y
+			};
+
+			worldContainer.scale.set(newScale);
+			worldContainer.x = mouseX - worldPos.x * newScale;
+			worldContainer.y = mouseY - worldPos.y * newScale;
+
+			currentZoom = newScale;
+		}, { passive: false });
+
+		// Pan with drag
+		canvas.addEventListener('pointerdown', (e) => {
+			isDragging = true;
+			lastPointerPos = { x: e.clientX, y: e.clientY };
+			canvas.style.cursor = 'grabbing';
+		});
+
+		canvas.addEventListener('pointermove', (e) => {
+			if (!isDragging || !worldContainer) return;
+
+			const dx = e.clientX - lastPointerPos.x;
+			const dy = e.clientY - lastPointerPos.y;
+
+			worldContainer.x += dx;
+			worldContainer.y += dy;
+
+			lastPointerPos = { x: e.clientX, y: e.clientY };
+		});
+
+		canvas.addEventListener('pointerup', () => {
+			isDragging = false;
+			canvas.style.cursor = 'grab';
+		});
+
+		canvas.addEventListener('pointerleave', () => {
+			isDragging = false;
+			canvas.style.cursor = 'grab';
+		});
+
+		canvas.style.cursor = 'grab';
+	}
 
 	// Zoom controls
 	function zoomIn() {
-		if (zoomBehavior && svgRef) {
-			select(svgRef).transition().duration(200).call(zoomBehavior.scaleBy, 1.3);
-		}
+		if (!worldContainer || !pixiApp) return;
+		const canvas = pixiApp.canvas;
+		const rect = canvas.getBoundingClientRect();
+		const centerX = rect.width / 2;
+		const centerY = rect.height / 2;
+
+		const newScale = Math.min(4, worldContainer.scale.x * 1.3);
+
+		const worldPos = {
+			x: (centerX - worldContainer.x) / worldContainer.scale.x,
+			y: (centerY - worldContainer.y) / worldContainer.scale.y
+		};
+
+		worldContainer.scale.set(newScale);
+		worldContainer.x = centerX - worldPos.x * newScale;
+		worldContainer.y = centerY - worldPos.y * newScale;
+
+		currentZoom = newScale;
 	}
 
 	function zoomOut() {
-		if (zoomBehavior && svgRef) {
-			select(svgRef).transition().duration(200).call(zoomBehavior.scaleBy, 0.7);
-		}
+		if (!worldContainer || !pixiApp) return;
+		const canvas = pixiApp.canvas;
+		const rect = canvas.getBoundingClientRect();
+		const centerX = rect.width / 2;
+		const centerY = rect.height / 2;
+
+		const newScale = Math.max(0.25, worldContainer.scale.x * 0.7);
+
+		const worldPos = {
+			x: (centerX - worldContainer.x) / worldContainer.scale.x,
+			y: (centerY - worldContainer.y) / worldContainer.scale.y
+		};
+
+		worldContainer.scale.set(newScale);
+		worldContainer.x = centerX - worldPos.x * newScale;
+		worldContainer.y = centerY - worldPos.y * newScale;
+
+		currentZoom = newScale;
 	}
 
 	function resetView() {
-		if (zoomBehavior && svgRef) {
-			select(svgRef).transition().duration(300).call(
-				zoomBehavior.transform,
-				zoomIdentity.translate(20, 20).scale(1)
-			);
-		}
+		if (!worldContainer) return;
+		worldContainer.scale.set(1);
+		worldContainer.x = 20;
+		worldContainer.y = 20;
+		currentZoom = 1;
 	}
 
-	// Handle link clicks (prevent zoom/pan interference)
-	function handleLinkClick(e: MouseEvent, url: string) {
-		e.stopPropagation();
-		window.open(url, '_blank', 'noopener,noreferrer');
-	}
+	// Re-render on sort change
+	$effect(() => {
+		if (pixiApp && worldContainer && sortedProjects) {
+			import('pixi.js').then(PIXI => renderCards(PIXI));
+		}
+	});
+
+	// Cleanup
+	onDestroy(() => {
+		if (pixiApp) {
+			pixiApp.destroy(true, { children: true });
+			pixiApp = null;
+		}
+	});
 </script>
 
 <svelte:head>
@@ -174,6 +471,7 @@
 	<div class="shrink-0 flex items-center justify-between px-4 py-2 bg-gray-900/80 border-b border-gray-800 backdrop-blur-sm z-10">
 		<div class="flex items-center gap-4">
 			<h1 class="text-lg font-semibold text-white">Infrastructure Map</h1>
+			<span class="text-xs px-1.5 py-0.5 bg-green-900/50 text-green-400 rounded">WebGL</span>
 			<span class="text-xs text-gray-500">{sortedProjects.length} projects</span>
 			<span class="text-xs text-gray-600">|</span>
 			<span class="text-xs text-gray-500">Data: <code class="text-gray-400">lib/config/infrastructure.ts</code></span>
@@ -225,234 +523,11 @@
 		Scroll to zoom | Drag to pan | Click links to open dashboards
 	</div>
 
-	<!-- SVG Canvas -->
-	<div class="flex-1 overflow-hidden relative bg-gray-950">
-		<svg
-			bind:this={svgRef}
-			class="w-full h-full"
-			style="cursor: grab;"
-		>
-			<!-- Defs for patterns and filters -->
-			<defs>
-				<!-- Grid pattern -->
-				<pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-					<path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(55, 65, 81, 0.3)" stroke-width="0.5"/>
-				</pattern>
-				<!-- Card shadow filter -->
-				<filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
-					<feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="rgba(0,0,0,0.5)"/>
-				</filter>
-			</defs>
-
-			<!-- Background grid (fixed, doesn't zoom) -->
-			<rect width="100%" height="100%" fill="url(#grid)" />
-
-			<!-- Zoomable content group -->
-			<g bind:this={gRef}>
-				{#each sortedProjects as project, index (project.id)}
-					{@const pos = getCardPosition(index)}
-					{@const identityColor = identityColors[project.identity] || '#6b7280'}
-					{@const hostProvider = getHostingProvider(project.services)}
-					{@const hostColor = providerColors[hostProvider] || '#6b7280'}
-
-					<!-- Card container -->
-					<g transform="translate({pos.x}, {pos.y})">
-						<!-- Card background -->
-						<rect
-							width={CARD_WIDTH}
-							height={CARD_HEIGHT}
-							rx="8"
-							fill="#111827"
-							stroke="#374151"
-							stroke-width="1"
-							filter="url(#cardShadow)"
-						/>
-						<!-- Identity accent -->
-						<rect
-							x="0"
-							y="0"
-							width="4"
-							height={CARD_HEIGHT}
-							rx="2"
-							fill={identityColor}
-						/>
-
-						<!-- Header background -->
-						<rect
-							x="4"
-							y="0"
-							width={CARD_WIDTH - 4}
-							height="70"
-							rx="8"
-							fill="#1f2937"
-						/>
-
-						<!-- Project name -->
-						<text
-							x="16"
-							y="24"
-							font-size="14"
-							font-weight="600"
-							fill="white"
-							font-family="system-ui, -apple-system, sans-serif"
-						>
-							{project.displayName}
-						</text>
-
-						<!-- Host badge -->
-						<rect
-							x={CARD_WIDTH - 70}
-							y="8"
-							width="58"
-							height="20"
-							rx="4"
-							fill="{hostColor}30"
-						/>
-						<text
-							x={CARD_WIDTH - 41}
-							y="22"
-							font-size="10"
-							font-weight="500"
-							fill={hostColor}
-							text-anchor="middle"
-							font-family="system-ui, sans-serif"
-						>
-							{hostProvider}
-						</text>
-
-						<!-- Production URL -->
-						{#if project.productionUrl}
-							<!-- svelte-ignore a11y_click_events_have_key_events -->
-							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<g
-								class="cursor-pointer"
-								onclick={(e) => handleLinkClick(e, project.productionUrl!)}
-							>
-								<text
-									x="16"
-									y="42"
-									font-size="11"
-									fill="#60a5fa"
-									font-family="system-ui, sans-serif"
-								>
-									{getDisplayUrl(project.productionUrl)}
-								</text>
-							</g>
-						{:else}
-							<text
-								x="16"
-								y="42"
-								font-size="11"
-								fill="#6b7280"
-								font-family="system-ui, sans-serif"
-							>
-								No production URL
-							</text>
-						{/if}
-
-						<!-- Repo ID -->
-						<text
-							x="16"
-							y="58"
-							font-size="10"
-							fill="#6b7280"
-							font-family="ui-monospace, monospace"
-						>
-							{project.id}
-						</text>
-
-						<!-- Services list -->
-						{#each project.services as service, svcIdx (service.provider + '-' + service.category + '-' + svcIdx)}
-							{@const svcY = 80 + svcIdx * 28}
-							{@const color = providerColors[service.provider] || '#6b7280'}
-
-							{#if svcY + 28 < CARD_HEIGHT - 10}
-								<!-- Service row background -->
-								<rect
-									x="8"
-									y={svcY}
-									width={CARD_WIDTH - 16}
-									height="24"
-									rx="4"
-									fill="#1f293780"
-								/>
-
-								<!-- Category icon circle -->
-								<circle
-									cx="22"
-									cy={svcY + 12}
-									r="10"
-									fill="{color}20"
-								/>
-								<text
-									x="22"
-									y={svcY + 16}
-									font-size="10"
-									fill={color}
-									text-anchor="middle"
-									font-family="system-ui, sans-serif"
-								>
-									{getCategoryIcon(service.category)}
-								</text>
-
-								<!-- Category label -->
-								<text
-									x="40"
-									y={svcY + 16}
-									font-size="10"
-									fill="#9ca3af"
-									font-family="system-ui, sans-serif"
-								>
-									{getCategoryLabel(service.category)}
-								</text>
-
-								<!-- Provider name -->
-								{#if service.dashboardUrl}
-									<!-- svelte-ignore a11y_click_events_have_key_events -->
-									<!-- svelte-ignore a11y_no_static_element_interactions -->
-									<g
-										class="cursor-pointer"
-										onclick={(e) => handleLinkClick(e, service.dashboardUrl!)}
-									>
-										<text
-											x="95"
-											y={svcY + 16}
-											font-size="11"
-											font-weight="500"
-											fill="#e5e7eb"
-											font-family="system-ui, sans-serif"
-										>
-											{service.provider}
-										</text>
-										<!-- External link indicator -->
-										<text
-											x={CARD_WIDTH - 24}
-											y={svcY + 16}
-											font-size="10"
-											fill="#6b7280"
-										>
-											↗
-										</text>
-									</g>
-								{:else}
-									<text
-										x="95"
-										y={svcY + 16}
-										font-size="11"
-										font-weight="500"
-										fill="#d1d5db"
-										font-family="system-ui, sans-serif"
-									>
-										{service.provider}
-									</text>
-								{/if}
-							{/if}
-						{/each}
-					</g>
-				{/each}
-			</g>
-		</svg>
-	</div>
+	<!-- WebGL Canvas Container -->
+	<div
+		bind:this={canvasContainer}
+		class="flex-1 overflow-hidden relative"
+	></div>
 
 	<!-- Legend -->
 	<div class="shrink-0 px-4 py-2 bg-gray-900/90 border-t border-gray-800 flex items-center gap-6 flex-wrap">
@@ -460,7 +535,7 @@
 			<span class="text-xs text-gray-500">Identity:</span>
 			{#each Object.entries(identityColors) as [identity, color] (identity)}
 				<div class="flex items-center gap-1.5">
-					<div class="w-3 h-3 rounded" style="background-color: {color};"></div>
+					<div class="w-3 h-3 rounded" style="background-color: #{color.toString(16).padStart(6, '0')};"></div>
 					<span class="text-xs text-gray-400">{identity}</span>
 				</div>
 			{/each}
@@ -469,22 +544,10 @@
 			<span class="text-xs text-gray-500">Providers:</span>
 			{#each Object.entries(providerColors).slice(0, 8) as [provider, color] (provider)}
 				<div class="flex items-center gap-1">
-					<div class="w-2 h-2 rounded-sm" style="background-color: {color};"></div>
+					<div class="w-2 h-2 rounded-sm" style="background-color: #{color.toString(16).padStart(6, '0')};"></div>
 					<span class="text-[10px] text-gray-500">{provider}</span>
 				</div>
 			{/each}
 		</div>
 	</div>
 </div>
-
-<style>
-	/* Crisp text rendering for SVG */
-	svg {
-		shape-rendering: geometricPrecision;
-		text-rendering: optimizeLegibility;
-	}
-	svg text {
-		-webkit-font-smoothing: antialiased;
-		-moz-osx-font-smoothing: grayscale;
-	}
-</style>

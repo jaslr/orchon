@@ -1,1 +1,0 @@
-import{m as o,h as _,y as c,E as d,z as y,A as E,B as T,w as b,v as f}from"./CkbQ0fmx.js";import{B as m}from"./DoutiFXv.js";function A(t,i,h=!1){_&&c();var e=new m(t),u=h?d:0;function n(a,r){if(_){const l=y(t)===E;if(a===l){var s=T();b(s),e.anchor=s,f(!1),e.ensure(a,r),f(!0);return}}e.ensure(a,r)}o(()=>{var a=!1;i((r,s=!0)=>{a=!0,n(s,r)}),a||n(!1,null)},u)}export{A as i};

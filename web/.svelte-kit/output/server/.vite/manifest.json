@@ -126,6 +126,13 @@
     "file": "chunks/github.js",
     "name": "github"
   },
+  "_index-server.js": {
+    "file": "chunks/index-server.js",
+    "name": "index-server",
+    "imports": [
+      "_context.js"
+    ]
+  },
   "_index.js": {
     "file": "chunks/index.js",
     "name": "index",
@@ -553,8 +560,9 @@
       "_index2.js",
       "_index3.js",
       "_infrastructure.js",
-      "_context.js",
+      "_index-server.js",
       "_refresh-cw.js",
+      "_context.js",
       "_activity.js"
     ],
     "css": [
@@ -577,11 +585,9 @@
     "isEntry": true,
     "imports": [
       "_index2.js",
+      "_index-server.js",
       "_Icon.js",
       "_context.js"
-    ],
-    "css": [
-      "_app/immutable/assets/_page.DtomnKOL.css"
     ]
   },
   "src/routes/login/+page.server.ts": {

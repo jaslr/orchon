@@ -1,1 +1,0 @@
-import{h as c,y as s,m as l,E as m}from"./CkbQ0fmx.js";import{B as _}from"./DoutiFXv.js";function f(n,o,r){c&&s();var a=new _(n);l(()=>{var e=o()??null;a.ensure(e,e&&(t=>r(t,e)))},m)}const u=Object.freeze(Object.defineProperty({__proto__:null},Symbol.toStringTag,{value:"Module"}));export{u as _,f as c};
