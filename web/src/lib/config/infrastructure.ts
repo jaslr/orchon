@@ -823,3 +823,152 @@ export function isDeployedInstance(projectId: string): boolean {
 export function getSourceRepo(projectId: string): string | undefined {
   return INFRASTRUCTURE[projectId]?.sourceRepo;
 }
+
+// ==========================================================================
+// ORGANISATIONS - Top-level entities that own campuses/instances
+// This represents the "ownership" hierarchy, not the repo hierarchy
+// ==========================================================================
+
+export interface Campus {
+  id: string;
+  displayName: string;
+  productionUrl?: string;
+  gcpProject?: string;
+  sourceRepo: 'junipa' | 'junipa-organisations';  // Which repo this campus runs
+}
+
+export interface Organisation {
+  id: string;
+  displayName: string;
+  marketingUrl?: string;  // e.g. busyschools.com.au (external marketing site)
+  orgPortalUrl?: string;  // Organisation portal URL (from junipa-organisations)
+  orgPortalGcpProject?: string;
+  campuses: Campus[];
+}
+
+/**
+ * Organisations and their campuses
+ * This is the "ownership" view - who owns what
+ */
+export const ORGANISATIONS: Organisation[] = [
+  {
+    id: 'busy-schools',
+    displayName: 'Busy Schools',
+    marketingUrl: 'https://busyschools.com.au',
+    orgPortalUrl: 'https://busyschools.junipa.com.au',
+    orgPortalGcpProject: 'busyschools-junipa',  // TODO: verify
+    campuses: [
+      {
+        id: 'busy-schools-cairns',
+        displayName: 'Busy Schools Cairns',
+        productionUrl: 'https://busyschools-cairns.junipa.com.au',  // TODO: verify URL
+        gcpProject: 'busyschools-cairns-prod',  // TODO: verify
+        sourceRepo: 'junipa',
+      },
+      {
+        id: 'busy-schools-koolingadda',
+        displayName: 'Busy Schools Koolingadda',
+        productionUrl: 'https://busyschools-koolingadda.junipa.com.au',  // TODO: verify URL
+        gcpProject: 'busyschools-koolingadda-prod',  // TODO: verify
+        sourceRepo: 'junipa',
+      },
+    ],
+  },
+  {
+    id: 'margaret-jurd-college',
+    displayName: 'Margaret Jurd College',
+    orgPortalUrl: 'https://margaretjurdcollege.junipa.com.au',
+    orgPortalGcpProject: 'margaretjurdcollege-junipa',  // TODO: verify
+    campuses: [
+      // MJC campuses - TODO: add actual campuses
+      {
+        id: 'mjc-main',
+        displayName: 'MJC Main Campus',
+        productionUrl: 'https://mjc-prod-2022b.appspot.com',
+        gcpProject: 'mjc-prod-2022b',
+        sourceRepo: 'junipa',
+      },
+      {
+        id: 'mjc-tuncurry',
+        displayName: 'MJC Tuncurry',
+        productionUrl: 'https://mjc-tuncurry-prod.appspot.com',
+        gcpProject: 'mjc-tuncurry-prod',
+        sourceRepo: 'junipa',
+      },
+    ],
+  },
+  {
+    id: 'cedar-college',
+    displayName: 'Cedar College',
+    campuses: [
+      {
+        id: 'cedar-college-main',
+        displayName: 'Cedar College',
+        productionUrl: 'https://cedarcollege-prod.appspot.com',
+        gcpProject: 'cedarcollege-prod',
+        sourceRepo: 'junipa',
+      },
+    ],
+  },
+  {
+    id: 'men-of-business',
+    displayName: 'Men of Business',
+    campuses: [
+      {
+        id: 'men-of-business-main',
+        displayName: 'Men of Business',
+        productionUrl: 'https://menofbusiness-prod.appspot.com',
+        gcpProject: 'menofbusiness-prod',
+        sourceRepo: 'junipa',
+      },
+    ],
+  },
+  {
+    id: 'junipa-demo',
+    displayName: 'Junipa Demo Organisation',
+    orgPortalUrl: 'https://organisation.junipa.com.au',
+    orgPortalGcpProject: 'junipa-organisations',  // TODO: verify
+    campuses: [
+      {
+        id: 'junipa-demo-campus',
+        displayName: 'Junipa Demo',
+        productionUrl: 'https://junipa.appspot.com',
+        gcpProject: 'junipa',
+        sourceRepo: 'junipa',
+      },
+    ],
+  },
+  {
+    id: 'junipa-central-demo',
+    displayName: 'Junipa Central Demo',
+    campuses: [
+      {
+        id: 'junipa-central-demo-campus',
+        displayName: 'Central Demo Campus',
+        productionUrl: 'https://junipa-central-demo.appspot.com',
+        gcpProject: 'junipa-central-demo',
+        sourceRepo: 'junipa',
+      },
+    ],
+  },
+  {
+    id: 'junipa-west-demo',
+    displayName: 'Junipa West Demo',
+    campuses: [
+      {
+        id: 'junipa-west-demo-campus',
+        displayName: 'West Demo Campus',
+        productionUrl: 'https://junipa-west-demo.appspot.com',
+        gcpProject: 'junipa-west-demo',
+        sourceRepo: 'junipa',
+      },
+    ],
+  },
+];
+
+/**
+ * Get all organisations for the ownership view
+ */
+export function getOrganisations(): Organisation[] {
+  return ORGANISATIONS;
+}

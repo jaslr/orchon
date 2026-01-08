@@ -1,5 +1,11 @@
 import type { PageServerLoad } from './$types';
-import { INFRASTRUCTURE, getSourceReposWithInstances, type SourceRepoWithInstances } from '$lib/config/infrastructure';
+import {
+  INFRASTRUCTURE,
+  getSourceReposWithInstances,
+  getOrganisations,
+  type SourceRepoWithInstances,
+  type Organisation
+} from '$lib/config/infrastructure';
 
 export interface ProjectNode {
   id: string;
@@ -38,5 +44,8 @@ export const load: PageServerLoad = async () => {
   // Get hierarchical structure for source repos and their instances
   const sourceRepos: SourceRepoWithInstances[] = getSourceReposWithInstances();
 
-  return { projects, sourceRepos };
+  // Get organisations for ownership view
+  const organisations: Organisation[] = getOrganisations();
+
+  return { projects, sourceRepos, organisations };
 };

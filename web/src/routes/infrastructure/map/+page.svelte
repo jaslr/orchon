@@ -1,12 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import {
-		Cloud,
-		Database,
-		Shield,
-		HardDrive,
-		GitBranch,
-		Activity,
 		ExternalLink,
 		ZoomIn,
 		ZoomOut,
@@ -14,13 +8,16 @@
 		ArrowDownZA,
 		Focus,
 		FolderGit2,
-		Server
+		Server,
+		Building2,
+		School,
+		Globe
 	} from '@lucide/svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	// View mode: 'hierarchy' shows repos with instances, 'flat' shows all projects
-	let viewMode = $state<'hierarchy' | 'flat'>('hierarchy');
+	// View mode: 'repos' shows source repos with instances, 'ownership' shows orgs with campuses, 'flat' shows all projects
+	let viewMode = $state<'repos' | 'ownership' | 'flat'>('ownership');
 
 	// Sorting
 	let sortAsc = $state(true);
@@ -36,11 +33,18 @@
 			: [...standaloneProjects].sort((a, b) => b.displayName.localeCompare(a.displayName))
 	);
 
-	// For hierarchy view - source repos with their instances
+	// For repos view - source repos with their instances
 	let sortedSourceRepos = $derived(
 		sortAsc
 			? [...data.sourceRepos].sort((a, b) => a.displayName.localeCompare(b.displayName))
 			: [...data.sourceRepos].sort((a, b) => b.displayName.localeCompare(a.displayName))
+	);
+
+	// For ownership view - organisations with campuses
+	let sortedOrganisations = $derived(
+		sortAsc
+			? [...data.organisations].sort((a, b) => a.displayName.localeCompare(b.displayName))
+			: [...data.organisations].sort((a, b) => b.displayName.localeCompare(a.displayName))
 	);
 
 	// Canvas state - pan (x, y) and zoom
@@ -53,54 +57,24 @@
 	let isDragging = $state(false);
 	let dragStart = { x: 0, y: 0, panX: 0, panY: 0 };
 
-	// Grid config for hierarchy view
+	// Grid config for hierarchy views
 	const REPO_WIDTH = 280;
 	const REPO_HEIGHT = 120;
 	const INSTANCE_WIDTH = 240;
 	const INSTANCE_HEIGHT = 80;
-	const HORIZONTAL_GAP = 200;
-	const VERTICAL_GAP = 30;
-	const REPO_VERTICAL_GAP = 80;
+	const ORG_WIDTH = 300;
+	const ORG_HEIGHT = 140;
+	const CAMPUS_WIDTH = 260;
+	const CAMPUS_HEIGHT = 90;
+	const HORIZONTAL_GAP = 180;
+	const VERTICAL_GAP = 25;
+	const BLOCK_VERTICAL_GAP = 60;
 	const PADDING = 60;
 
-	// Calculate content bounds for hierarchy view
-	let hierarchyContentWidth = $derived(() => {
-		let maxWidth = 0;
-		for (const repo of sortedSourceRepos) {
-			const width = PADDING + REPO_WIDTH + HORIZONTAL_GAP + INSTANCE_WIDTH + PADDING;
-			if (width > maxWidth) maxWidth = width;
-		}
-		return Math.max(maxWidth, 800);
-	});
-
-	let hierarchyContentHeight = $derived(() => {
-		let totalHeight = PADDING;
-		for (const repo of sortedSourceRepos) {
-			const instancesHeight = repo.instances.length > 0
-				? repo.instances.length * (INSTANCE_HEIGHT + VERTICAL_GAP) - VERTICAL_GAP
-				: 0;
-			const repoBlockHeight = Math.max(REPO_HEIGHT, instancesHeight);
-			totalHeight += repoBlockHeight + REPO_VERTICAL_GAP;
-		}
-		return totalHeight + PADDING;
-	});
-
-	// Provider colors
-	const providerColors: Record<string, string> = {
-		cloudflare: '#f38020',
-		supabase: '#3ecf8e',
-		flyio: '#7c3aed',
-		firebase: '#ffca28',
-		gcp: '#4285f4',
-		github: '#6e7681',
-		pocketbase: '#b8dbe4',
-		sentry: '#362d59',
-		vercel: '#171717',
-		netlify: '#00c7b7',
-		resend: '#171717',
-		sendgrid: '#1a82e2',
-		mailgun: '#f06b66',
-		digitalocean: '#0080ff',
+	// Provider/repo colors
+	const repoColors: Record<string, string> = {
+		'junipa': '#4285f4',  // GCP blue
+		'junipa-organisations': '#8b5cf6',  // Purple
 	};
 
 	const identityColors: Record<string, string> = {
@@ -129,15 +103,12 @@
 		const mouseX = e.clientX - rect.left;
 		const mouseY = e.clientY - rect.top;
 
-		// Calculate world position under cursor before zoom
 		const worldX = (mouseX - panX) / zoom;
 		const worldY = (mouseY - panY) / zoom;
 
-		// Update zoom
 		const zoomDelta = e.deltaY > 0 ? 0.9 : 1.1;
 		const newZoom = Math.max(0.1, Math.min(5, zoom * zoomDelta));
 
-		// Adjust pan so the point under cursor stays fixed
 		panX = mouseX - worldX * newZoom;
 		panY = mouseY - worldY * newZoom;
 		zoom = newZoom;
@@ -160,7 +131,6 @@
 		isDragging = false;
 	}
 
-	// Zoom controls
 	function zoomIn() {
 		const rect = containerRef.getBoundingClientRect();
 		const centerX = rect.width / 2;
@@ -185,27 +155,86 @@
 		zoom = newZoom;
 	}
 
-	// Fit diagram in view
+	// Calculate content dimensions
+	function getContentDimensions() {
+		if (viewMode === 'ownership') {
+			let totalHeight = PADDING;
+			for (const org of sortedOrganisations) {
+				const campusesHeight = org.campuses.length > 0
+					? org.campuses.length * (CAMPUS_HEIGHT + VERTICAL_GAP) - VERTICAL_GAP
+					: 0;
+				const orgBlockHeight = Math.max(ORG_HEIGHT, campusesHeight);
+				totalHeight += orgBlockHeight + BLOCK_VERTICAL_GAP;
+			}
+			return {
+				width: PADDING + ORG_WIDTH + HORIZONTAL_GAP + CAMPUS_WIDTH + PADDING,
+				height: totalHeight + PADDING
+			};
+		} else if (viewMode === 'repos') {
+			let totalHeight = PADDING;
+			for (const repo of sortedSourceRepos) {
+				const instancesHeight = repo.instances.length > 0
+					? repo.instances.length * (INSTANCE_HEIGHT + VERTICAL_GAP) - VERTICAL_GAP
+					: 0;
+				const repoBlockHeight = Math.max(REPO_HEIGHT, instancesHeight);
+				totalHeight += repoBlockHeight + BLOCK_VERTICAL_GAP;
+			}
+			return {
+				width: PADDING + REPO_WIDTH + HORIZONTAL_GAP + INSTANCE_WIDTH + PADDING,
+				height: totalHeight + PADDING
+			};
+		}
+		return { width: 1400, height: 1200 };
+	}
+
 	function fitToView() {
 		if (!containerRef) return;
 		const rect = containerRef.getBoundingClientRect();
 		const padding = 60;
+		const { width: contentWidth, height: contentHeight } = getContentDimensions();
 
-		const contentWidth = viewMode === 'hierarchy' ? hierarchyContentWidth() : 1400;
-		const contentHeight = viewMode === 'hierarchy' ? hierarchyContentHeight() : 1200;
-
-		// Calculate zoom to fit content
 		const scaleX = (rect.width - padding * 2) / contentWidth;
 		const scaleY = (rect.height - padding * 2) / contentHeight;
 		const newZoom = Math.min(scaleX, scaleY, 1);
 
-		// Center the content
 		panX = (rect.width - contentWidth * newZoom) / 2;
 		panY = (rect.height - contentHeight * newZoom) / 2;
 		zoom = newZoom;
 	}
 
-	// Calculate positions for hierarchy view
+	// Calculate positions for ownership view
+	function getOrgPositions() {
+		const positions: Map<string, { x: number; y: number; campusPositions: { id: string; x: number; y: number }[] }> = new Map();
+		let currentY = PADDING;
+
+		for (const org of sortedOrganisations) {
+			const campusesHeight = org.campuses.length > 0
+				? org.campuses.length * (CAMPUS_HEIGHT + VERTICAL_GAP) - VERTICAL_GAP
+				: 0;
+			const orgBlockHeight = Math.max(ORG_HEIGHT, campusesHeight);
+
+			const orgX = PADDING;
+			const orgY = currentY + (orgBlockHeight - ORG_HEIGHT) / 2;
+
+			const campusPositions: { id: string; x: number; y: number }[] = [];
+			const campusStartY = currentY + (orgBlockHeight - campusesHeight) / 2;
+
+			for (let i = 0; i < org.campuses.length; i++) {
+				campusPositions.push({
+					id: org.campuses[i].id,
+					x: PADDING + ORG_WIDTH + HORIZONTAL_GAP,
+					y: campusStartY + i * (CAMPUS_HEIGHT + VERTICAL_GAP),
+				});
+			}
+
+			positions.set(org.id, { x: orgX, y: orgY, campusPositions });
+			currentY += orgBlockHeight + BLOCK_VERTICAL_GAP;
+		}
+
+		return positions;
+	}
+
+	// Calculate positions for repos view
 	function getRepoPositions() {
 		const positions: Map<string, { x: number; y: number; instancePositions: { id: string; x: number; y: number }[] }> = new Map();
 		let currentY = PADDING;
@@ -216,11 +245,9 @@
 				: 0;
 			const repoBlockHeight = Math.max(REPO_HEIGHT, instancesHeight);
 
-			// Repo position (left side)
 			const repoX = PADDING;
 			const repoY = currentY + (repoBlockHeight - REPO_HEIGHT) / 2;
 
-			// Instance positions (right side, stacked vertically)
 			const instancePositions: { id: string; x: number; y: number }[] = [];
 			const instanceStartY = currentY + (repoBlockHeight - instancesHeight) / 2;
 
@@ -233,13 +260,15 @@
 			}
 
 			positions.set(repo.id, { x: repoX, y: repoY, instancePositions });
-			currentY += repoBlockHeight + REPO_VERTICAL_GAP;
+			currentY += repoBlockHeight + BLOCK_VERTICAL_GAP;
 		}
 
 		return positions;
 	}
 
+	let orgPositions = $derived(getOrgPositions());
 	let repoPositions = $derived(getRepoPositions());
+	let contentDimensions = $derived(getContentDimensions());
 </script>
 
 <svelte:head>
@@ -253,10 +282,16 @@
 			<h1 class="text-lg font-semibold text-white">Infrastructure Map</h1>
 			<div class="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5">
 				<button
-					onclick={() => viewMode = 'hierarchy'}
-					class="px-3 py-1 text-xs rounded-md transition-colors {viewMode === 'hierarchy' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}"
+					onclick={() => viewMode = 'ownership'}
+					class="px-3 py-1 text-xs rounded-md transition-colors {viewMode === 'ownership' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}"
 				>
-					Hierarchy
+					Ownership
+				</button>
+				<button
+					onclick={() => viewMode = 'repos'}
+					class="px-3 py-1 text-xs rounded-md transition-colors {viewMode === 'repos' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}"
+				>
+					Repos
 				</button>
 				<button
 					onclick={() => viewMode = 'flat'}
@@ -266,9 +301,13 @@
 				</button>
 			</div>
 			<span class="text-xs text-gray-500">
-				{viewMode === 'hierarchy'
-					? `${sortedSourceRepos.length} repos, ${sortedSourceRepos.reduce((acc, r) => acc + r.instances.length, 0)} instances`
-					: `${sortedStandaloneProjects.length} projects`}
+				{#if viewMode === 'ownership'}
+					{sortedOrganisations.length} orgs, {sortedOrganisations.reduce((acc, o) => acc + o.campuses.length, 0)} campuses
+				{:else if viewMode === 'repos'}
+					{sortedSourceRepos.length} repos, {sortedSourceRepos.reduce((acc, r) => acc + r.instances.length, 0)} instances
+				{:else}
+					{sortedStandaloneProjects.length} projects
+				{/if}
 			</span>
 		</div>
 		<div class="flex items-center gap-2">
@@ -304,7 +343,7 @@
 	</div>
 
 	<div class="shrink-0 px-4 py-1 text-xs text-gray-500 bg-gray-900/50">
-		Scroll to zoom at cursor | Drag to pan | Data: <code class="text-gray-400">lib/config/infrastructure.ts</code>
+		Scroll to zoom | Drag to pan | {viewMode === 'ownership' ? 'Organisation ownership hierarchy' : viewMode === 'repos' ? 'Source repos with deployed instances' : 'All projects'}
 	</div>
 
 	<!-- Infinite Canvas -->
@@ -320,7 +359,7 @@
 		role="application"
 		tabindex="0"
 	>
-		<!-- Grid background (infinite, follows pan) -->
+		<!-- Grid background -->
 		<div
 			class="absolute inset-0 pointer-events-none"
 			style="
@@ -335,18 +374,130 @@
 		<!-- Content layer -->
 		<div
 			class="absolute origin-top-left"
-			style="
-				transform: translate({panX}px, {panY}px) scale({zoom});
-			"
+			style="transform: translate({panX}px, {panY}px) scale({zoom});"
 		>
-			{#if viewMode === 'hierarchy'}
-				<!-- SVG for connecting lines -->
-				<svg class="absolute top-0 left-0 pointer-events-none" style="width: {hierarchyContentWidth()}px; height: {hierarchyContentHeight()}px;">
+			{#if viewMode === 'ownership'}
+				<!-- Ownership View: Organisations with Campuses -->
+				<svg class="absolute top-0 left-0 pointer-events-none" style="width: {contentDimensions.width}px; height: {contentDimensions.height}px;">
+					{#each sortedOrganisations as org (org.id)}
+						{@const pos = orgPositions.get(org.id)}
+						{#if pos && org.campuses.length > 0}
+							{#each pos.campusPositions as campusPos (campusPos.id)}
+								<path
+									d="M {pos.x + ORG_WIDTH} {pos.y + ORG_HEIGHT / 2}
+									   C {pos.x + ORG_WIDTH + HORIZONTAL_GAP / 2} {pos.y + ORG_HEIGHT / 2},
+									     {campusPos.x - HORIZONTAL_GAP / 2} {campusPos.y + CAMPUS_HEIGHT / 2},
+									     {campusPos.x} {campusPos.y + CAMPUS_HEIGHT / 2}"
+									fill="none"
+									stroke="rgba(16, 185, 129, 0.4)"
+									stroke-width="2"
+									stroke-dasharray="6 4"
+								/>
+								<circle
+									cx={campusPos.x}
+									cy={campusPos.y + CAMPUS_HEIGHT / 2}
+									r="4"
+									fill="rgb(16, 185, 129)"
+								/>
+							{/each}
+						{/if}
+					{/each}
+				</svg>
+
+				{#each sortedOrganisations as org (org.id)}
+					{@const pos = orgPositions.get(org.id)}
+					{#if pos}
+						<!-- Organisation Card -->
+						<div
+							class="absolute bg-gray-900 border-2 border-emerald-500 rounded-lg overflow-hidden shadow-xl shadow-emerald-500/10"
+							style="left: {pos.x}px; top: {pos.y}px; width: {ORG_WIDTH}px; min-height: {ORG_HEIGHT}px;"
+						>
+							<div class="px-4 py-3 bg-emerald-950/50 border-b border-emerald-500/30">
+								<div class="flex items-center gap-2">
+									<Building2 class="w-5 h-5 text-emerald-400" />
+									<span class="font-semibold text-white">{org.displayName}</span>
+								</div>
+								<div class="text-[10px] text-emerald-300 mt-1">Organisation</div>
+							</div>
+							<div class="px-4 py-2 space-y-1.5">
+								{#if org.orgPortalUrl}
+									<a
+										href={org.orgPortalUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 group"
+									>
+										<Globe class="w-3 h-3" />
+										<span class="truncate">{getDisplayUrl(org.orgPortalUrl)}</span>
+										<ExternalLink class="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+									</a>
+									<div class="text-[9px] text-gray-500">Org Portal (junipa-organisations)</div>
+								{/if}
+								{#if org.marketingUrl}
+									<a
+										href={org.marketingUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 group"
+									>
+										<span class="truncate">{getDisplayUrl(org.marketingUrl)}</span>
+										<ExternalLink class="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+									</a>
+								{/if}
+								<div class="text-[10px] text-gray-500 pt-1">{org.campuses.length} campus{org.campuses.length !== 1 ? 'es' : ''}</div>
+							</div>
+						</div>
+
+						<!-- Campus Cards -->
+						{#each pos.campusPositions as campusPos, i (campusPos.id)}
+							{@const campus = org.campuses[i]}
+							{@const repoColor = repoColors[campus.sourceRepo] || '#6b7280'}
+							<div
+								class="absolute bg-gray-900 border border-gray-600 rounded-lg overflow-hidden shadow-lg hover:border-gray-500 transition-colors"
+								style="left: {campusPos.x}px; top: {campusPos.y}px; width: {CAMPUS_WIDTH}px; min-height: {CAMPUS_HEIGHT}px;"
+							>
+								<div class="px-3 py-2 bg-gray-800/50 border-b border-gray-700">
+									<div class="flex items-center justify-between gap-2">
+										<div class="flex items-center gap-2">
+											<School class="w-3.5 h-3.5 text-blue-400" />
+											<span class="font-medium text-white text-xs truncate">{campus.displayName}</span>
+										</div>
+										<span
+											class="px-1.5 py-0.5 rounded text-[9px] font-medium shrink-0"
+											style="background-color: {repoColor}25; color: {repoColor};"
+										>
+											{campus.sourceRepo}
+										</span>
+									</div>
+								</div>
+								<div class="px-3 py-2">
+									{#if campus.productionUrl}
+										<a
+											href={campus.productionUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											class="flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 group"
+										>
+											<span class="truncate">{getDisplayUrl(campus.productionUrl)}</span>
+											<ExternalLink class="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+										</a>
+									{/if}
+									{#if campus.gcpProject}
+										<div class="text-[10px] text-gray-500 mt-0.5 font-mono">{campus.gcpProject}</div>
+									{/if}
+								</div>
+							</div>
+						{/each}
+					{/if}
+				{/each}
+
+			{:else if viewMode === 'repos'}
+				<!-- Repos View: Source repos with deployed instances -->
+				<svg class="absolute top-0 left-0 pointer-events-none" style="width: {contentDimensions.width}px; height: {contentDimensions.height}px;">
 					{#each sortedSourceRepos as repo (repo.id)}
 						{@const pos = repoPositions.get(repo.id)}
 						{#if pos && repo.instances.length > 0}
 							{#each pos.instancePositions as instPos (instPos.id)}
-								<!-- Bezier curve from repo to instance -->
 								<path
 									d="M {pos.x + REPO_WIDTH} {pos.y + REPO_HEIGHT / 2}
 									   C {pos.x + REPO_WIDTH + HORIZONTAL_GAP / 2} {pos.y + REPO_HEIGHT / 2},
@@ -357,7 +508,6 @@
 									stroke-width="2"
 									stroke-dasharray="6 4"
 								/>
-								<!-- Arrow at end -->
 								<circle
 									cx={instPos.x}
 									cy={instPos.y + INSTANCE_HEIGHT / 2}
@@ -369,12 +519,10 @@
 					{/each}
 				</svg>
 
-				<!-- Source repos and instances -->
 				{#each sortedSourceRepos as repo (repo.id)}
 					{@const pos = repoPositions.get(repo.id)}
 					{@const identityColor = identityColors[repo.identity] || '#6b7280'}
 					{#if pos}
-						<!-- Source Repo Card -->
 						<div
 							class="absolute bg-gray-900 border-2 border-indigo-500 rounded-lg overflow-hidden shadow-xl shadow-indigo-500/10"
 							style="left: {pos.x}px; top: {pos.y}px; width: {REPO_WIDTH}px; height: {REPO_HEIGHT}px; border-left: 4px solid {identityColor};"
@@ -402,7 +550,6 @@
 							</div>
 						</div>
 
-						<!-- Instance Cards -->
 						{#each pos.instancePositions as instPos, i (instPos.id)}
 							{@const instance = repo.instances[i]}
 							<div
@@ -436,64 +583,16 @@
 					{/if}
 				{/each}
 
-				<!-- Standalone projects (no sourceRepo and not a source repo with instances) -->
-				{@const standaloneInHierarchy = standaloneProjects.filter(p => !p.isSourceRepo || !sortedSourceRepos.find(r => r.id === p.id)?.instances.length)}
-				{#if standaloneInHierarchy.length > 0}
-					<div
-						class="absolute"
-						style="left: {PADDING}px; top: {hierarchyContentHeight() + 40}px;"
-					>
-						<div class="text-xs text-gray-500 mb-4 uppercase tracking-wide">Standalone Projects</div>
-						<div class="flex flex-wrap gap-4" style="max-width: {hierarchyContentWidth() - PADDING * 2}px;">
-							{#each standaloneInHierarchy.filter(p => !p.isSourceRepo) as project (project.id)}
-								{@const identityColor = identityColors[project.identity] || '#6b7280'}
-								{@const hostProvider = getHostingProvider(project.services)}
-								{@const hostColor = providerColors[hostProvider] || '#6b7280'}
-								<div
-									class="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden shadow-lg hover:border-gray-500 transition-colors"
-									style="width: 220px; border-left: 3px solid {identityColor};"
-								>
-									<div class="px-3 py-2 bg-gray-800/50 border-b border-gray-700">
-										<div class="flex items-center justify-between gap-2">
-											<span class="font-medium text-white text-xs truncate">{project.displayName}</span>
-											<span
-												class="px-1.5 py-0.5 rounded text-[9px] font-medium shrink-0"
-												style="background-color: {hostColor}25; color: {hostColor};"
-											>
-												{hostProvider}
-											</span>
-										</div>
-									</div>
-									<div class="px-3 py-2">
-										{#if project.productionUrl}
-											<a
-												href={project.productionUrl}
-												target="_blank"
-												rel="noopener noreferrer"
-												class="flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 group"
-											>
-												<span class="truncate">{getDisplayUrl(project.productionUrl)}</span>
-												<ExternalLink class="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
-											</a>
-										{/if}
-									</div>
-								</div>
-							{/each}
-						</div>
-					</div>
-				{/if}
 			{:else}
 				<!-- Flat view - grid of all projects -->
 				<div class="grid gap-8 p-10" style="grid-template-columns: repeat(4, 280px);">
 					{#each sortedStandaloneProjects as project (project.id)}
 						{@const identityColor = identityColors[project.identity] || '#6b7280'}
 						{@const hostProvider = getHostingProvider(project.services)}
-						{@const hostColor = providerColors[hostProvider] || '#6b7280'}
 						<div
 							class="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden shadow-xl hover:border-gray-500 transition-colors"
 							style="border-left: 4px solid {identityColor}; width: 280px;"
 						>
-							<!-- Header -->
 							<div class="px-4 py-3 bg-gray-800/70 border-b border-gray-700">
 								<div class="flex items-center justify-between gap-2">
 									<div class="flex items-center gap-2">
@@ -502,10 +601,7 @@
 										{/if}
 										<span class="font-semibold text-white text-sm">{project.displayName}</span>
 									</div>
-									<span
-										class="px-2 py-0.5 rounded text-[10px] font-medium"
-										style="background-color: {hostColor}25; color: {hostColor};"
-									>
+									<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-gray-700 text-gray-300">
 										{hostProvider}
 									</span>
 								</div>
@@ -525,15 +621,9 @@
 								<div class="text-[10px] text-gray-500 mt-1 font-mono">{project.id}</div>
 							</div>
 
-							<!-- Services -->
 							<div class="p-3 space-y-1.5 max-h-[200px] overflow-y-auto">
 								{#each project.services as service, idx (service.provider + '-' + service.category + '-' + idx)}
-									{@const color = providerColors[service.provider] || '#6b7280'}
 									<div class="flex items-center gap-2 px-2 py-1.5 bg-gray-800/50 rounded text-xs">
-										<div
-											class="w-2 h-2 rounded-full shrink-0"
-											style="background-color: {color};"
-										></div>
 										<span class="text-gray-400 w-12 shrink-0">{service.category}</span>
 										<span class="text-gray-200 font-medium">{service.provider}</span>
 									</div>
@@ -548,25 +638,60 @@
 
 	<!-- Legend -->
 	<div class="shrink-0 px-4 py-2 bg-gray-900/90 border-t border-gray-800 flex items-center gap-6 flex-wrap">
-		<div class="flex items-center gap-3">
-			<span class="text-xs text-gray-500">Identity:</span>
-			{#each Object.entries(identityColors) as [identity, color] (identity)}
+		{#if viewMode === 'ownership'}
+			<div class="flex items-center gap-3">
+				<span class="text-xs text-gray-500">Node Types:</span>
 				<div class="flex items-center gap-1.5">
-					<div class="w-3 h-3 rounded" style="background-color: {color};"></div>
-					<span class="text-xs text-gray-400">{identity}</span>
+					<Building2 class="w-3.5 h-3.5 text-emerald-400" />
+					<span class="text-xs text-gray-400">Organisation</span>
 				</div>
-			{/each}
-		</div>
-		<div class="flex items-center gap-3">
-			<span class="text-xs text-gray-500">Node Types:</span>
-			<div class="flex items-center gap-1.5">
-				<FolderGit2 class="w-3.5 h-3.5 text-indigo-400" />
-				<span class="text-xs text-gray-400">Source Repo</span>
+				<div class="flex items-center gap-1.5">
+					<School class="w-3.5 h-3.5 text-blue-400" />
+					<span class="text-xs text-gray-400">Campus</span>
+				</div>
 			</div>
-			<div class="flex items-center gap-1.5">
-				<Server class="w-3.5 h-3.5 text-emerald-400" />
-				<span class="text-xs text-gray-400">Deployed Instance</span>
+			<div class="flex items-center gap-3">
+				<span class="text-xs text-gray-500">Source:</span>
+				<div class="flex items-center gap-1.5">
+					<div class="w-2.5 h-2.5 rounded" style="background-color: {repoColors['junipa']};"></div>
+					<span class="text-xs text-gray-400">junipa</span>
+				</div>
+				<div class="flex items-center gap-1.5">
+					<div class="w-2.5 h-2.5 rounded" style="background-color: {repoColors['junipa-organisations']};"></div>
+					<span class="text-xs text-gray-400">junipa-organisations</span>
+				</div>
 			</div>
-		</div>
+		{:else if viewMode === 'repos'}
+			<div class="flex items-center gap-3">
+				<span class="text-xs text-gray-500">Identity:</span>
+				{#each Object.entries(identityColors) as [identity, color] (identity)}
+					<div class="flex items-center gap-1.5">
+						<div class="w-3 h-3 rounded" style="background-color: {color};"></div>
+						<span class="text-xs text-gray-400">{identity}</span>
+					</div>
+				{/each}
+			</div>
+			<div class="flex items-center gap-3">
+				<span class="text-xs text-gray-500">Node Types:</span>
+				<div class="flex items-center gap-1.5">
+					<FolderGit2 class="w-3.5 h-3.5 text-indigo-400" />
+					<span class="text-xs text-gray-400">Source Repo</span>
+				</div>
+				<div class="flex items-center gap-1.5">
+					<Server class="w-3.5 h-3.5 text-emerald-400" />
+					<span class="text-xs text-gray-400">Deployed Instance</span>
+				</div>
+			</div>
+		{:else}
+			<div class="flex items-center gap-3">
+				<span class="text-xs text-gray-500">Identity:</span>
+				{#each Object.entries(identityColors) as [identity, color] (identity)}
+					<div class="flex items-center gap-1.5">
+						<div class="w-3 h-3 rounded" style="background-color: {color};"></div>
+						<span class="text-xs text-gray-400">{identity}</span>
+					</div>
+				{/each}
+			</div>
+		{/if}
 	</div>
 </div>
