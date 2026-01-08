@@ -2,9 +2,10 @@ import type { PageServerLoad } from './$types';
 import {
   INFRASTRUCTURE,
   getSourceReposWithInstances,
-  getOrganisations,
+  getClients,
+  getGcpProject,
   type SourceRepoWithInstances,
-  type Organisation
+  type Client
 } from '$lib/config/infrastructure';
 
 export interface ProjectNode {
@@ -19,6 +20,26 @@ export interface ProjectNode {
     provider: string;
     serviceName: string;
     dashboardUrl?: string;
+  }[];
+}
+
+// Resolved client with full GCP project details
+export interface ResolvedClient {
+  id: string;
+  displayName: string;
+  marketingUrl?: string;
+  orgPortal?: {
+    gcpProject: string;
+    displayName: string;
+    customDomain?: string;  // e.g., busyschools.junipa.com.au
+    productionUrl?: string;  // https://busyschools.junipa.com.au
+  };
+  campuses: {
+    id: string;
+    displayName: string;
+    gcpProject: string;
+    customDomain?: string;
+    productionUrl?: string;
   }[];
 }
 
@@ -44,8 +65,40 @@ export const load: PageServerLoad = async () => {
   // Get hierarchical structure for source repos and their instances
   const sourceRepos: SourceRepoWithInstances[] = getSourceReposWithInstances();
 
-  // Get organisations for ownership view
-  const organisations: Organisation[] = getOrganisations();
+  // Get clients with resolved GCP project details
+  const clients: ResolvedClient[] = getClients().map((client: Client) => {
+    // Resolve org portal GCP project
+    let orgPortal: ResolvedClient['orgPortal'] = undefined;
+    if (client.orgPortal) {
+      const gcpProject = getGcpProject(client.orgPortal.gcpProject);
+      orgPortal = {
+        gcpProject: client.orgPortal.gcpProject,
+        displayName: gcpProject?.displayName || client.orgPortal.gcpProject,
+        customDomain: gcpProject?.customDomain,
+        productionUrl: gcpProject?.customDomain ? `https://${gcpProject.customDomain}` : undefined,
+      };
+    }
 
-  return { projects, sourceRepos, organisations };
+    // Resolve campus GCP projects
+    const campuses = client.campuses.map(campus => {
+      const gcpProject = getGcpProject(campus.gcpProject);
+      return {
+        id: campus.id,
+        displayName: campus.displayName,
+        gcpProject: campus.gcpProject,
+        customDomain: gcpProject?.customDomain,
+        productionUrl: gcpProject?.customDomain ? `https://${gcpProject.customDomain}` : undefined,
+      };
+    });
+
+    return {
+      id: client.id,
+      displayName: client.displayName,
+      marketingUrl: client.marketingUrl,
+      orgPortal,
+      campuses,
+    };
+  });
+
+  return { projects, sourceRepos, clients };
 };

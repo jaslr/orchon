@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import type { ResolvedClient } from './+page.server';
 	import {
 		ExternalLink,
 		ZoomIn,
@@ -11,12 +12,13 @@
 		Server,
 		Building2,
 		School,
-		Globe
+		Globe,
+		Network
 	} from '@lucide/svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	// View mode: 'repos' shows source repos with instances, 'ownership' shows orgs with campuses, 'flat' shows all projects
+	// View mode: 'repos' shows source repos with instances, 'ownership' shows clients with org portals and campuses, 'flat' shows all projects
 	let viewMode = $state<'repos' | 'ownership' | 'flat'>('ownership');
 
 	// Sorting
@@ -40,11 +42,11 @@
 			: [...data.sourceRepos].sort((a, b) => b.displayName.localeCompare(a.displayName))
 	);
 
-	// For ownership view - organisations with campuses
-	let sortedOrganisations = $derived(
+	// For ownership view - clients with org portals and campuses (3-level hierarchy)
+	let sortedClients = $derived(
 		sortAsc
-			? [...data.organisations].sort((a, b) => a.displayName.localeCompare(b.displayName))
-			: [...data.organisations].sort((a, b) => b.displayName.localeCompare(a.displayName))
+			? [...data.clients].sort((a: ResolvedClient, b: ResolvedClient) => a.displayName.localeCompare(b.displayName))
+			: [...data.clients].sort((a: ResolvedClient, b: ResolvedClient) => b.displayName.localeCompare(a.displayName))
 	);
 
 	// Canvas state - pan (x, y) and zoom
@@ -62,13 +64,17 @@
 	const REPO_HEIGHT = 120;
 	const INSTANCE_WIDTH = 240;
 	const INSTANCE_HEIGHT = 80;
-	const ORG_WIDTH = 300;
-	const ORG_HEIGHT = 140;
-	const CAMPUS_WIDTH = 260;
-	const CAMPUS_HEIGHT = 90;
-	const HORIZONTAL_GAP = 180;
-	const VERTICAL_GAP = 25;
-	const BLOCK_VERTICAL_GAP = 60;
+	// Ownership view: Client > Org Portal > Campuses
+	const CLIENT_WIDTH = 200;  // Subdued, smaller
+	const CLIENT_HEIGHT = 80;
+	const ORG_PORTAL_WIDTH = 280;  // Prominent
+	const ORG_PORTAL_HEIGHT = 100;
+	const CAMPUS_WIDTH = 240;
+	const CAMPUS_HEIGHT = 75;
+	const COL1_TO_COL2_GAP = 120;  // Client to Org Portal
+	const COL2_TO_COL3_GAP = 140;  // Org Portal to Campuses
+	const VERTICAL_GAP = 20;
+	const BLOCK_VERTICAL_GAP = 50;
 	const PADDING = 60;
 
 	// Provider/repo colors
@@ -159,15 +165,20 @@
 	function getContentDimensions() {
 		if (viewMode === 'ownership') {
 			let totalHeight = PADDING;
-			for (const org of sortedOrganisations) {
-				const campusesHeight = org.campuses.length > 0
-					? org.campuses.length * (CAMPUS_HEIGHT + VERTICAL_GAP) - VERTICAL_GAP
-					: 0;
-				const orgBlockHeight = Math.max(ORG_HEIGHT, campusesHeight);
-				totalHeight += orgBlockHeight + BLOCK_VERTICAL_GAP;
+			for (const client of sortedClients) {
+				// Height based on number of campuses
+				const campusesHeight = client.campuses.length > 0
+					? client.campuses.length * (CAMPUS_HEIGHT + VERTICAL_GAP) - VERTICAL_GAP
+					: CAMPUS_HEIGHT;
+				// Also consider org portal height
+				const orgPortalHeight = client.orgPortal ? ORG_PORTAL_HEIGHT : 0;
+				const blockHeight = Math.max(CLIENT_HEIGHT, orgPortalHeight, campusesHeight);
+				totalHeight += blockHeight + BLOCK_VERTICAL_GAP;
 			}
+			// 3 columns: Client, Org Portal, Campuses
+			const totalWidth = PADDING + CLIENT_WIDTH + COL1_TO_COL2_GAP + ORG_PORTAL_WIDTH + COL2_TO_COL3_GAP + CAMPUS_WIDTH + PADDING;
 			return {
-				width: PADDING + ORG_WIDTH + HORIZONTAL_GAP + CAMPUS_WIDTH + PADDING,
+				width: totalWidth,
 				height: totalHeight + PADDING
 			};
 		} else if (viewMode === 'repos') {
@@ -180,7 +191,7 @@
 				totalHeight += repoBlockHeight + BLOCK_VERTICAL_GAP;
 			}
 			return {
-				width: PADDING + REPO_WIDTH + HORIZONTAL_GAP + INSTANCE_WIDTH + PADDING,
+				width: PADDING + REPO_WIDTH + COL1_TO_COL2_GAP + INSTANCE_WIDTH + PADDING,
 				height: totalHeight + PADDING
 			};
 		}
@@ -202,33 +213,57 @@
 		zoom = newZoom;
 	}
 
-	// Calculate positions for ownership view
-	function getOrgPositions() {
-		const positions: Map<string, { x: number; y: number; campusPositions: { id: string; x: number; y: number }[] }> = new Map();
+	// Calculate positions for ownership view (3-level hierarchy: Client > Org Portal > Campuses)
+	interface ClientPositions {
+		clientX: number;
+		clientY: number;
+		orgPortalX?: number;
+		orgPortalY?: number;
+		campusPositions: { id: string; x: number; y: number }[];
+	}
+
+	function getClientPositions() {
+		const positions: Map<string, ClientPositions> = new Map();
 		let currentY = PADDING;
 
-		for (const org of sortedOrganisations) {
-			const campusesHeight = org.campuses.length > 0
-				? org.campuses.length * (CAMPUS_HEIGHT + VERTICAL_GAP) - VERTICAL_GAP
-				: 0;
-			const orgBlockHeight = Math.max(ORG_HEIGHT, campusesHeight);
+		// Column X positions
+		const col1X = PADDING;  // Client
+		const col2X = PADDING + CLIENT_WIDTH + COL1_TO_COL2_GAP;  // Org Portal
+		const col3X = col2X + ORG_PORTAL_WIDTH + COL2_TO_COL3_GAP;  // Campuses
 
-			const orgX = PADDING;
-			const orgY = currentY + (orgBlockHeight - ORG_HEIGHT) / 2;
+		for (const client of sortedClients) {
+			// Calculate block height based on campuses
+			const campusesHeight = client.campuses.length > 0
+				? client.campuses.length * (CAMPUS_HEIGHT + VERTICAL_GAP) - VERTICAL_GAP
+				: CAMPUS_HEIGHT;
+			const orgPortalHeight = client.orgPortal ? ORG_PORTAL_HEIGHT : 0;
+			const blockHeight = Math.max(CLIENT_HEIGHT, orgPortalHeight, campusesHeight);
 
+			// Client card position (vertically centered in block)
+			const clientX = col1X;
+			const clientY = currentY + (blockHeight - CLIENT_HEIGHT) / 2;
+
+			// Org Portal position (only if exists)
+			let orgPortalX: number | undefined;
+			let orgPortalY: number | undefined;
+			if (client.orgPortal) {
+				orgPortalX = col2X;
+				orgPortalY = currentY + (blockHeight - ORG_PORTAL_HEIGHT) / 2;
+			}
+
+			// Campus positions
 			const campusPositions: { id: string; x: number; y: number }[] = [];
-			const campusStartY = currentY + (orgBlockHeight - campusesHeight) / 2;
-
-			for (let i = 0; i < org.campuses.length; i++) {
+			const campusesStartY = currentY + (blockHeight - campusesHeight) / 2;
+			for (let i = 0; i < client.campuses.length; i++) {
 				campusPositions.push({
-					id: org.campuses[i].id,
-					x: PADDING + ORG_WIDTH + HORIZONTAL_GAP,
-					y: campusStartY + i * (CAMPUS_HEIGHT + VERTICAL_GAP),
+					id: client.campuses[i].id,
+					x: col3X,
+					y: campusesStartY + i * (CAMPUS_HEIGHT + VERTICAL_GAP),
 				});
 			}
 
-			positions.set(org.id, { x: orgX, y: orgY, campusPositions });
-			currentY += orgBlockHeight + BLOCK_VERTICAL_GAP;
+			positions.set(client.id, { clientX, clientY, orgPortalX, orgPortalY, campusPositions });
+			currentY += blockHeight + BLOCK_VERTICAL_GAP;
 		}
 
 		return positions;
@@ -254,7 +289,7 @@
 			for (let i = 0; i < repo.instances.length; i++) {
 				instancePositions.push({
 					id: repo.instances[i].id,
-					x: PADDING + REPO_WIDTH + HORIZONTAL_GAP,
+					x: PADDING + REPO_WIDTH + COL1_TO_COL2_GAP,
 					y: instanceStartY + i * (INSTANCE_HEIGHT + VERTICAL_GAP),
 				});
 			}
@@ -266,7 +301,7 @@
 		return positions;
 	}
 
-	let orgPositions = $derived(getOrgPositions());
+	let clientPositions = $derived(getClientPositions());
 	let repoPositions = $derived(getRepoPositions());
 	let contentDimensions = $derived(getContentDimensions());
 </script>
@@ -302,7 +337,7 @@
 			</div>
 			<span class="text-xs text-gray-500">
 				{#if viewMode === 'ownership'}
-					{sortedOrganisations.length} orgs, {sortedOrganisations.reduce((acc, o) => acc + o.campuses.length, 0)} campuses
+					{sortedClients.length} clients, {sortedClients.filter(c => c.orgPortal).length} org portals, {sortedClients.reduce((acc, c) => acc + c.campuses.length, 0)} campuses
 				{:else if viewMode === 'repos'}
 					{sortedSourceRepos.length} repos, {sortedSourceRepos.reduce((acc, r) => acc + r.instances.length, 0)} instances
 				{:else}
@@ -377,100 +412,141 @@
 			style="transform: translate({panX}px, {panY}px) scale({zoom});"
 		>
 			{#if viewMode === 'ownership'}
-				<!-- Ownership View: Organisations with Campuses -->
+				<!-- Ownership View: 3-level hierarchy - Client > Org Portal > Campuses -->
 				<svg class="absolute top-0 left-0 pointer-events-none" style="width: {contentDimensions.width}px; height: {contentDimensions.height}px;">
-					{#each sortedOrganisations as org (org.id)}
-						{@const pos = orgPositions.get(org.id)}
-						{#if pos && org.campuses.length > 0}
-							{#each pos.campusPositions as campusPos (campusPos.id)}
+					{#each sortedClients as client (client.id)}
+						{@const pos = clientPositions.get(client.id)}
+						{#if pos}
+							<!-- Lines from Client to Org Portal (if exists) -->
+							{#if client.orgPortal && pos.orgPortalX !== undefined && pos.orgPortalY !== undefined}
 								<path
-									d="M {pos.x + ORG_WIDTH} {pos.y + ORG_HEIGHT / 2}
-									   C {pos.x + ORG_WIDTH + HORIZONTAL_GAP / 2} {pos.y + ORG_HEIGHT / 2},
-									     {campusPos.x - HORIZONTAL_GAP / 2} {campusPos.y + CAMPUS_HEIGHT / 2},
-									     {campusPos.x} {campusPos.y + CAMPUS_HEIGHT / 2}"
+									d="M {pos.clientX + CLIENT_WIDTH} {pos.clientY + CLIENT_HEIGHT / 2}
+									   C {pos.clientX + CLIENT_WIDTH + COL1_TO_COL2_GAP / 2} {pos.clientY + CLIENT_HEIGHT / 2},
+									     {pos.orgPortalX - COL1_TO_COL2_GAP / 2} {pos.orgPortalY + ORG_PORTAL_HEIGHT / 2},
+									     {pos.orgPortalX} {pos.orgPortalY + ORG_PORTAL_HEIGHT / 2}"
 									fill="none"
-									stroke="rgba(16, 185, 129, 0.4)"
+									stroke="rgba(139, 92, 246, 0.5)"
 									stroke-width="2"
-									stroke-dasharray="6 4"
 								/>
-								<circle
-									cx={campusPos.x}
-									cy={campusPos.y + CAMPUS_HEIGHT / 2}
-									r="4"
-									fill="rgb(16, 185, 129)"
-								/>
-							{/each}
+								<!-- Lines from Org Portal to Campuses -->
+								{#each pos.campusPositions as campusPos (campusPos.id)}
+									<path
+										d="M {pos.orgPortalX + ORG_PORTAL_WIDTH} {pos.orgPortalY + ORG_PORTAL_HEIGHT / 2}
+										   C {pos.orgPortalX + ORG_PORTAL_WIDTH + COL2_TO_COL3_GAP / 2} {pos.orgPortalY + ORG_PORTAL_HEIGHT / 2},
+										     {campusPos.x - COL2_TO_COL3_GAP / 2} {campusPos.y + CAMPUS_HEIGHT / 2},
+										     {campusPos.x} {campusPos.y + CAMPUS_HEIGHT / 2}"
+										fill="none"
+										stroke="rgba(16, 185, 129, 0.4)"
+										stroke-width="2"
+										stroke-dasharray="6 4"
+									/>
+									<circle
+										cx={campusPos.x}
+										cy={campusPos.y + CAMPUS_HEIGHT / 2}
+										r="4"
+										fill="rgb(16, 185, 129)"
+									/>
+								{/each}
+							{:else}
+								<!-- No org portal - draw lines directly from Client to Campuses -->
+								{#each pos.campusPositions as campusPos (campusPos.id)}
+									<path
+										d="M {pos.clientX + CLIENT_WIDTH} {pos.clientY + CLIENT_HEIGHT / 2}
+										   C {pos.clientX + CLIENT_WIDTH + (COL1_TO_COL2_GAP + ORG_PORTAL_WIDTH + COL2_TO_COL3_GAP) / 2} {pos.clientY + CLIENT_HEIGHT / 2},
+										     {campusPos.x - COL2_TO_COL3_GAP / 2} {campusPos.y + CAMPUS_HEIGHT / 2},
+										     {campusPos.x} {campusPos.y + CAMPUS_HEIGHT / 2}"
+										fill="none"
+										stroke="rgba(75, 85, 99, 0.6)"
+										stroke-width="2"
+										stroke-dasharray="4 4"
+									/>
+									<circle
+										cx={campusPos.x}
+										cy={campusPos.y + CAMPUS_HEIGHT / 2}
+										r="4"
+										fill="rgb(107, 114, 128)"
+									/>
+								{/each}
+							{/if}
 						{/if}
 					{/each}
 				</svg>
 
-				{#each sortedOrganisations as org (org.id)}
-					{@const pos = orgPositions.get(org.id)}
+				{#each sortedClients as client (client.id)}
+					{@const pos = clientPositions.get(client.id)}
 					{#if pos}
-						<!-- Organisation Card -->
+						<!-- Client Card (subdued, plain) -->
 						<div
-							class="absolute bg-gray-900 border-2 border-emerald-500 rounded-lg overflow-hidden shadow-xl shadow-emerald-500/10"
-							style="left: {pos.x}px; top: {pos.y}px; width: {ORG_WIDTH}px; min-height: {ORG_HEIGHT}px;"
+							class="absolute bg-gray-800/60 border border-gray-700 rounded-lg overflow-hidden"
+							style="left: {pos.clientX}px; top: {pos.clientY}px; width: {CLIENT_WIDTH}px; min-height: {CLIENT_HEIGHT}px;"
 						>
-							<div class="px-4 py-3 bg-emerald-950/50 border-b border-emerald-500/30">
+							<div class="px-3 py-2">
 								<div class="flex items-center gap-2">
-									<Building2 class="w-5 h-5 text-emerald-400" />
-									<span class="font-semibold text-white">{org.displayName}</span>
+									<Building2 class="w-4 h-4 text-gray-400" />
+									<span class="font-medium text-gray-200 text-sm">{client.displayName}</span>
 								</div>
-								<div class="text-[10px] text-emerald-300 mt-1">Organisation</div>
-							</div>
-							<div class="px-4 py-2 space-y-1.5">
-								{#if org.orgPortalUrl}
+								{#if client.marketingUrl}
 									<a
-										href={org.orgPortalUrl}
+										href={client.marketingUrl}
 										target="_blank"
 										rel="noopener noreferrer"
-										class="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 group"
+										class="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-400 mt-1.5 group"
 									>
 										<Globe class="w-3 h-3" />
-										<span class="truncate">{getDisplayUrl(org.orgPortalUrl)}</span>
-										<ExternalLink class="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
-									</a>
-									<div class="text-[9px] text-gray-500">Org Portal (junipa-organisations)</div>
-								{/if}
-								{#if org.marketingUrl}
-									<a
-										href={org.marketingUrl}
-										target="_blank"
-										rel="noopener noreferrer"
-										class="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 group"
-									>
-										<span class="truncate">{getDisplayUrl(org.marketingUrl)}</span>
-										<ExternalLink class="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+										<span class="truncate">{getDisplayUrl(client.marketingUrl)}</span>
+										<ExternalLink class="w-2 h-2 opacity-50 group-hover:opacity-100" />
 									</a>
 								{/if}
-								<div class="text-[10px] text-gray-500 pt-1">{org.campuses.length} campus{org.campuses.length !== 1 ? 'es' : ''}</div>
+								<div class="text-[10px] text-gray-600 mt-1">
+									{client.campuses.length} campus{client.campuses.length !== 1 ? 'es' : ''}
+								</div>
 							</div>
 						</div>
 
+						<!-- Org Portal Card (prominent emerald, only if exists) -->
+						{#if client.orgPortal && pos.orgPortalX !== undefined && pos.orgPortalY !== undefined}
+							<div
+								class="absolute bg-gray-900 border-2 border-emerald-500 rounded-lg overflow-hidden shadow-xl shadow-emerald-500/10"
+								style="left: {pos.orgPortalX}px; top: {pos.orgPortalY}px; width: {ORG_PORTAL_WIDTH}px; min-height: {ORG_PORTAL_HEIGHT}px;"
+							>
+								<div class="px-4 py-2.5 bg-emerald-950/50 border-b border-emerald-500/30">
+									<div class="flex items-center gap-2">
+										<Network class="w-4 h-4 text-emerald-400" />
+										<span class="font-semibold text-white text-sm">Org Portal</span>
+									</div>
+									<div class="text-[9px] text-emerald-300/70 mt-0.5">junipa-organisations</div>
+								</div>
+								<div class="px-4 py-2">
+									{#if client.orgPortal.productionUrl}
+										<a
+											href={client.orgPortal.productionUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											class="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 group"
+										>
+											<span class="truncate">{client.orgPortal.customDomain}</span>
+											<ExternalLink class="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+										</a>
+									{/if}
+									<div class="text-[9px] text-gray-500 mt-1 font-mono">{client.orgPortal.gcpProject}</div>
+								</div>
+							</div>
+						{/if}
+
 						<!-- Campus Cards -->
 						{#each pos.campusPositions as campusPos, i (campusPos.id)}
-							{@const campus = org.campuses[i]}
-							{@const repoColor = repoColors[campus.sourceRepo] || '#6b7280'}
+							{@const campus = client.campuses[i]}
 							<div
 								class="absolute bg-gray-900 border border-gray-600 rounded-lg overflow-hidden shadow-lg hover:border-gray-500 transition-colors"
 								style="left: {campusPos.x}px; top: {campusPos.y}px; width: {CAMPUS_WIDTH}px; min-height: {CAMPUS_HEIGHT}px;"
 							>
-								<div class="px-3 py-2 bg-gray-800/50 border-b border-gray-700">
-									<div class="flex items-center justify-between gap-2">
-										<div class="flex items-center gap-2">
-											<School class="w-3.5 h-3.5 text-blue-400" />
-											<span class="font-medium text-white text-xs truncate">{campus.displayName}</span>
-										</div>
-										<span
-											class="px-1.5 py-0.5 rounded text-[9px] font-medium shrink-0"
-											style="background-color: {repoColor}25; color: {repoColor};"
-										>
-											{campus.sourceRepo}
-										</span>
+								<div class="px-3 py-1.5 bg-gray-800/50 border-b border-gray-700">
+									<div class="flex items-center gap-2">
+										<School class="w-3.5 h-3.5 text-blue-400" />
+										<span class="font-medium text-white text-xs truncate">{campus.displayName}</span>
 									</div>
 								</div>
-								<div class="px-3 py-2">
+								<div class="px-3 py-1.5">
 									{#if campus.productionUrl}
 										<a
 											href={campus.productionUrl}
@@ -478,13 +554,11 @@
 											rel="noopener noreferrer"
 											class="flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 group"
 										>
-											<span class="truncate">{getDisplayUrl(campus.productionUrl)}</span>
+											<span class="truncate">{campus.customDomain || getDisplayUrl(campus.productionUrl)}</span>
 											<ExternalLink class="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
 										</a>
 									{/if}
-									{#if campus.gcpProject}
-										<div class="text-[10px] text-gray-500 mt-0.5 font-mono">{campus.gcpProject}</div>
-									{/if}
+									<div class="text-[9px] text-gray-500 mt-0.5 font-mono">{campus.gcpProject}</div>
 								</div>
 							</div>
 						{/each}
@@ -640,10 +714,14 @@
 	<div class="shrink-0 px-4 py-2 bg-gray-900/90 border-t border-gray-800 flex items-center gap-6 flex-wrap">
 		{#if viewMode === 'ownership'}
 			<div class="flex items-center gap-3">
-				<span class="text-xs text-gray-500">Node Types:</span>
+				<span class="text-xs text-gray-500">Hierarchy:</span>
 				<div class="flex items-center gap-1.5">
-					<Building2 class="w-3.5 h-3.5 text-emerald-400" />
-					<span class="text-xs text-gray-400">Organisation</span>
+					<Building2 class="w-3.5 h-3.5 text-gray-400" />
+					<span class="text-xs text-gray-400">Client</span>
+				</div>
+				<div class="flex items-center gap-1.5">
+					<Network class="w-3.5 h-3.5 text-emerald-400" />
+					<span class="text-xs text-gray-400">Org Portal</span>
 				</div>
 				<div class="flex items-center gap-1.5">
 					<School class="w-3.5 h-3.5 text-blue-400" />
@@ -651,14 +729,14 @@
 				</div>
 			</div>
 			<div class="flex items-center gap-3">
-				<span class="text-xs text-gray-500">Source:</span>
+				<span class="text-xs text-gray-500">Lines:</span>
 				<div class="flex items-center gap-1.5">
-					<div class="w-2.5 h-2.5 rounded" style="background-color: {repoColors['junipa']};"></div>
-					<span class="text-xs text-gray-400">junipa</span>
+					<div class="w-6 h-0.5 rounded bg-purple-500"></div>
+					<span class="text-xs text-gray-400">to org portal</span>
 				</div>
 				<div class="flex items-center gap-1.5">
-					<div class="w-2.5 h-2.5 rounded" style="background-color: {repoColors['junipa-organisations']};"></div>
-					<span class="text-xs text-gray-400">junipa-organisations</span>
+					<div class="w-6 h-0.5 rounded bg-emerald-500 opacity-60" style="background: repeating-linear-gradient(90deg, rgb(16 185 129 / 0.6) 0px, rgb(16 185 129 / 0.6) 4px, transparent 4px, transparent 8px);"></div>
+					<span class="text-xs text-gray-400">to campus</span>
 				</div>
 			</div>
 		{:else if viewMode === 'repos'}

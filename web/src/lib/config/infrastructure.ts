@@ -825,157 +825,170 @@ export function getSourceRepo(projectId: string): string | undefined {
 }
 
 // ==========================================================================
-// ORGANISATIONS - Top-level entities that own campuses/instances
-// This represents the "ownership" hierarchy, not the repo hierarchy
+// GCP PROJECTS - All projects from gcloud projects list
+// Enable/disable to control which appear in the ownership view
+// ==========================================================================
+
+export interface GcpProject {
+  projectId: string;
+  displayName: string;
+  enabled: boolean;  // Toggle visibility in ownership view
+  customDomain?: string;  // Custom domain if mapped
+  type?: 'campus' | 'org-portal' | 'testing' | 'infrastructure' | 'other';
+}
+
+/**
+ * All GCP projects from gcloud projects list
+ * Set enabled: true to include in ownership view
+ */
+export const GCP_PROJECTS: GcpProject[] = [
+  // Active Junipa Campus Projects
+  { projectId: 'busyschools-cairns-prod', displayName: 'Busy Schools Cairns', enabled: true, customDomain: 'busyschools-cairns.junipa.com.au', type: 'campus' },
+  { projectId: 'busyschools-coolangatta-prod', displayName: 'Busy Schools Coolangatta', enabled: true, customDomain: 'busyschools-coolangatta.junipa.com.au', type: 'campus' },
+  { projectId: 'cedarcollege-prod', displayName: 'Cedar College', enabled: true, customDomain: 'cedarcollege.junipa.com.au', type: 'campus' },
+  { projectId: 'junipa', displayName: 'Junipa Demo', enabled: true, customDomain: 'demo2.junipa.com.au', type: 'campus' },
+  { projectId: 'junipa-central-demo', displayName: 'Junipa Central Demo', enabled: true, customDomain: 'junipacentral.junipa.com.au', type: 'campus' },
+  { projectId: 'junipa-west-demo', displayName: 'Junipa West Demo', enabled: true, customDomain: 'junipawest.junipa.com.au', type: 'campus' },
+  { projectId: 'menofbusiness-prod', displayName: 'Men of Business', enabled: true, customDomain: 'menofbusiness.junipa.com.au', type: 'campus' },
+  { projectId: 'mjc-prod-2022b', displayName: 'MJC Main Campus', enabled: true, customDomain: 'mjc.junipa.com.au', type: 'campus' },
+  { projectId: 'mjc-tuncurry-prod', displayName: 'MJC Tuncurry', enabled: true, customDomain: 'tuncurry-mjc.junipa.com.au', type: 'campus' },
+  { projectId: 'mjc-wallsend', displayName: 'MJC Wallsend', enabled: true, customDomain: 'mjc-wallsend.junipa.com.au', type: 'campus' },
+
+  // Organisation Portal Projects (junipa-organisations repo)
+  { projectId: 'busyschools-org', displayName: 'Busy Schools Organisation', enabled: true, customDomain: 'busyschools.junipa.com.au', type: 'org-portal' },
+  { projectId: 'junipa-org-hub', displayName: 'Junipa Organisations Hub', enabled: true, customDomain: 'organisation.junipa.com.au', type: 'org-portal' },
+  { projectId: 'junipa-org-mjc', displayName: 'Junipa Org MJC', enabled: true, customDomain: 'margaretjurdcollege.junipa.com.au', type: 'org-portal' },
+
+  // Testing/Staging Projects
+  { projectId: 'cedarcollege-testing', displayName: 'Cedar College Testing', enabled: false, type: 'testing' },
+  { projectId: 'junipa-dev-saml', displayName: 'Junipa Dev SAML', enabled: false, type: 'testing' },
+  { projectId: 'junipa-dev-wonde', displayName: 'Junipa Dev Wonde', enabled: false, type: 'testing' },
+  { projectId: 'junipa-testing-project', displayName: 'Junipa Testing Project', enabled: false, type: 'testing' },
+  { projectId: 'menofbusiness-test', displayName: 'Men of Business Test', enabled: false, type: 'testing' },
+  { projectId: 'mjc-staging', displayName: 'MJC Staging', enabled: false, type: 'testing' },
+  { projectId: 'test-junipa', displayName: 'Test Junipa', enabled: false, type: 'testing' },
+  { projectId: 'test-junipa-experimental', displayName: 'Test Junipa Experimental', enabled: false, type: 'testing' },
+
+  // Infrastructure Projects
+  { projectId: 'junipa-infra', displayName: 'Junipa Infra', enabled: false, type: 'infrastructure' },
+  { projectId: 'junipa-gateway-2020', displayName: 'Junipa Gateway', enabled: false, type: 'infrastructure' },
+  { projectId: 'junipa-client-app', displayName: 'Junipa Client App', enabled: false, type: 'infrastructure' },
+  { projectId: 'junipa-support', displayName: 'Junipa Support', enabled: false, type: 'infrastructure' },
+
+  // Old/Deprecated Projects (disabled)
+  { projectId: 'rlc-prod2', displayName: 'RLC Prod', enabled: false, customDomain: 'rlc.junipa.com.au', type: 'other' },
+  { projectId: 'allegra-prod', displayName: 'Allegra Prod', enabled: false, type: 'other' },
+  { projectId: 'allegra-staging', displayName: 'Allegra Staging', enabled: false, type: 'other' },
+  { projectId: 'djarragun-prod', displayName: 'Djarragun Prod', enabled: false, type: 'other' },
+  { projectId: 'djarragun-test', displayName: 'Djarragun Test', enabled: false, type: 'other' },
+  { projectId: 'djarragun-girls-academy', displayName: 'Djarragun Girls Academy', enabled: false, type: 'other' },
+  { projectId: 'djarragun-girls-staging', displayName: 'Djarragun Girls Staging', enabled: false, type: 'other' },
+  { projectId: 'gulfcc-prod', displayName: 'Gulf CC Prod', enabled: false, type: 'other' },
+  { projectId: 'gulfcc-test', displayName: 'Gulf CC Test', enabled: false, type: 'other' },
+  { projectId: 'mastery-springfield-prod', displayName: 'Mastery Springfield Prod', enabled: false, type: 'other' },
+  { projectId: 'mastery-springfield-staging', displayName: 'Mastery Springfield Staging', enabled: false, type: 'other' },
+  { projectId: 'mastery-southport', displayName: 'Mastery Southport', enabled: false, type: 'other' },
+  { projectId: 'mastery-southport-staging', displayName: 'Mastery Southport Staging', enabled: false, type: 'other' },
+  { projectId: 'mastery-coolangatta', displayName: 'Mastery Coolangatta', enabled: false, type: 'other' },
+  { projectId: 'mastery-coolangatta-staging', displayName: 'Mastery Coolangatta Staging', enabled: false, type: 'other' },
+  { projectId: 'msa-junipa-prod', displayName: 'MSA Junipa Prod', enabled: false, type: 'other' },
+  { projectId: 'msa-junipa-test', displayName: 'MSA Junipa Test', enabled: false, type: 'other' },
+  { projectId: 'olol-prod', displayName: 'OLOL Prod', enabled: false, type: 'other' },
+];
+
+// ==========================================================================
+// CLIENTS - Bricks and mortar schools/organisations
+// This is the top level of the ownership hierarchy
 // ==========================================================================
 
 export interface Campus {
   id: string;
   displayName: string;
-  productionUrl?: string;
-  gcpProject?: string;
-  sourceRepo: 'junipa' | 'junipa-organisations';  // Which repo this campus runs
+  gcpProject: string;  // References GCP_PROJECTS.projectId
 }
 
-export interface Organisation {
+export interface OrgPortal {
+  gcpProject: string;  // References GCP_PROJECTS.projectId (type: org-portal)
+}
+
+export interface Client {
   id: string;
   displayName: string;
-  marketingUrl?: string;  // e.g. busyschools.com.au (external marketing site)
-  orgPortalUrl?: string;  // Organisation portal URL (from junipa-organisations)
-  orgPortalGcpProject?: string;
-  campuses: Campus[];
+  marketingUrl?: string;  // School's own marketing website (not ours)
+  orgPortal?: OrgPortal;  // Optional org portal (junipa-organisations)
+  campuses: Campus[];  // Campus instances (junipa repo)
 }
 
 /**
- * Organisations and their campuses
- * This is the "ownership" view - who owns what
- * Data sourced from GCP projects list + Firebase hosting + App Engine domain mappings
+ * Clients (schools) with their org portals and campuses
+ * 3-level hierarchy: Client > Org Portal (optional) > Campuses
  */
-export const ORGANISATIONS: Organisation[] = [
+export const CLIENTS: Client[] = [
   {
     id: 'busy-schools',
     displayName: 'Busy Schools',
-    marketingUrl: 'https://busyschools.com.au',
-    orgPortalUrl: 'https://busyschools-org.web.app',  // Firebase: busyschools-org
-    orgPortalGcpProject: 'busyschools-org',
+    marketingUrl: 'https://busyschools.com.au',  // Their marketing site, not ours
+    orgPortal: { gcpProject: 'busyschools-org' },  // busyschools.junipa.com.au
     campuses: [
-      {
-        id: 'busy-schools-cairns',
-        displayName: 'Busy Schools Cairns',
-        productionUrl: 'https://busyschools-cairns.junipa.com.au',
-        gcpProject: 'busyschools-cairns-prod',
-        sourceRepo: 'junipa',
-      },
-      {
-        id: 'busy-schools-coolangatta',
-        displayName: 'Busy Schools Coolangatta',
-        productionUrl: 'https://busyschools-coolangatta.junipa.com.au',
-        gcpProject: 'busyschools-coolangatta-prod',
-        sourceRepo: 'junipa',
-      },
+      { id: 'busy-schools-cairns', displayName: 'Busy Schools Cairns', gcpProject: 'busyschools-cairns-prod' },
+      { id: 'busy-schools-coolangatta', displayName: 'Busy Schools Coolangatta', gcpProject: 'busyschools-coolangatta-prod' },
     ],
   },
   {
     id: 'margaret-jurd-college',
     displayName: 'Margaret Jurd College',
-    orgPortalUrl: 'https://margaretjurdcollege.junipa.com.au',  // Firebase: junipa-org-mjc
-    orgPortalGcpProject: 'junipa-org-mjc',
+    marketingUrl: 'https://margaretjurdcollege.com.au',  // Their marketing site
+    orgPortal: { gcpProject: 'junipa-org-mjc' },  // margaretjurdcollege.junipa.com.au
     campuses: [
-      {
-        id: 'mjc-main',
-        displayName: 'MJC Main Campus',
-        productionUrl: 'https://mjc.junipa.com.au',
-        gcpProject: 'mjc-prod-2022b',
-        sourceRepo: 'junipa',
-      },
-      {
-        id: 'mjc-tuncurry',
-        displayName: 'MJC Tuncurry',
-        productionUrl: 'https://tuncurry-mjc.junipa.com.au',
-        gcpProject: 'mjc-tuncurry-prod',
-        sourceRepo: 'junipa',
-      },
-      {
-        id: 'mjc-wallsend',
-        displayName: 'MJC Wallsend',
-        productionUrl: 'https://mjc-wallsend.junipa.com.au',
-        gcpProject: 'mjc-wallsend',
-        sourceRepo: 'junipa',
-      },
-    ],
-  },
-  {
-    id: 'cedar-college',
-    displayName: 'Cedar College',
-    campuses: [
-      {
-        id: 'cedar-college-main',
-        displayName: 'Cedar College',
-        productionUrl: 'https://cedarcollege.junipa.com.au',
-        gcpProject: 'cedarcollege-prod',
-        sourceRepo: 'junipa',
-      },
-    ],
-  },
-  {
-    id: 'men-of-business',
-    displayName: 'Men of Business',
-    campuses: [
-      {
-        id: 'men-of-business-main',
-        displayName: 'Men of Business',
-        productionUrl: 'https://menofbusiness.junipa.com.au',
-        gcpProject: 'menofbusiness-prod',
-        sourceRepo: 'junipa',
-      },
+      { id: 'mjc-main', displayName: 'MJC Main Campus', gcpProject: 'mjc-prod-2022b' },
+      { id: 'mjc-tuncurry', displayName: 'MJC Tuncurry', gcpProject: 'mjc-tuncurry-prod' },
+      { id: 'mjc-wallsend', displayName: 'MJC Wallsend', gcpProject: 'mjc-wallsend' },
     ],
   },
   {
     id: 'junipa-demo-org',
     displayName: 'Junipa Demo Organisation',
-    orgPortalUrl: 'https://organisation.junipa.com.au',  // Firebase: junipa-org-hub
-    orgPortalGcpProject: 'junipa-org-hub',
+    orgPortal: { gcpProject: 'junipa-org-hub' },  // organisation.junipa.com.au
     campuses: [
-      {
-        id: 'junipa-demo-campus',
-        displayName: 'Junipa Demo',
-        productionUrl: 'https://demo2.junipa.com.au',
-        gcpProject: 'junipa',
-        sourceRepo: 'junipa',
-      },
+      { id: 'junipa-demo', displayName: 'Junipa Demo', gcpProject: 'junipa' },
+      { id: 'junipa-central-demo', displayName: 'Junipa Central Demo', gcpProject: 'junipa-central-demo' },
+      { id: 'junipa-west-demo', displayName: 'Junipa West Demo', gcpProject: 'junipa-west-demo' },
+      { id: 'cedar-college', displayName: 'Cedar College', gcpProject: 'cedarcollege-prod' },
     ],
   },
   {
-    id: 'junipa-central-demo',
-    displayName: 'Junipa Central Demo',
+    id: 'men-of-business',
+    displayName: 'Men of Business',
+    // No org portal - standalone campus
     campuses: [
-      {
-        id: 'junipa-central-demo-campus',
-        displayName: 'Central Demo Campus',
-        productionUrl: 'https://junipacentral.junipa.com.au',
-        gcpProject: 'junipa-central-demo',
-        sourceRepo: 'junipa',
-      },
-    ],
-  },
-  {
-    id: 'junipa-west-demo',
-    displayName: 'Junipa West Demo',
-    campuses: [
-      {
-        id: 'junipa-west-demo-campus',
-        displayName: 'West Demo Campus',
-        productionUrl: 'https://junipawest.junipa.com.au',
-        gcpProject: 'junipa-west-demo',
-        sourceRepo: 'junipa',
-      },
+      { id: 'men-of-business-main', displayName: 'Men of Business', gcpProject: 'menofbusiness-prod' },
     ],
   },
 ];
 
 /**
- * Get all organisations for the ownership view
+ * Get GCP project details by ID
  */
-export function getOrganisations(): Organisation[] {
-  return ORGANISATIONS;
+export function getGcpProject(projectId: string): GcpProject | undefined {
+  return GCP_PROJECTS.find(p => p.projectId === projectId);
+}
+
+/**
+ * Get all enabled GCP projects
+ */
+export function getEnabledGcpProjects(): GcpProject[] {
+  return GCP_PROJECTS.filter(p => p.enabled);
+}
+
+/**
+ * Get all clients for the ownership view
+ */
+export function getClients(): Client[] {
+  return CLIENTS;
+}
+
+// Legacy exports for backward compatibility
+export type Organisation = Client;
+export function getOrganisations(): Client[] {
+  return CLIENTS;
 }
