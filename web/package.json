@@ -29,6 +29,7 @@
 	"dependencies": {
 		"@lucide/svelte": "^0.562.0",
 		"@types/d3-force": "^3.0.10",
-		"d3-force": "^3.0.0"
+		"d3-force": "^3.0.0",
+		"panzoom": "^9.4.3"
 	}
 }

@@ -27,7 +27,7 @@ export {};
 
 declare module "$app/types" {
 	export interface AppTypes {
-		RouteId(): "/" | "/admin" | "/admin/infra" | "/admin/media" | "/admin/projects" | "/admin/repos" | "/api" | "/api/logos" | "/api/logos/[...path]" | "/api/scan" | "/deployments" | "/ecosystem" | "/login" | "/logout" | "/projects";
+		RouteId(): "/" | "/admin" | "/admin/infra" | "/admin/media" | "/admin/projects" | "/admin/repos" | "/api" | "/api/logos" | "/api/logos/[...path]" | "/api/scan" | "/deployments" | "/ecosystem" | "/infrastructure" | "/infrastructure/map" | "/login" | "/logout" | "/projects";
 		RouteParams(): {
 			"/api/logos/[...path]": { path: string }
 		};
@@ -44,11 +44,13 @@ declare module "$app/types" {
 			"/api/scan": Record<string, never>;
 			"/deployments": Record<string, never>;
 			"/ecosystem": Record<string, never>;
+			"/infrastructure": Record<string, never>;
+			"/infrastructure/map": Record<string, never>;
 			"/login": Record<string, never>;
 			"/logout": Record<string, never>;
 			"/projects": Record<string, never>
 		};
-		Pathname(): "/" | "/admin" | "/admin/" | "/admin/infra" | "/admin/infra/" | "/admin/media" | "/admin/media/" | "/admin/projects" | "/admin/projects/" | "/admin/repos" | "/admin/repos/" | "/api" | "/api/" | "/api/logos" | "/api/logos/" | `/api/logos/${string}` & {} | `/api/logos/${string}/` & {} | "/api/scan" | "/api/scan/" | "/deployments" | "/deployments/" | "/ecosystem" | "/ecosystem/" | "/login" | "/login/" | "/logout" | "/logout/" | "/projects" | "/projects/";
+		Pathname(): "/" | "/admin" | "/admin/" | "/admin/infra" | "/admin/infra/" | "/admin/media" | "/admin/media/" | "/admin/projects" | "/admin/projects/" | "/admin/repos" | "/admin/repos/" | "/api" | "/api/" | "/api/logos" | "/api/logos/" | `/api/logos/${string}` & {} | `/api/logos/${string}/` & {} | "/api/scan" | "/api/scan/" | "/deployments" | "/deployments/" | "/ecosystem" | "/ecosystem/" | "/infrastructure" | "/infrastructure/" | "/infrastructure/map" | "/infrastructure/map/" | "/login" | "/login/" | "/logout" | "/logout/" | "/projects" | "/projects/";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
 		Asset(): "/favicon.svg" | "/icons/apple-touch-icon.png" | "/icons/icon-192.png" | "/icons/icon-512.png" | "/icons/icon-maskable-512.png" | "/logo.svg" | "/manifest.json" | "/robots.txt" | "/sw.js" | string & {};
 	}

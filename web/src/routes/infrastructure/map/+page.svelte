@@ -1,5 +1,8 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { browser } from '$app/environment';
+	import { onMount } from 'svelte';
+	import panzoom from 'panzoom';
 	import {
 		Cloud,
 		Database,
@@ -12,7 +15,10 @@
 		ZoomOut,
 		ArrowUpAZ,
 		ArrowDownZA,
-		Maximize2
+		Maximize2,
+		Globe,
+		Mail,
+		Link
 	} from '@lucide/svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -25,17 +31,16 @@
 			: [...data.projects].sort((a, b) => b.displayName.localeCompare(a.displayName))
 	);
 
-	// Canvas state
-	let containerRef: HTMLDivElement;
-	let transform = $state({ x: 0, y: 0, scale: 1 });
-	let isPanning = $state(false);
-	let panStart = $state({ x: 0, y: 0 });
+	// Panzoom instance
+	let canvasRef: HTMLDivElement;
+	let panzoomInstance: ReturnType<typeof panzoom> | null = null;
+	let currentZoom = $state(1);
 
 	// Grid config - 4 columns
 	const COLS = 4;
-	const PROJECT_WIDTH = 280;
-	const PROJECT_HEIGHT = 320;
-	const GAP = 60;
+	const PROJECT_WIDTH = 320;
+	const PROJECT_HEIGHT = 380;
+	const GAP = 50;
 
 	// Provider colors
 	const providerColors: Record<string, string> = {
@@ -49,9 +54,13 @@
 		sentry: '#362d59',
 		vercel: '#000000',
 		netlify: '#00c7b7',
+		resend: '#000000',
+		sendgrid: '#1a82e2',
+		mailgun: '#f06b66',
+		digitalocean: '#0080ff',
 	};
 
-	// Category icons
+	// Category icons and labels
 	function getCategoryIcon(category: string) {
 		switch (category) {
 			case 'hosting': return Cloud;
@@ -60,8 +69,24 @@
 			case 'storage': return HardDrive;
 			case 'ci': return GitBranch;
 			case 'monitoring': return Activity;
+			case 'dns': return Globe;
+			case 'email': return Mail;
 			default: return Cloud;
 		}
+	}
+
+	function getCategoryLabel(category: string): string {
+		const labels: Record<string, string> = {
+			hosting: 'Host',
+			database: 'DB',
+			auth: 'Auth',
+			storage: 'Storage',
+			ci: 'CI/CD',
+			monitoring: 'Monitor',
+			dns: 'DNS',
+			email: 'Email',
+		};
+		return labels[category] || category;
 	}
 
 	// Identity colors
@@ -70,104 +95,80 @@
 		'jvp-ux': '#8b5cf6',
 	};
 
-	// Zoom handlers
-	function handleWheel(event: WheelEvent) {
-		// Require Ctrl for zoom
-		if (!event.ctrlKey) return;
+	// Get hosting provider for display
+	function getHostingProvider(services: typeof data.projects[0]['services']): string {
+		const hosting = services.find(s => s.category === 'hosting');
+		return hosting?.provider || 'unknown';
+	}
 
-		event.preventDefault();
+	// Initialize panzoom
+	onMount(() => {
+		if (!browser || !canvasRef) return;
 
-		const delta = event.deltaY > 0 ? 0.9 : 1.1;
-		const newScale = Math.max(0.2, Math.min(3, transform.scale * delta));
+		panzoomInstance = panzoom(canvasRef, {
+			maxZoom: 4,
+			minZoom: 0.25,
+			smoothScroll: false,
+			zoomDoubleClickSpeed: 1,
+			filterKey: () => true,  // Allow all keys
+			beforeWheel: (e) => {
+				// Only zoom with Ctrl key
+				return !e.ctrlKey;
+			},
+			beforeMouseDown: (e) => {
+				// Don't pan when clicking on links
+				const target = e.target as HTMLElement;
+				return target.tagName === 'A' || target.closest('a') !== null;
+			},
+		});
 
-		// Zoom toward mouse position
-		const rect = containerRef.getBoundingClientRect();
-		const mouseX = event.clientX - rect.left;
-		const mouseY = event.clientY - rect.top;
+		panzoomInstance.on('zoom', (e: { getTransform: () => { scale: number } }) => {
+			currentZoom = e.getTransform().scale;
+		});
 
-		const scaleRatio = newScale / transform.scale;
-
-		transform = {
-			scale: newScale,
-			x: mouseX - (mouseX - transform.x) * scaleRatio,
-			y: mouseY - (mouseY - transform.y) * scaleRatio,
+		return () => {
+			panzoomInstance?.dispose();
 		};
-	}
-
-	// Pan handlers
-	function handlePanStart(event: MouseEvent) {
-		// Only left click, and not on interactive elements
-		if (event.button !== 0) return;
-		isPanning = true;
-		panStart = { x: event.clientX - transform.x, y: event.clientY - transform.y };
-	}
-
-	function handlePanMove(event: MouseEvent) {
-		if (!isPanning) return;
-		transform = {
-			...transform,
-			x: event.clientX - panStart.x,
-			y: event.clientY - panStart.y,
-		};
-	}
-
-	function handlePanEnd() {
-		isPanning = false;
-	}
+	});
 
 	// Zoom controls
 	function zoomIn() {
-		const newScale = Math.min(3, transform.scale * 1.2);
-		// Center zoom
-		if (containerRef) {
-			const rect = containerRef.getBoundingClientRect();
-			const centerX = rect.width / 2;
-			const centerY = rect.height / 2;
-			const scaleRatio = newScale / transform.scale;
-			transform = {
-				scale: newScale,
-				x: centerX - (centerX - transform.x) * scaleRatio,
-				y: centerY - (centerY - transform.y) * scaleRatio,
-			};
-		} else {
-			transform = { ...transform, scale: newScale };
-		}
+		panzoomInstance?.smoothZoom(0, 0, 1.3);
 	}
 
 	function zoomOut() {
-		const newScale = Math.max(0.2, transform.scale / 1.2);
-		if (containerRef) {
-			const rect = containerRef.getBoundingClientRect();
-			const centerX = rect.width / 2;
-			const centerY = rect.height / 2;
-			const scaleRatio = newScale / transform.scale;
-			transform = {
-				scale: newScale,
-				x: centerX - (centerX - transform.x) * scaleRatio,
-				y: centerY - (centerY - transform.y) * scaleRatio,
-			};
-		} else {
-			transform = { ...transform, scale: newScale };
-		}
+		panzoomInstance?.smoothZoom(0, 0, 0.7);
 	}
 
 	function resetView() {
-		transform = { x: 40, y: 40, scale: 1 };
+		panzoomInstance?.moveTo(40, 40);
+		panzoomInstance?.zoomAbs(0, 0, 1);
+		currentZoom = 1;
 	}
 
 	// Calculate grid dimensions
 	let rows = $derived(Math.ceil(sortedProjects.length / COLS));
-	let canvasWidth = $derived(COLS * PROJECT_WIDTH + (COLS - 1) * GAP + 80);
-	let canvasHeight = $derived(rows * PROJECT_HEIGHT + (rows - 1) * GAP + 80);
+	let canvasWidth = $derived(COLS * PROJECT_WIDTH + (COLS - 1) * GAP + 100);
+	let canvasHeight = $derived(rows * PROJECT_HEIGHT + (rows - 1) * GAP + 100);
 
 	// Get project position
 	function getProjectPosition(index: number) {
 		const col = index % COLS;
 		const row = Math.floor(index / COLS);
 		return {
-			x: 40 + col * (PROJECT_WIDTH + GAP),
-			y: 40 + row * (PROJECT_HEIGHT + GAP),
+			x: 50 + col * (PROJECT_WIDTH + GAP),
+			y: 50 + row * (PROJECT_HEIGHT + GAP),
 		};
+	}
+
+	// Get display URL (shortened)
+	function getDisplayUrl(url: string): string {
+		try {
+			const u = new URL(url);
+			return u.hostname;
+		} catch {
+			return url;
+		}
 	}
 </script>
 
@@ -181,6 +182,8 @@
 		<div class="flex items-center gap-4">
 			<h1 class="text-lg font-semibold text-white">Infrastructure Map</h1>
 			<span class="text-xs text-gray-500">{sortedProjects.length} projects</span>
+			<span class="text-xs text-gray-600">|</span>
+			<span class="text-xs text-gray-500">Data source: <code class="text-gray-400">lib/config/infrastructure.ts</code></span>
 		</div>
 		<div class="flex items-center gap-2">
 			<!-- Sort toggle -->
@@ -205,7 +208,7 @@
 				>
 					<ZoomOut class="w-4 h-4" />
 				</button>
-				<span class="text-xs text-gray-400 w-12 text-center">{Math.round(transform.scale * 100)}%</span>
+				<span class="text-xs text-gray-400 w-12 text-center">{Math.round(currentZoom * 100)}%</span>
 				<button
 					onclick={zoomIn}
 					class="p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors"
@@ -226,78 +229,84 @@
 
 	<!-- Hint -->
 	<div class="shrink-0 px-4 py-1 text-xs text-gray-500 bg-gray-900/50">
-		Ctrl + scroll to zoom | Drag to pan
+		Ctrl + scroll to zoom | Drag to pan | Click service badges to open dashboards
 	</div>
 
 	<!-- Canvas container -->
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div
-		bind:this={containerRef}
-		class="flex-1 overflow-hidden relative cursor-grab {isPanning ? 'cursor-grabbing' : ''}"
-		role="application"
-		aria-label="Infrastructure map canvas"
-		tabindex="0"
-		onwheel={handleWheel}
-		onmousedown={handlePanStart}
-		onmousemove={handlePanMove}
-		onmouseup={handlePanEnd}
-		onmouseleave={handlePanEnd}
-	>
-		<!-- Grid background -->
+	<div class="flex-1 overflow-hidden relative bg-gray-950">
+		<!-- Grid background (fixed) -->
 		<div
 			class="absolute inset-0 pointer-events-none"
 			style="
 				background-image:
-					linear-gradient(rgba(55, 65, 81, 0.3) 1px, transparent 1px),
-					linear-gradient(90deg, rgba(55, 65, 81, 0.3) 1px, transparent 1px);
-				background-size: {40 * transform.scale}px {40 * transform.scale}px;
-				background-position: {transform.x % (40 * transform.scale)}px {transform.y % (40 * transform.scale)}px;
+					linear-gradient(rgba(55, 65, 81, 0.2) 1px, transparent 1px),
+					linear-gradient(90deg, rgba(55, 65, 81, 0.2) 1px, transparent 1px);
+				background-size: 40px 40px;
 			"
 		></div>
 
-		<!-- Transformed canvas -->
+		<!-- Panzoom canvas -->
 		<div
-			class="absolute origin-top-left will-change-transform"
+			bind:this={canvasRef}
+			class="absolute origin-top-left cursor-grab active:cursor-grabbing"
 			style="
-				transform: translate({transform.x}px, {transform.y}px) scale({transform.scale});
 				width: {canvasWidth}px;
 				height: {canvasHeight}px;
+				transform-origin: 0 0;
+				will-change: transform;
+				backface-visibility: hidden;
 			"
 		>
 			{#each sortedProjects as project, index (project.id)}
 				{@const pos = getProjectPosition(index)}
 				{@const identityColor = identityColors[project.identity] || '#6b7280'}
+				{@const hostProvider = getHostingProvider(project.services)}
+				{@const hostColor = providerColors[hostProvider] || '#6b7280'}
 				<div
 					class="absolute select-none"
-					style="left: {pos.x}px; top: {pos.y}px; width: {PROJECT_WIDTH}px;"
+					style="
+						left: {pos.x}px;
+						top: {pos.y}px;
+						width: {PROJECT_WIDTH}px;
+						transform: translateZ(0);
+					"
 				>
 					<!-- Project card -->
 					<div
-						class="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden shadow-lg hover:border-gray-600 transition-colors"
-						style="border-left: 3px solid {identityColor};"
+						class="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden shadow-xl hover:border-gray-500 transition-colors"
+						style="border-left: 4px solid {identityColor};"
 					>
-						<!-- Header -->
-						<div class="px-3 py-2 bg-gray-800/50 border-b border-gray-700">
-							<div class="flex items-center justify-between">
-								<span class="font-medium text-white text-sm truncate">{project.displayName}</span>
-								{#if project.productionUrl}
-									<a
-										href={project.productionUrl}
-										target="_blank"
-										rel="noopener noreferrer"
-										class="text-gray-400 hover:text-blue-400 transition-colors"
-										onclick={(e) => e.stopPropagation()}
-									>
-										<ExternalLink class="w-3.5 h-3.5" />
-									</a>
-								{/if}
+						<!-- Header with URL -->
+						<div class="px-3 py-2.5 bg-gray-800/70 border-b border-gray-700">
+							<div class="flex items-center justify-between gap-2">
+								<span class="font-semibold text-white text-sm">{project.displayName}</span>
+								<div
+									class="px-1.5 py-0.5 rounded text-[10px] font-medium"
+									style="background-color: {hostColor}30; color: {hostColor};"
+								>
+									{hostProvider}
+								</div>
 							</div>
-							<div class="text-xs text-gray-500 mt-0.5">{project.id}</div>
+							{#if project.productionUrl}
+								<a
+									href={project.productionUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mt-1 group"
+									onclick={(e) => e.stopPropagation()}
+								>
+									<Link class="w-3 h-3" />
+									<span class="truncate">{getDisplayUrl(project.productionUrl)}</span>
+									<ExternalLink class="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+								</a>
+							{:else}
+								<div class="text-xs text-gray-500 mt-1">No production URL</div>
+							{/if}
+							<div class="text-[10px] text-gray-500 mt-1 font-mono">{project.id}</div>
 						</div>
 
-						<!-- Services grid -->
-						<div class="p-2 grid grid-cols-2 gap-1.5">
+						<!-- Services list -->
+						<div class="p-2 space-y-1">
 							{#each project.services as service, svcIdx (service.provider + '-' + service.category + '-' + svcIdx)}
 								{@const Icon = getCategoryIcon(service.category)}
 								{@const color = providerColors[service.provider] || '#6b7280'}
@@ -306,33 +315,32 @@
 										href={service.dashboardUrl}
 										target="_blank"
 										rel="noopener noreferrer"
-										class="flex items-center gap-1.5 px-2 py-1.5 bg-gray-800/50 hover:bg-gray-800 rounded text-xs transition-colors group"
+										class="flex items-center gap-2 px-2 py-1.5 bg-gray-800/40 hover:bg-gray-800 rounded text-xs transition-colors group"
 										onclick={(e) => e.stopPropagation()}
 									>
 										<div
-											class="w-5 h-5 rounded flex items-center justify-center shrink-0"
+											class="w-6 h-6 rounded flex items-center justify-center shrink-0"
 											style="background-color: {color}20;"
 										>
-											<Icon class="w-3 h-3" style="color: {color};" />
+											<Icon class="w-3.5 h-3.5" style="color: {color};" />
 										</div>
-										<div class="flex-1 min-w-0">
-											<div class="text-gray-300 truncate group-hover:text-white">{service.provider}</div>
-											<div class="text-gray-500 text-[10px] truncate">{service.category}</div>
+										<div class="flex-1 min-w-0 flex items-center gap-2">
+											<span class="text-gray-500 w-12 shrink-0">{getCategoryLabel(service.category)}</span>
+											<span class="text-gray-200 group-hover:text-white font-medium">{service.provider}</span>
 										</div>
+										<ExternalLink class="w-3 h-3 text-gray-600 group-hover:text-gray-400 shrink-0" />
 									</a>
 								{:else}
-									<div
-										class="flex items-center gap-1.5 px-2 py-1.5 bg-gray-800/50 rounded text-xs"
-									>
+									<div class="flex items-center gap-2 px-2 py-1.5 bg-gray-800/40 rounded text-xs">
 										<div
-											class="w-5 h-5 rounded flex items-center justify-center shrink-0"
+											class="w-6 h-6 rounded flex items-center justify-center shrink-0"
 											style="background-color: {color}20;"
 										>
-											<Icon class="w-3 h-3" style="color: {color};" />
+											<Icon class="w-3.5 h-3.5" style="color: {color};" />
 										</div>
-										<div class="flex-1 min-w-0">
-											<div class="text-gray-300 truncate">{service.provider}</div>
-											<div class="text-gray-500 text-[10px] truncate">{service.category}</div>
+										<div class="flex-1 min-w-0 flex items-center gap-2">
+											<span class="text-gray-500 w-12 shrink-0">{getCategoryLabel(service.category)}</span>
+											<span class="text-gray-300 font-medium">{service.provider}</span>
 										</div>
 									</div>
 								{/if}
@@ -345,21 +353,33 @@
 	</div>
 
 	<!-- Legend -->
-	<div class="shrink-0 px-4 py-2 bg-gray-900/80 border-t border-gray-800 flex items-center gap-4 flex-wrap">
-		<span class="text-xs text-gray-500">Identities:</span>
-		{#each Object.entries(identityColors) as [identity, color] (identity)}
-			<div class="flex items-center gap-1.5">
-				<div class="w-3 h-3 rounded" style="background-color: {color};"></div>
-				<span class="text-xs text-gray-400">{identity}</span>
-			</div>
-		{/each}
-		<span class="text-gray-700 mx-2">|</span>
-		<span class="text-xs text-gray-500">Providers:</span>
-		{#each Object.entries(providerColors).slice(0, 6) as [provider, color] (provider)}
-			<div class="flex items-center gap-1.5">
-				<div class="w-2.5 h-2.5 rounded-sm" style="background-color: {color};"></div>
-				<span class="text-xs text-gray-400">{provider}</span>
-			</div>
-		{/each}
+	<div class="shrink-0 px-4 py-2 bg-gray-900/90 border-t border-gray-800 flex items-center gap-6 flex-wrap">
+		<div class="flex items-center gap-3">
+			<span class="text-xs text-gray-500">Identity:</span>
+			{#each Object.entries(identityColors) as [identity, color] (identity)}
+				<div class="flex items-center gap-1.5">
+					<div class="w-3 h-3 rounded" style="background-color: {color};"></div>
+					<span class="text-xs text-gray-400">{identity}</span>
+				</div>
+			{/each}
+		</div>
+		<div class="flex items-center gap-3">
+			<span class="text-xs text-gray-500">Providers:</span>
+			{#each Object.entries(providerColors).slice(0, 8) as [provider, color] (provider)}
+				<div class="flex items-center gap-1">
+					<div class="w-2 h-2 rounded-sm" style="background-color: {color};"></div>
+					<span class="text-[10px] text-gray-500">{provider}</span>
+				</div>
+			{/each}
+		</div>
 	</div>
 </div>
+
+<style>
+	/* Prevent blurry text during transforms */
+	:global(.panzoom) {
+		-webkit-font-smoothing: subpixel-antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-rendering: optimizeLegibility;
+	}
+</style>

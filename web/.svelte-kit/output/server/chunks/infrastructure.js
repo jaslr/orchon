@@ -12,6 +12,7 @@ const INFRASTRUCTURE = {
     // Deploys via wrangler pages deploy
     services: [
       { category: "hosting", provider: "cloudflare", serviceName: "Cloudflare Pages", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://dash.cloudflare.com/?to=/:account/pages/view/orchon" },
+      { category: "dns", provider: "cloudflare", serviceName: "Cloudflare DNS", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://dash.cloudflare.com/?to=/:account/dns" },
       { category: "ci", provider: "github", serviceName: "GitHub Actions", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://github.com/jaslr/orchon/actions" }
     ],
     stack: {
@@ -41,9 +42,11 @@ const INFRASTRUCTURE = {
     // Deploys via wrangler pages deploy
     services: [
       { category: "hosting", provider: "cloudflare", serviceName: "Cloudflare Pages", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://dash.cloudflare.com/?to=/:account/pages/view/livna" },
+      { category: "dns", provider: "cloudflare", serviceName: "Cloudflare DNS", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://dash.cloudflare.com/?to=/:account/dns" },
       { category: "database", provider: "supabase", serviceName: "Supabase Database", status: "unknown", config: {}, discoveryMethod: "package_json", dashboardUrl: "https://supabase.com/dashboard/project/vtyfsrpupgrkkbnsiuqe" },
       { category: "auth", provider: "supabase", serviceName: "Supabase Auth", status: "unknown", config: {}, discoveryMethod: "package_json", dashboardUrl: "https://supabase.com/dashboard/project/vtyfsrpupgrkkbnsiuqe/auth/users" },
       { category: "storage", provider: "cloudflare", serviceName: "Cloudflare R2", status: "unknown", config: {}, discoveryMethod: "env_vars", dashboardUrl: "https://dash.cloudflare.com/?to=/:account/r2/default/buckets" },
+      { category: "email", provider: "resend", serviceName: "Resend", status: "unknown", config: {}, discoveryMethod: "package_json", dashboardUrl: "https://resend.com/emails" },
       { category: "monitoring", provider: "sentry", serviceName: "Sentry", status: "unknown", config: {}, discoveryMethod: "package_json", dashboardUrl: "https://jaslr.sentry.io/projects/livna/" },
       { category: "ci", provider: "github", serviceName: "GitHub Actions", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://github.com/jaslr/livna/actions" }
     ],
@@ -146,7 +149,9 @@ const INFRASTRUCTURE = {
     services: [
       { category: "hosting", provider: "flyio", serviceName: "Fly.io", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://fly.io/apps/shippywhippy" },
       { category: "hosting", provider: "cloudflare", serviceName: "Cloudflare Pages (Admin)", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://dash.cloudflare.com/?to=/:account/pages/view/shippywhippy-admin" },
+      { category: "dns", provider: "cloudflare", serviceName: "Cloudflare DNS", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://dash.cloudflare.com/?to=/:account/dns" },
       { category: "database", provider: "supabase", serviceName: "Supabase Database", status: "unknown", config: {}, discoveryMethod: "package_json", dashboardUrl: "https://supabase.com/dashboard" },
+      { category: "email", provider: "sendgrid", serviceName: "SendGrid", status: "unknown", config: {}, discoveryMethod: "env_vars", dashboardUrl: "https://app.sendgrid.com/" },
       { category: "ci", provider: "github", serviceName: "GitHub Actions", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://github.com/jaslr/shippywhippy/actions" }
     ],
     stack: {
@@ -209,6 +214,7 @@ const INFRASTRUCTURE = {
     // Manual workflow, usually deploys via wrangler
     services: [
       { category: "hosting", provider: "cloudflare", serviceName: "Cloudflare Pages", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://dash.cloudflare.com/?to=/:account/pages/view/littlelistoflights" },
+      { category: "dns", provider: "cloudflare", serviceName: "Cloudflare DNS", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://dash.cloudflare.com/?to=/:account/dns" },
       { category: "database", provider: "supabase", serviceName: "Supabase Database", status: "unknown", config: {}, discoveryMethod: "package_json", dashboardUrl: "https://supabase.com/dashboard/project/hjrawccyhnvtwulzfbbo" },
       { category: "ci", provider: "github", serviceName: "GitHub Actions", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://github.com/jaslr/littlelistoflights/actions" }
     ],
@@ -361,9 +367,11 @@ const INFRASTRUCTURE = {
     services: [
       { category: "hosting", provider: "firebase", serviceName: "Firebase Hosting", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.firebase.google.com/project/junipa/hosting" },
       { category: "hosting", provider: "gcp", serviceName: "Cloud Run (API)", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/run?project=junipa" },
+      { category: "dns", provider: "gcp", serviceName: "Cloud DNS", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/net-services/dns/zones?project=junipa" },
       { category: "database", provider: "firebase", serviceName: "Firestore", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.firebase.google.com/project/junipa/firestore" },
       { category: "auth", provider: "firebase", serviceName: "Firebase Auth", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.firebase.google.com/project/junipa/authentication" },
-      { category: "storage", provider: "firebase", serviceName: "Firebase Storage", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.firebase.google.com/project/junipa/storage" }
+      { category: "storage", provider: "firebase", serviceName: "Firebase Storage", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.firebase.google.com/project/junipa/storage" },
+      { category: "email", provider: "mailgun", serviceName: "Mailgun", status: "unknown", config: {}, discoveryMethod: "env_vars", dashboardUrl: "https://app.mailgun.com/" }
     ],
     stack: {
       framework: "angular",

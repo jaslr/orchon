@@ -38,6 +38,10 @@
 	"/ecosystem": [
 		"src/routes/+layout.server.ts"
 	],
+	"/infrastructure/map": [
+		"src/routes/infrastructure/map/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
 	"/login": [
 		"src/routes/login/+page.server.ts",
 		"src/routes/+layout.server.ts"
