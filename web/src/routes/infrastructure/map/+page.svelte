@@ -13,7 +13,8 @@
 		Building2,
 		School,
 		Globe,
-		Network
+		Network,
+		Settings
 	} from '@lucide/svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -23,6 +24,31 @@
 
 	// Sorting
 	let sortAsc = $state(true);
+
+	// Toggle overrides from localStorage (for filtering which projects to show)
+	let toggleOverrides = $state<Record<string, boolean>>({});
+
+	// Load toggle overrides from localStorage on mount
+	$effect(() => {
+		if (typeof window !== 'undefined') {
+			const saved = localStorage.getItem('gcp-project-overrides');
+			if (saved) {
+				try {
+					toggleOverrides = JSON.parse(saved);
+				} catch {
+					toggleOverrides = {};
+				}
+			}
+		}
+	});
+
+	// Check if a GCP project is enabled (considering overrides)
+	function isProjectEnabled(gcpProjectId: string, defaultEnabled: boolean): boolean {
+		if (gcpProjectId in toggleOverrides) {
+			return toggleOverrides[gcpProjectId];
+		}
+		return defaultEnabled;
+	}
 
 	// For flat view - filter out instances (show only standalone projects and source repos)
 	let standaloneProjects = $derived(
@@ -43,10 +69,30 @@
 	);
 
 	// For ownership view - clients with org portals and campuses (3-level hierarchy)
+	// Filter out clients where all campuses are disabled
+	let filteredClients = $derived(
+		data.clients.map((client: ResolvedClient) => {
+			// Filter campuses based on toggle overrides
+			const enabledCampuses = client.campuses.filter(campus =>
+				isProjectEnabled(campus.gcpProject, true)
+			);
+			// Check if org portal is enabled
+			const orgPortalEnabled = client.orgPortal
+				? isProjectEnabled(client.orgPortal.gcpProject, true)
+				: true;
+
+			return {
+				...client,
+				campuses: enabledCampuses,
+				orgPortal: orgPortalEnabled ? client.orgPortal : undefined,
+			};
+		}).filter(client => client.campuses.length > 0 || client.orgPortal)
+	);
+
 	let sortedClients = $derived(
 		sortAsc
-			? [...data.clients].sort((a: ResolvedClient, b: ResolvedClient) => a.displayName.localeCompare(b.displayName))
-			: [...data.clients].sort((a: ResolvedClient, b: ResolvedClient) => b.displayName.localeCompare(a.displayName))
+			? [...filteredClients].sort((a, b) => a.displayName.localeCompare(b.displayName))
+			: [...filteredClients].sort((a, b) => b.displayName.localeCompare(a.displayName))
 	);
 
 	// Canvas state - pan (x, y) and zoom
@@ -346,6 +392,14 @@
 			</span>
 		</div>
 		<div class="flex items-center gap-2">
+			<a
+				href="/infrastructure/settings"
+				class="flex items-center gap-1.5 px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs text-gray-300 transition-colors"
+				title="Manage GCP Projects"
+			>
+				<Settings class="w-3.5 h-3.5" />
+				Settings
+			</a>
 			<button
 				onclick={() => sortAsc = !sortAsc}
 				class="flex items-center gap-1.5 px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs text-gray-300 transition-colors"
