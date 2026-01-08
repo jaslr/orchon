@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { Activity, Layers, Cloud, Server } from '@lucide/svelte';
+	import { Activity, Layers, Cloud, Server, Map } from '@lucide/svelte';
 
 	// Determine active route
 	let currentPath = $derived(page.url.pathname);
@@ -46,13 +46,26 @@
 
 	<a
 		href="/admin/infra"
-		class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors {currentPath.startsWith('/admin/infra')
+		class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors {currentPath.startsWith('/admin/infra') || currentPath.startsWith('/infrastructure')
 			? 'bg-gray-800 border-l-2 border-blue-500'
 			: 'hover:bg-gray-800/50 border-l-2 border-transparent'}"
 	>
-		<Server class="w-4 h-4 {currentPath.startsWith('/admin/infra') ? 'text-blue-400' : 'text-gray-500'} shrink-0" />
+		<Server class="w-4 h-4 {currentPath.startsWith('/admin/infra') || currentPath.startsWith('/infrastructure') ? 'text-blue-400' : 'text-gray-500'} shrink-0" />
 		<div class="flex-1 min-w-0">
-			<div class="font-medium text-sm {currentPath.startsWith('/admin/infra') ? 'text-white' : 'text-gray-300'} truncate">Infrastructure</div>
+			<div class="font-medium text-sm {currentPath.startsWith('/admin/infra') || currentPath.startsWith('/infrastructure') ? 'text-white' : 'text-gray-300'} truncate">Infrastructure</div>
+		</div>
+	</a>
+
+	<!-- Infrastructure Map sub-menu -->
+	<a
+		href="/infrastructure/map"
+		class="flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors {currentPath === '/infrastructure/map'
+			? 'bg-gray-800/50 border-l-2 border-blue-400'
+			: 'hover:bg-gray-800/30 border-l-2 border-transparent'}"
+	>
+		<Map class="w-3.5 h-3.5 {currentPath === '/infrastructure/map' ? 'text-blue-400' : 'text-gray-500'} shrink-0" />
+		<div class="flex-1 min-w-0">
+			<div class="text-sm {currentPath === '/infrastructure/map' ? 'text-white' : 'text-gray-400'} truncate">Map</div>
 		</div>
 	</a>
 </nav>
