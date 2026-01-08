@@ -21,13 +21,25 @@ class ServerMessage {
     );
   }
 
-  String? get threadId => data['threadId'] as String?;
+  String? get threadId => data['threadId'] as String? ?? data['id'] as String?;
   String? get text => data['text'] as String?;
   String? get step => data['step'] as String?;
   String? get actionId => data['actionId'] as String?;
   String? get error => data['error'] as String?;
   String? get prompt => data['prompt'] as String?;
   dynamic get result => data['result'];
+
+  // Thread list response
+  List<Map<String, dynamic>> get threads =>
+      (data['threads'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
+
+  // Thread loaded response
+  List<Map<String, dynamic>> get messages =>
+      (data['messages'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
+  String? get projectHint => data['projectHint'] as String?;
+  String? get createdAt => data['createdAt'] as String?;
+  String? get updatedAt => data['updatedAt'] as String?;
+  String? get title => data['title'] as String?;
 
   // Notification-related fields
   String? get project => data['project'] as String?;
@@ -150,9 +162,27 @@ class WebSocketService {
   }
 
   /// Close a thread
-  void closeThread(String threadId) {
+  void closeThread(String threadId, {bool archive = false}) {
     send({
       'type': 'thread.close',
+      'threadId': threadId,
+      'archive': archive,
+    });
+  }
+
+  /// List threads from PocketBase
+  void listThreads({String status = 'active', int limit = 50}) {
+    send({
+      'type': 'thread.list',
+      'status': status,
+      'limit': limit,
+    });
+  }
+
+  /// Load a specific thread with its messages
+  void loadThread(String threadId) {
+    send({
+      'type': 'thread.load',
       'threadId': threadId,
     });
   }

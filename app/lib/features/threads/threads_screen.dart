@@ -87,9 +87,16 @@ class _ThreadsScreenState extends ConsumerState<ThreadsScreen> {
         ],
       ),
       endDrawer: const SettingsDrawer(),
-      body: threadsState.threads.isEmpty
-          ? _buildEmptyState()
-          : _buildThreadsList(threadsState.threads),
+      body: threadsState.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : threadsState.threads.isEmpty
+              ? _buildEmptyState()
+              : RefreshIndicator(
+                  onRefresh: () async {
+                    ref.read(threadsProvider.notifier).refreshThreads();
+                  },
+                  child: _buildThreadsList(threadsState.threads),
+                ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _createNewThread(context),
         icon: const Icon(Icons.add),
@@ -209,6 +216,9 @@ class _ThreadsScreenState extends ConsumerState<ThreadsScreen> {
   }
 
   void _openThread(BuildContext context, thread) {
+    // Request the thread to be loaded with its messages
+    ref.read(threadsProvider.notifier).loadThread(thread.id);
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -262,10 +272,20 @@ class _ThreadCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      thread.projectHint ?? 'General',
+                      thread.title ?? thread.projectHint ?? 'New Thread',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      thread.projectHint ?? 'General',
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 12,
                       ),
                     ),
                     if (thread.lastMessage != null) ...[

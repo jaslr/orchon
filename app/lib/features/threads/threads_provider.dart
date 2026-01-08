@@ -43,17 +43,40 @@ class ThreadsNotifier extends StateNotifier<ThreadsState> {
         case 'thread.created':
           _handleThreadCreated(message.data);
           break;
+        case 'thread.list':
+          _handleThreadList(message);
+          break;
         case 'thread.updated':
           _handleThreadUpdated(message.data);
           break;
         case 'thread.deleted':
           _handleThreadDeleted(message.data);
           break;
+        case 'auth.success':
+          // When authenticated, request thread list
+          refreshThreads();
+          break;
         case 'error':
           _handleError(message.data);
           break;
       }
     });
+  }
+
+  void _handleThreadList(ServerMessage message) {
+    final threadsList = message.threads.map((t) => Thread(
+      id: t['id'] as String,
+      projectHint: t['projectHint'] as String?,
+      title: t['title'] as String?,
+      createdAt: DateTime.tryParse(t['createdAt'] as String? ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(t['updatedAt'] as String? ?? '') ?? DateTime.now(),
+    )).toList();
+
+    state = state.copyWith(
+      threads: threadsList,
+      isLoading: false,
+    );
+    debugPrint('[Threads] Loaded ${threadsList.length} threads from server');
   }
 
   void _handleError(Map<String, dynamic> data) {
@@ -89,11 +112,20 @@ class ThreadsNotifier extends StateNotifier<ThreadsState> {
     _wsService.createThread(projectHint: projectHint);
   }
 
-  void closeThread(String threadId) {
-    _wsService.closeThread(threadId);
+  void closeThread(String threadId, {bool archive = false}) {
+    _wsService.closeThread(threadId, archive: archive);
     state = state.copyWith(
       threads: state.threads.where((t) => t.id != threadId).toList(),
     );
+  }
+
+  void refreshThreads() {
+    state = state.copyWith(isLoading: true);
+    _wsService.listThreads();
+  }
+
+  void loadThread(String threadId) {
+    _wsService.loadThread(threadId);
   }
 }
 
@@ -156,6 +188,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       if (message.threadId != threadId) return;
 
       switch (message.type) {
+        case 'thread.loaded':
+          _handleThreadLoaded(message);
+          break;
         case 'stream.start':
           _handleStreamStart(message);
           break;
@@ -179,6 +214,31 @@ class ChatNotifier extends StateNotifier<ChatState> {
           break;
       }
     });
+  }
+
+  void _handleThreadLoaded(ServerMessage message) {
+    final loadedMessages = message.messages.map((m) => Message(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      threadId: threadId,
+      role: _parseRole(m['role'] as String? ?? 'user'),
+      content: m['content'] as String? ?? '',
+      status: MessageStatus.complete,
+      createdAt: DateTime.tryParse(m['timestamp'] as String? ?? '') ?? DateTime.now(),
+    )).toList();
+
+    state = state.copyWith(messages: loadedMessages);
+    debugPrint('[Chat] Loaded ${loadedMessages.length} messages for thread $threadId');
+  }
+
+  MessageRole _parseRole(String role) {
+    switch (role) {
+      case 'assistant':
+        return MessageRole.assistant;
+      case 'system':
+        return MessageRole.system;
+      default:
+        return MessageRole.user;
+    }
   }
 
   void _handleStreamStart(ServerMessage message) {
