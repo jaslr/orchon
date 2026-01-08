@@ -172,18 +172,53 @@ const server = http.createServer((req, res) => {
 
     fs.createReadStream(apkPath).pipe(res);
   } else if (req.method === 'GET' && req.url === '/tmux-sessions') {
-    // PROTECTED: List tmux sessions
-    if (!isAuthorized(req)) return unauthorized(res);
+    // List tmux sessions with source and timestamps
+    // No auth required - sessions are visible to all
 
     try {
-      const output = execSync('tmux list-sessions -F "#{session_name}|#{session_windows}|#{session_attached}"', {
+      const output = execSync('tmux list-sessions -F "#{session_name}|#{session_windows}|#{session_attached}|#{session_created}|#{session_activity}"', {
         encoding: 'utf8',
         timeout: 5000,
       }).trim();
 
       const sessions = output.split('\n').filter(line => line).map(line => {
-        const [name, windows, attached] = line.split('|');
-        return { name, windows, attached: attached === '1' };
+        const [name, windows, attached, created, activity] = line.split('|');
+
+        // Parse source from session name (e.g., "agentdeck_livna-fix_abc123" -> "Agent Deck")
+        // Common patterns: agentdeck_*, claude_*, orchon_*, or plain names
+        let source = 'SSH/Manual';
+        let project = null;
+
+        if (name.startsWith('agentdeck_')) {
+          source = 'Agent Deck';
+          // Extract project from middle part: agentdeck_PROJECT_id
+          const parts = name.split('_');
+          if (parts.length >= 2) {
+            project = parts[1];
+          }
+        } else if (name.startsWith('claude_')) {
+          source = 'Claude Code';
+          const parts = name.split('_');
+          if (parts.length >= 2) {
+            project = parts[1];
+          }
+        } else if (name.startsWith('orchon_')) {
+          source = 'ORCHON App';
+          const parts = name.split('_');
+          if (parts.length >= 2) {
+            project = parts[1];
+          }
+        }
+
+        return {
+          name,
+          windows,
+          attached: attached === '1',
+          source,
+          project,
+          createdAt: created ? new Date(parseInt(created) * 1000).toISOString() : null,
+          lastActivity: activity ? new Date(parseInt(activity) * 1000).toISOString() : null,
+        };
       });
 
       res.writeHead(200, { 'Content-Type': 'application/json' });

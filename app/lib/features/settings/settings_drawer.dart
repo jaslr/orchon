@@ -682,6 +682,10 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
             'name': s['name']?.toString() ?? 'unknown',
             'windows': s['windows']?.toString() ?? '0',
             'attached': s['attached']?.toString() ?? 'false',
+            'source': s['source']?.toString() ?? 'SSH/Manual',
+            'project': s['project']?.toString() ?? '',
+            'createdAt': s['createdAt']?.toString() ?? '',
+            'lastActivity': s['lastActivity']?.toString() ?? '',
           }).toList();
           _isLoading = false;
         });
@@ -769,30 +773,77 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
                 ),
               ),
               const SizedBox(height: 8),
-              ...(_sessions.map((session) => _SessionOption(
-                icon: Icons.terminal,
-                title: session['name'] ?? 'unknown',
-                subtitle: '${session['windows']} windows${session['attached'] == 'true' ? ' (attached)' : ''}',
-                color: Colors.grey[400]!,
-                trailing: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red, size: 20),
-                  onPressed: () => _killSession(session['name']!),
-                  tooltip: 'Kill session',
-                ),
-                onTap: () {
-                  Navigator.pop(context); // Close bottom sheet
-                  Navigator.pop(context); // Close drawer
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SshTerminalScreen(
-                        launchMode: LaunchMode.claude,
-                        initialCommand: 'tmux attach -t ${session['name']}',
+              ...(_sessions.map((session) {
+                final source = session['source'] ?? 'SSH/Manual';
+                final project = session['project'] ?? '';
+                final createdAt = session['createdAt'] ?? '';
+                final attached = session['attached'] == 'true';
+
+                // Format time ago
+                String timeAgo = '';
+                if (createdAt.isNotEmpty) {
+                  try {
+                    final created = DateTime.parse(createdAt);
+                    final diff = DateTime.now().difference(created);
+                    if (diff.inDays > 0) {
+                      timeAgo = '${diff.inDays}d ago';
+                    } else if (diff.inHours > 0) {
+                      timeAgo = '${diff.inHours}h ago';
+                    } else if (diff.inMinutes > 0) {
+                      timeAgo = '${diff.inMinutes}m ago';
+                    } else {
+                      timeAgo = 'just now';
+                    }
+                  } catch (_) {}
+                }
+
+                // Build subtitle with source info
+                final subtitle = [
+                  source,
+                  if (project.isNotEmpty) project,
+                  if (timeAgo.isNotEmpty) timeAgo,
+                  if (attached) '(attached)',
+                ].join(' - ');
+
+                // Pick icon based on source
+                IconData icon = Icons.terminal;
+                Color iconColor = Colors.grey[400]!;
+                if (source == 'Agent Deck') {
+                  icon = Icons.smart_toy;
+                  iconColor = Colors.blue[300]!;
+                } else if (source == 'Claude Code') {
+                  icon = Icons.code;
+                  iconColor = Colors.purple[300]!;
+                } else if (source == 'ORCHON App') {
+                  icon = Icons.phone_android;
+                  iconColor = Colors.indigo[300]!;
+                }
+
+                return _SessionOption(
+                  icon: icon,
+                  title: session['name'] ?? 'unknown',
+                  subtitle: subtitle,
+                  color: iconColor,
+                  trailing: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.red, size: 20),
+                    onPressed: () => _killSession(session),
+                    tooltip: 'Kill session',
+                  ),
+                  onTap: () {
+                    Navigator.pop(context); // Close bottom sheet
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SshTerminalScreen(
+                          launchMode: LaunchMode.claude,
+                          initialCommand: 'tmux attach -t ${session['name']}',
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ))),
+                    );
+                  },
+                );
+              })),
             ],
           ],
         ),
@@ -800,16 +851,50 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
     );
   }
 
-  Future<void> _killSession(String sessionName) async {
+  Future<void> _killSession(Map<String, String> session) async {
     final config = widget.ref.read(terminalConfigProvider);
+    final sessionName = session['name'] ?? 'unknown';
+    final source = session['source'] ?? 'SSH/Manual';
+    final project = session['project'] ?? '';
+
+    // Build warning message
+    String warningText = 'This will terminate the tmux session.\n\n';
+    warningText += 'Source: $source\n';
+    if (project.isNotEmpty) {
+      warningText += 'Project: $project\n';
+    }
+    warningText += '\nAny unsaved work in this session will be lost.';
 
     // Show confirmation dialog
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
-        title: const Text('Kill Session?'),
-        content: Text('Kill tmux session "$sessionName"?'),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.orange[300]),
+            const SizedBox(width: 8),
+            const Text('Kill Session?'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              sessionName,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              warningText,
+              style: TextStyle(color: Colors.grey[400]),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -818,7 +903,7 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Kill'),
+            child: const Text('Kill Session'),
           ),
         ],
       ),
