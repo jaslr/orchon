@@ -27,6 +27,9 @@ export const INFRASTRUCTURE: Record<string, {
   logCommands?: LogCommand[];
   productionUrl?: string;  // Live production site URL for evidence
   deployMechanism?: DeploymentMechanism;  // How this project gets deployed
+  sourceRepo?: string;  // For deployed instances: which repo they're deployed from
+  isSourceRepo?: boolean;  // True if this is a source repo that deploys to multiple instances
+  gcpProject?: string;  // GCP project ID for fetching deployed instances
 }> = {
   // ==========================================================================
   // ORCHON - This application (monitors itself!)
@@ -346,6 +349,8 @@ export const INFRASTRUCTURE: Record<string, {
     repoOwner: 'jvp-ux',
     localPath: '/home/chip/vastpuddle/junipa-organisations',
     productionUrl: 'https://junipa-organisations.web.app',
+    isSourceRepo: true,  // Organisation portal - deploys to multiple tenant instances
+    gcpProject: 'junipa-organisations',  // For fetching instances
     services: [
       { category: 'hosting', provider: 'firebase', serviceName: 'Firebase Hosting', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.firebase.google.com/project/junipa-organisations/hosting' },
       { category: 'hosting', provider: 'gcp', serviceName: 'Cloud Run (API)', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/run?project=junipa-organisations' },
@@ -397,6 +402,7 @@ export const INFRASTRUCTURE: Record<string, {
     repoOwner: 'jvp-ux',
     localPath: '/home/chip/vastpuddle/junipa',
     productionUrl: 'https://junipa.web.app',
+    isSourceRepo: true,  // Main app - deploys to multiple tenant instances on GCP
     services: [
       { category: 'hosting', provider: 'firebase', serviceName: 'Firebase Hosting', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.firebase.google.com/project/junipa/hosting' },
       { category: 'hosting', provider: 'gcp', serviceName: 'Cloud Run (API)', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/run?project=junipa' },
@@ -435,7 +441,9 @@ export const INFRASTRUCTURE: Record<string, {
     identity: 'jvp-ux',
     repoOwner: 'jvp-ux',
     productionUrl: 'https://junipa.appspot.com',
-    deployMechanism: 'gcp-cloudbuild',  // GCP Cloud Build triggered by Cloud Source Repos
+    deployMechanism: 'gcp-cloudbuild',
+    sourceRepo: 'junipa',  // Deployed from junipa repo
+    gcpProject: 'junipa',
     services: [
       { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=junipa' },
       { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=junipa' },
@@ -460,6 +468,8 @@ export const INFRASTRUCTURE: Record<string, {
     repoOwner: 'jvp-ux',
     productionUrl: 'https://cedarcollege-prod.appspot.com',
     deployMechanism: 'gcp-cloudbuild',
+    sourceRepo: 'junipa',
+    gcpProject: 'cedarcollege-prod',
     services: [
       { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=cedarcollege-prod' },
       { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=cedarcollege-prod' },
@@ -484,6 +494,8 @@ export const INFRASTRUCTURE: Record<string, {
     repoOwner: 'jvp-ux',
     productionUrl: 'https://menofbusiness-prod.appspot.com',
     deployMechanism: 'gcp-cloudbuild',
+    sourceRepo: 'junipa',
+    gcpProject: 'menofbusiness-prod',
     services: [
       { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=menofbusiness-prod' },
       { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=menofbusiness-prod' },
@@ -508,6 +520,8 @@ export const INFRASTRUCTURE: Record<string, {
     repoOwner: 'jvp-ux',
     productionUrl: 'https://mjc-prod-2022b.appspot.com',
     deployMechanism: 'gcp-cloudbuild',
+    sourceRepo: 'junipa',
+    gcpProject: 'mjc-prod-2022b',
     services: [
       { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=mjc-prod-2022b' },
       { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=mjc-prod-2022b' },
@@ -532,6 +546,8 @@ export const INFRASTRUCTURE: Record<string, {
     repoOwner: 'jvp-ux',
     productionUrl: 'https://mjc-tuncurry-prod.appspot.com',
     deployMechanism: 'gcp-cloudbuild',
+    sourceRepo: 'junipa',
+    gcpProject: 'mjc-tuncurry-prod',
     services: [
       { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=mjc-tuncurry-prod' },
       { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=mjc-tuncurry-prod' },
@@ -556,6 +572,8 @@ export const INFRASTRUCTURE: Record<string, {
     repoOwner: 'jvp-ux',
     productionUrl: 'https://junipa-central-demo.appspot.com',
     deployMechanism: 'gcp-cloudbuild',
+    sourceRepo: 'junipa',
+    gcpProject: 'junipa-central-demo',
     services: [
       { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=junipa-central-demo' },
       { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=junipa-central-demo' },
@@ -580,6 +598,8 @@ export const INFRASTRUCTURE: Record<string, {
     repoOwner: 'jvp-ux',
     productionUrl: 'https://junipa-west-demo.appspot.com',
     deployMechanism: 'gcp-cloudbuild',
+    sourceRepo: 'junipa',
+    gcpProject: 'junipa-west-demo',
     services: [
       { category: 'hosting', provider: 'gcp', serviceName: 'GCP App Engine', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/appengine?project=junipa-west-demo' },
       { category: 'ci', provider: 'gcp', serviceName: 'GCP Cloud Build', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://console.cloud.google.com/cloud-build/builds?project=junipa-west-demo' },
@@ -743,4 +763,63 @@ export function getAllProjects(): { id: string; displayName: string; identity: s
     displayName: infra.displayName,
     identity: infra.identity,
   }));
+}
+
+/**
+ * Get source repos and their deployed instances for hierarchical view
+ */
+export interface SourceRepoWithInstances {
+  id: string;
+  displayName: string;
+  identity: string;
+  productionUrl?: string;
+  instances: {
+    id: string;
+    displayName: string;
+    productionUrl?: string;
+    gcpProject?: string;
+  }[];
+}
+
+export function getSourceReposWithInstances(): SourceRepoWithInstances[] {
+  const result: SourceRepoWithInstances[] = [];
+
+  // Find all source repos
+  const sourceRepos = Object.entries(INFRASTRUCTURE).filter(([, infra]) => infra.isSourceRepo);
+
+  for (const [repoId, repoData] of sourceRepos) {
+    // Find all instances that point to this source repo
+    const instances = Object.entries(INFRASTRUCTURE)
+      .filter(([, infra]) => infra.sourceRepo === repoId)
+      .map(([instanceId, instanceData]) => ({
+        id: instanceId,
+        displayName: instanceData.displayName,
+        productionUrl: instanceData.productionUrl,
+        gcpProject: instanceData.gcpProject,
+      }));
+
+    result.push({
+      id: repoId,
+      displayName: repoData.displayName,
+      identity: repoData.identity,
+      productionUrl: repoData.productionUrl,
+      instances,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Check if a project is a deployed instance (has a sourceRepo)
+ */
+export function isDeployedInstance(projectId: string): boolean {
+  return !!INFRASTRUCTURE[projectId]?.sourceRepo;
+}
+
+/**
+ * Get the source repo for a deployed instance
+ */
+export function getSourceRepo(projectId: string): string | undefined {
+  return INFRASTRUCTURE[projectId]?.sourceRepo;
 }

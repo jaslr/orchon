@@ -12,17 +12,35 @@
 		ZoomOut,
 		ArrowUpAZ,
 		ArrowDownZA,
-		Focus
+		Focus,
+		FolderGit2,
+		Server
 	} from '@lucide/svelte';
 
 	let { data }: { data: PageData } = $props();
 
+	// View mode: 'hierarchy' shows repos with instances, 'flat' shows all projects
+	let viewMode = $state<'hierarchy' | 'flat'>('hierarchy');
+
 	// Sorting
 	let sortAsc = $state(true);
-	let sortedProjects = $derived(
+
+	// For flat view - filter out instances (show only standalone projects and source repos)
+	let standaloneProjects = $derived(
+		data.projects.filter(p => !p.sourceRepo)
+	);
+
+	let sortedStandaloneProjects = $derived(
 		sortAsc
-			? [...data.projects].sort((a, b) => a.displayName.localeCompare(b.displayName))
-			: [...data.projects].sort((a, b) => b.displayName.localeCompare(a.displayName))
+			? [...standaloneProjects].sort((a, b) => a.displayName.localeCompare(b.displayName))
+			: [...standaloneProjects].sort((a, b) => b.displayName.localeCompare(a.displayName))
+	);
+
+	// For hierarchy view - source repos with their instances
+	let sortedSourceRepos = $derived(
+		sortAsc
+			? [...data.sourceRepos].sort((a, b) => a.displayName.localeCompare(b.displayName))
+			: [...data.sourceRepos].sort((a, b) => b.displayName.localeCompare(a.displayName))
 	);
 
 	// Canvas state - pan (x, y) and zoom
@@ -35,17 +53,37 @@
 	let isDragging = $state(false);
 	let dragStart = { x: 0, y: 0, panX: 0, panY: 0 };
 
-	// Grid config
-	const COLS = 4;
-	const CARD_WIDTH = 300;
-	const CARD_HEIGHT = 360;
-	const GAP = 40;
-	const PADDING = 40;
+	// Grid config for hierarchy view
+	const REPO_WIDTH = 280;
+	const REPO_HEIGHT = 120;
+	const INSTANCE_WIDTH = 240;
+	const INSTANCE_HEIGHT = 80;
+	const HORIZONTAL_GAP = 200;
+	const VERTICAL_GAP = 30;
+	const REPO_VERTICAL_GAP = 80;
+	const PADDING = 60;
 
-	// Calculate content bounds
-	let rows = $derived(Math.ceil(sortedProjects.length / COLS));
-	let contentWidth = $derived(COLS * CARD_WIDTH + (COLS - 1) * GAP + PADDING * 2);
-	let contentHeight = $derived(rows * CARD_HEIGHT + (rows - 1) * GAP + PADDING * 2);
+	// Calculate content bounds for hierarchy view
+	let hierarchyContentWidth = $derived(() => {
+		let maxWidth = 0;
+		for (const repo of sortedSourceRepos) {
+			const width = PADDING + REPO_WIDTH + HORIZONTAL_GAP + INSTANCE_WIDTH + PADDING;
+			if (width > maxWidth) maxWidth = width;
+		}
+		return Math.max(maxWidth, 800);
+	});
+
+	let hierarchyContentHeight = $derived(() => {
+		let totalHeight = PADDING;
+		for (const repo of sortedSourceRepos) {
+			const instancesHeight = repo.instances.length > 0
+				? repo.instances.length * (INSTANCE_HEIGHT + VERTICAL_GAP) - VERTICAL_GAP
+				: 0;
+			const repoBlockHeight = Math.max(REPO_HEIGHT, instancesHeight);
+			totalHeight += repoBlockHeight + REPO_VERTICAL_GAP;
+		}
+		return totalHeight + PADDING;
+	});
 
 	// Provider colors
 	const providerColors: Record<string, string> = {
@@ -65,43 +103,10 @@
 		digitalocean: '#0080ff',
 	};
 
-	function getCategoryIcon(category: string) {
-		switch (category) {
-			case 'hosting': return Cloud;
-			case 'database': return Database;
-			case 'auth': return Shield;
-			case 'storage': return HardDrive;
-			case 'ci': return GitBranch;
-			case 'monitoring': return Activity;
-			case 'dns': return Cloud;
-			case 'email': return Cloud;
-			default: return Cloud;
-		}
-	}
-
-	function getCategoryLabel(category: string): string {
-		const labels: Record<string, string> = {
-			hosting: 'Host',
-			database: 'DB',
-			auth: 'Auth',
-			storage: 'Storage',
-			ci: 'CI/CD',
-			monitoring: 'Monitor',
-			dns: 'DNS',
-			email: 'Email',
-		};
-		return labels[category] || category;
-	}
-
 	const identityColors: Record<string, string> = {
 		jaslr: '#3b82f6',
 		'jvp-ux': '#8b5cf6',
 	};
-
-	function getHostingProvider(services: typeof data.projects[0]['services']): string {
-		const hosting = services.find(s => s.category === 'hosting');
-		return hosting?.provider || 'unknown';
-	}
 
 	function getDisplayUrl(url: string): string {
 		try {
@@ -109,6 +114,11 @@
 		} catch {
 			return url;
 		}
+	}
+
+	function getHostingProvider(services: typeof data.projects[0]['services']): string {
+		const hosting = services.find(s => s.category === 'hosting');
+		return hosting?.provider || 'unknown';
 	}
 
 	// Zoom toward mouse cursor
@@ -181,16 +191,55 @@
 		const rect = containerRef.getBoundingClientRect();
 		const padding = 60;
 
+		const contentWidth = viewMode === 'hierarchy' ? hierarchyContentWidth() : 1400;
+		const contentHeight = viewMode === 'hierarchy' ? hierarchyContentHeight() : 1200;
+
 		// Calculate zoom to fit content
 		const scaleX = (rect.width - padding * 2) / contentWidth;
 		const scaleY = (rect.height - padding * 2) / contentHeight;
-		const newZoom = Math.min(scaleX, scaleY, 1); // Don't zoom in past 100%
+		const newZoom = Math.min(scaleX, scaleY, 1);
 
 		// Center the content
 		panX = (rect.width - contentWidth * newZoom) / 2;
 		panY = (rect.height - contentHeight * newZoom) / 2;
 		zoom = newZoom;
 	}
+
+	// Calculate positions for hierarchy view
+	function getRepoPositions() {
+		const positions: Map<string, { x: number; y: number; instancePositions: { id: string; x: number; y: number }[] }> = new Map();
+		let currentY = PADDING;
+
+		for (const repo of sortedSourceRepos) {
+			const instancesHeight = repo.instances.length > 0
+				? repo.instances.length * (INSTANCE_HEIGHT + VERTICAL_GAP) - VERTICAL_GAP
+				: 0;
+			const repoBlockHeight = Math.max(REPO_HEIGHT, instancesHeight);
+
+			// Repo position (left side)
+			const repoX = PADDING;
+			const repoY = currentY + (repoBlockHeight - REPO_HEIGHT) / 2;
+
+			// Instance positions (right side, stacked vertically)
+			const instancePositions: { id: string; x: number; y: number }[] = [];
+			const instanceStartY = currentY + (repoBlockHeight - instancesHeight) / 2;
+
+			for (let i = 0; i < repo.instances.length; i++) {
+				instancePositions.push({
+					id: repo.instances[i].id,
+					x: PADDING + REPO_WIDTH + HORIZONTAL_GAP,
+					y: instanceStartY + i * (INSTANCE_HEIGHT + VERTICAL_GAP),
+				});
+			}
+
+			positions.set(repo.id, { x: repoX, y: repoY, instancePositions });
+			currentY += repoBlockHeight + REPO_VERTICAL_GAP;
+		}
+
+		return positions;
+	}
+
+	let repoPositions = $derived(getRepoPositions());
 </script>
 
 <svelte:head>
@@ -202,7 +251,25 @@
 	<div class="shrink-0 flex items-center justify-between px-4 py-2 bg-gray-900/80 border-b border-gray-800 backdrop-blur-sm z-10">
 		<div class="flex items-center gap-4">
 			<h1 class="text-lg font-semibold text-white">Infrastructure Map</h1>
-			<span class="text-xs text-gray-500">{sortedProjects.length} projects</span>
+			<div class="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5">
+				<button
+					onclick={() => viewMode = 'hierarchy'}
+					class="px-3 py-1 text-xs rounded-md transition-colors {viewMode === 'hierarchy' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}"
+				>
+					Hierarchy
+				</button>
+				<button
+					onclick={() => viewMode = 'flat'}
+					class="px-3 py-1 text-xs rounded-md transition-colors {viewMode === 'flat' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}"
+				>
+					Flat
+				</button>
+			</div>
+			<span class="text-xs text-gray-500">
+				{viewMode === 'hierarchy'
+					? `${sortedSourceRepos.length} repos, ${sortedSourceRepos.reduce((acc, r) => acc + r.instances.length, 0)} instances`
+					: `${sortedStandaloneProjects.length} projects`}
+			</span>
 		</div>
 		<div class="flex items-center gap-2">
 			<button
@@ -270,95 +337,212 @@
 			class="absolute origin-top-left"
 			style="
 				transform: translate({panX}px, {panY}px) scale({zoom});
-				width: {contentWidth}px;
-				height: {contentHeight}px;
 			"
 		>
-			<!-- Cards grid -->
-			<div
-				class="grid gap-10 p-10"
-				style="grid-template-columns: repeat({COLS}, {CARD_WIDTH}px);"
-			>
-				{#each sortedProjects as project (project.id)}
-					{@const identityColor = identityColors[project.identity] || '#6b7280'}
-					{@const hostProvider = getHostingProvider(project.services)}
-					{@const hostColor = providerColors[hostProvider] || '#6b7280'}
+			{#if viewMode === 'hierarchy'}
+				<!-- SVG for connecting lines -->
+				<svg class="absolute top-0 left-0 pointer-events-none" style="width: {hierarchyContentWidth()}px; height: {hierarchyContentHeight()}px;">
+					{#each sortedSourceRepos as repo (repo.id)}
+						{@const pos = repoPositions.get(repo.id)}
+						{#if pos && repo.instances.length > 0}
+							{#each pos.instancePositions as instPos (instPos.id)}
+								<!-- Bezier curve from repo to instance -->
+								<path
+									d="M {pos.x + REPO_WIDTH} {pos.y + REPO_HEIGHT / 2}
+									   C {pos.x + REPO_WIDTH + HORIZONTAL_GAP / 2} {pos.y + REPO_HEIGHT / 2},
+									     {instPos.x - HORIZONTAL_GAP / 2} {instPos.y + INSTANCE_HEIGHT / 2},
+									     {instPos.x} {instPos.y + INSTANCE_HEIGHT / 2}"
+									fill="none"
+									stroke="rgba(99, 102, 241, 0.4)"
+									stroke-width="2"
+									stroke-dasharray="6 4"
+								/>
+								<!-- Arrow at end -->
+								<circle
+									cx={instPos.x}
+									cy={instPos.y + INSTANCE_HEIGHT / 2}
+									r="4"
+									fill="rgb(99, 102, 241)"
+								/>
+							{/each}
+						{/if}
+					{/each}
+				</svg>
 
-					<div
-						class="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden shadow-xl hover:border-gray-500 transition-colors"
-						style="border-left: 4px solid {identityColor}; width: {CARD_WIDTH}px;"
-					>
-						<!-- Header -->
-						<div class="px-4 py-3 bg-gray-800/70 border-b border-gray-700">
-							<div class="flex items-center justify-between gap-2">
-								<span class="font-semibold text-white text-sm">{project.displayName}</span>
-								<span
-									class="px-2 py-0.5 rounded text-[10px] font-medium"
-									style="background-color: {hostColor}25; color: {hostColor};"
-								>
-									{hostProvider}
-								</span>
+				<!-- Source repos and instances -->
+				{#each sortedSourceRepos as repo (repo.id)}
+					{@const pos = repoPositions.get(repo.id)}
+					{@const identityColor = identityColors[repo.identity] || '#6b7280'}
+					{#if pos}
+						<!-- Source Repo Card -->
+						<div
+							class="absolute bg-gray-900 border-2 border-indigo-500 rounded-lg overflow-hidden shadow-xl shadow-indigo-500/10"
+							style="left: {pos.x}px; top: {pos.y}px; width: {REPO_WIDTH}px; height: {REPO_HEIGHT}px; border-left: 4px solid {identityColor};"
+						>
+							<div class="px-4 py-3 bg-indigo-950/50 border-b border-indigo-500/30">
+								<div class="flex items-center gap-2">
+									<FolderGit2 class="w-4 h-4 text-indigo-400" />
+									<span class="font-semibold text-white text-sm">{repo.displayName}</span>
+								</div>
+								<div class="text-[10px] text-indigo-300 mt-1">Source Repository</div>
 							</div>
-							{#if project.productionUrl}
-								<a
-									href={project.productionUrl}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mt-1.5 group"
-								>
-									<span class="truncate">{getDisplayUrl(project.productionUrl)}</span>
-									<ExternalLink class="w-3 h-3 opacity-60 group-hover:opacity-100" />
-								</a>
-							{:else}
-								<div class="text-xs text-gray-500 mt-1.5">No production URL</div>
-							{/if}
-							<div class="text-[10px] text-gray-500 mt-1 font-mono">{project.id}</div>
-						</div>
-
-						<!-- Services -->
-						<div class="p-3 space-y-1.5">
-							{#each project.services as service, idx (service.provider + '-' + service.category + '-' + idx)}
-								{@const Icon = getCategoryIcon(service.category)}
-								{@const color = providerColors[service.provider] || '#6b7280'}
-
-								{#if service.dashboardUrl}
+							<div class="px-4 py-2">
+								{#if repo.productionUrl}
 									<a
-										href={service.dashboardUrl}
+										href={repo.productionUrl}
 										target="_blank"
 										rel="noopener noreferrer"
-										class="flex items-center gap-2.5 px-2.5 py-2 bg-gray-800/50 hover:bg-gray-800 rounded text-xs transition-colors group"
+										class="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 group"
 									>
-										<div
-											class="w-7 h-7 rounded flex items-center justify-center shrink-0"
-											style="background-color: {color}20;"
-										>
-											<Icon class="w-4 h-4" style="color: {color};" />
-										</div>
-										<div class="flex-1 min-w-0 flex items-center gap-3">
-											<span class="text-gray-500 w-14 shrink-0">{getCategoryLabel(service.category)}</span>
-											<span class="text-gray-200 group-hover:text-white font-medium">{service.provider}</span>
-										</div>
-										<ExternalLink class="w-3.5 h-3.5 text-gray-600 group-hover:text-gray-400 shrink-0" />
+										<span class="truncate">{getDisplayUrl(repo.productionUrl)}</span>
+										<ExternalLink class="w-3 h-3 opacity-60 group-hover:opacity-100" />
 									</a>
-								{:else}
-									<div class="flex items-center gap-2.5 px-2.5 py-2 bg-gray-800/50 rounded text-xs">
-										<div
-											class="w-7 h-7 rounded flex items-center justify-center shrink-0"
-											style="background-color: {color}20;"
+								{/if}
+								<div class="text-[10px] text-gray-500 mt-1">{repo.instances.length} deployed instance{repo.instances.length !== 1 ? 's' : ''}</div>
+							</div>
+						</div>
+
+						<!-- Instance Cards -->
+						{#each pos.instancePositions as instPos, i (instPos.id)}
+							{@const instance = repo.instances[i]}
+							<div
+								class="absolute bg-gray-900 border border-gray-600 rounded-lg overflow-hidden shadow-lg hover:border-gray-500 transition-colors"
+								style="left: {instPos.x}px; top: {instPos.y}px; width: {INSTANCE_WIDTH}px; height: {INSTANCE_HEIGHT}px;"
+							>
+								<div class="px-3 py-2 bg-gray-800/50 border-b border-gray-700">
+									<div class="flex items-center gap-2">
+										<Server class="w-3.5 h-3.5 text-emerald-400" />
+										<span class="font-medium text-white text-xs truncate">{instance.displayName}</span>
+									</div>
+								</div>
+								<div class="px-3 py-2">
+									{#if instance.productionUrl}
+										<a
+											href={instance.productionUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											class="flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 group"
 										>
-											<Icon class="w-4 h-4" style="color: {color};" />
-										</div>
-										<div class="flex-1 min-w-0 flex items-center gap-3">
-											<span class="text-gray-500 w-14 shrink-0">{getCategoryLabel(service.category)}</span>
-											<span class="text-gray-300 font-medium">{service.provider}</span>
+											<span class="truncate">{getDisplayUrl(instance.productionUrl)}</span>
+											<ExternalLink class="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+										</a>
+									{/if}
+									{#if instance.gcpProject}
+										<div class="text-[10px] text-gray-500 mt-0.5 font-mono">{instance.gcpProject}</div>
+									{/if}
+								</div>
+							</div>
+						{/each}
+					{/if}
+				{/each}
+
+				<!-- Standalone projects (no sourceRepo and not a source repo with instances) -->
+				{@const standaloneInHierarchy = standaloneProjects.filter(p => !p.isSourceRepo || !sortedSourceRepos.find(r => r.id === p.id)?.instances.length)}
+				{#if standaloneInHierarchy.length > 0}
+					<div
+						class="absolute"
+						style="left: {PADDING}px; top: {hierarchyContentHeight() + 40}px;"
+					>
+						<div class="text-xs text-gray-500 mb-4 uppercase tracking-wide">Standalone Projects</div>
+						<div class="flex flex-wrap gap-4" style="max-width: {hierarchyContentWidth() - PADDING * 2}px;">
+							{#each standaloneInHierarchy.filter(p => !p.isSourceRepo) as project (project.id)}
+								{@const identityColor = identityColors[project.identity] || '#6b7280'}
+								{@const hostProvider = getHostingProvider(project.services)}
+								{@const hostColor = providerColors[hostProvider] || '#6b7280'}
+								<div
+									class="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden shadow-lg hover:border-gray-500 transition-colors"
+									style="width: 220px; border-left: 3px solid {identityColor};"
+								>
+									<div class="px-3 py-2 bg-gray-800/50 border-b border-gray-700">
+										<div class="flex items-center justify-between gap-2">
+											<span class="font-medium text-white text-xs truncate">{project.displayName}</span>
+											<span
+												class="px-1.5 py-0.5 rounded text-[9px] font-medium shrink-0"
+												style="background-color: {hostColor}25; color: {hostColor};"
+											>
+												{hostProvider}
+											</span>
 										</div>
 									</div>
-								{/if}
+									<div class="px-3 py-2">
+										{#if project.productionUrl}
+											<a
+												href={project.productionUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 group"
+											>
+												<span class="truncate">{getDisplayUrl(project.productionUrl)}</span>
+												<ExternalLink class="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+											</a>
+										{/if}
+									</div>
+								</div>
 							{/each}
 						</div>
 					</div>
-				{/each}
-			</div>
+				{/if}
+			{:else}
+				<!-- Flat view - grid of all projects -->
+				<div class="grid gap-8 p-10" style="grid-template-columns: repeat(4, 280px);">
+					{#each sortedStandaloneProjects as project (project.id)}
+						{@const identityColor = identityColors[project.identity] || '#6b7280'}
+						{@const hostProvider = getHostingProvider(project.services)}
+						{@const hostColor = providerColors[hostProvider] || '#6b7280'}
+						<div
+							class="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden shadow-xl hover:border-gray-500 transition-colors"
+							style="border-left: 4px solid {identityColor}; width: 280px;"
+						>
+							<!-- Header -->
+							<div class="px-4 py-3 bg-gray-800/70 border-b border-gray-700">
+								<div class="flex items-center justify-between gap-2">
+									<div class="flex items-center gap-2">
+										{#if project.isSourceRepo}
+											<FolderGit2 class="w-4 h-4 text-indigo-400" />
+										{/if}
+										<span class="font-semibold text-white text-sm">{project.displayName}</span>
+									</div>
+									<span
+										class="px-2 py-0.5 rounded text-[10px] font-medium"
+										style="background-color: {hostColor}25; color: {hostColor};"
+									>
+										{hostProvider}
+									</span>
+								</div>
+								{#if project.productionUrl}
+									<a
+										href={project.productionUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mt-1.5 group"
+									>
+										<span class="truncate">{getDisplayUrl(project.productionUrl)}</span>
+										<ExternalLink class="w-3 h-3 opacity-60 group-hover:opacity-100" />
+									</a>
+								{:else}
+									<div class="text-xs text-gray-500 mt-1.5">No production URL</div>
+								{/if}
+								<div class="text-[10px] text-gray-500 mt-1 font-mono">{project.id}</div>
+							</div>
+
+							<!-- Services -->
+							<div class="p-3 space-y-1.5 max-h-[200px] overflow-y-auto">
+								{#each project.services as service, idx (service.provider + '-' + service.category + '-' + idx)}
+									{@const color = providerColors[service.provider] || '#6b7280'}
+									<div class="flex items-center gap-2 px-2 py-1.5 bg-gray-800/50 rounded text-xs">
+										<div
+											class="w-2 h-2 rounded-full shrink-0"
+											style="background-color: {color};"
+										></div>
+										<span class="text-gray-400 w-12 shrink-0">{service.category}</span>
+										<span class="text-gray-200 font-medium">{service.provider}</span>
+									</div>
+								{/each}
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
 		</div>
 	</div>
 
@@ -374,13 +558,15 @@
 			{/each}
 		</div>
 		<div class="flex items-center gap-3">
-			<span class="text-xs text-gray-500">Providers:</span>
-			{#each Object.entries(providerColors).slice(0, 8) as [provider, color] (provider)}
-				<div class="flex items-center gap-1">
-					<div class="w-2 h-2 rounded-sm" style="background-color: {color};"></div>
-					<span class="text-[10px] text-gray-500">{provider}</span>
-				</div>
-			{/each}
+			<span class="text-xs text-gray-500">Node Types:</span>
+			<div class="flex items-center gap-1.5">
+				<FolderGit2 class="w-3.5 h-3.5 text-indigo-400" />
+				<span class="text-xs text-gray-400">Source Repo</span>
+			</div>
+			<div class="flex items-center gap-1.5">
+				<Server class="w-3.5 h-3.5 text-emerald-400" />
+				<span class="text-xs text-gray-400">Deployed Instance</span>
+			</div>
 		</div>
 	</div>
 </div>
