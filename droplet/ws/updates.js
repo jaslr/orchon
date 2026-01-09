@@ -242,7 +242,17 @@ const server = http.createServer((req, res) => {
 
       const entries = fs.readdirSync(projectsDir, { withFileTypes: true });
       const projects = entries
-        .filter(entry => entry.isDirectory() && !entry.name.startsWith('.'))
+        .filter(entry => {
+          if (entry.name.startsWith('.')) return false;
+          // Check if it's a directory or a symlink to a directory
+          const fullPath = path.join(projectsDir, entry.name);
+          try {
+            const stat = fs.statSync(fullPath); // follows symlinks
+            return stat.isDirectory();
+          } catch {
+            return false;
+          }
+        })
         .map(entry => ({
           name: entry.name,
           directory: path.join(projectsDir, entry.name),
