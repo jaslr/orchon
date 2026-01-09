@@ -231,20 +231,6 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
     setState(() => _ctrlPressed = false);
   }
 
-  // Enter tmux copy/scroll mode to scroll through history
-  // Send Ctrl+B (tmux prefix) followed by [ to enter copy mode
-  // In copy mode: arrows/PgUp/PgDn to scroll, q or Esc to exit
-  void _enterTmuxScrollMode() {
-    if (_session != null) {
-      // Ctrl+B (tmux prefix) = ASCII 2
-      _session!.write(Uint8List.fromList([2]));
-      // Small delay then send [
-      Future.delayed(const Duration(milliseconds: 50), () {
-        _session?.write(Uint8List.fromList(utf8.encode('[')));
-      });
-    }
-  }
-
   void _sendInput(String text) {
     if (_session != null && text.isNotEmpty) {
       // Send text followed by carriage return (Enter key)
@@ -309,20 +295,29 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Terminal view with scrolling support and visible scrollbar
+            // Terminal view with 10px scrollbar on right side
             Expanded(
-              child: Scrollbar(
-                controller: _terminalScrollController,
-                thumbVisibility: true,
-                thickness: 8,
-                radius: const Radius.circular(4),
-                child: TerminalView(
-                  terminal,
-                  focusNode: _terminalFocusNode,
-                  scrollController: _terminalScrollController,
-                  textStyle: TerminalStyle(
-                    fontSize: ref.watch(terminalConfigProvider).terminalFontSize,
-                    fontFamily: 'monospace',
+              child: ScrollbarTheme(
+                data: ScrollbarThemeData(
+                  thickness: WidgetStateProperty.all(10),
+                  thumbColor: WidgetStateProperty.all(const Color(0xFF6366F1)),
+                  trackColor: WidgetStateProperty.all(const Color(0xFF2D2D44)),
+                  trackVisibility: WidgetStateProperty.all(true),
+                  thumbVisibility: WidgetStateProperty.all(true),
+                  radius: const Radius.circular(5),
+                  trackBorderColor: WidgetStateProperty.all(Colors.transparent),
+                  interactive: true,
+                ),
+                child: Scrollbar(
+                  controller: _terminalScrollController,
+                  child: TerminalView(
+                    terminal,
+                    focusNode: _terminalFocusNode,
+                    scrollController: _terminalScrollController,
+                    textStyle: TerminalStyle(
+                      fontSize: ref.watch(terminalConfigProvider).terminalFontSize,
+                      fontFamily: 'monospace',
+                    ),
                   ),
                 ),
               ),
@@ -377,14 +372,6 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
                   _buildToolbarButton('↓', () => _sendSpecialKey('\x1b[B'), compact: isCompact),
                   _buildToolbarButton('←', () => _sendSpecialKey('\x1b[D'), compact: isCompact),
                   _buildToolbarButton('→', () => _sendSpecialKey('\x1b[C'), compact: isCompact),
-                  // Divider
-                  _buildDivider(),
-                  // Tmux scroll mode - enters copy mode to scroll through history
-                  // Ctrl+B [ enters copy mode, use arrows/PgUp/PgDn to scroll, q or Esc to exit
-                  _buildToolbarButton('SCROLL', _enterTmuxScrollMode, compact: isCompact, highlight: true),
-                  // Page Up/Down for scrolling in scroll mode
-                  _buildToolbarButton('PgUp', () => _sendSpecialKey('\x1b[5~'), compact: isCompact),
-                  _buildToolbarButton('PgDn', () => _sendSpecialKey('\x1b[6~'), compact: isCompact),
                   // Divider
                   _buildDivider(),
                   // Common ctrl shortcuts
