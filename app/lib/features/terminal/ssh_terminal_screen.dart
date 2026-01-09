@@ -231,6 +231,35 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
     setState(() => _ctrlPressed = false);
   }
 
+  // Track scroll accumulator for smooth scrolling
+  double _scrollAccumulator = 0;
+
+  // Handle terminal scroll by sending mouse wheel events to tmux
+  // tmux with mouse mode on will respond to these escape sequences
+  void _handleTerminalScroll(double deltaY) {
+    if (_session == null) return;
+
+    // Accumulate scroll delta (negative = scroll up, positive = scroll down)
+    _scrollAccumulator += deltaY;
+
+    // Send scroll event every ~20 pixels of movement
+    const scrollThreshold = 20.0;
+
+    while (_scrollAccumulator.abs() >= scrollThreshold) {
+      if (_scrollAccumulator > 0) {
+        // Swipe down = scroll up (show older content)
+        // Mouse wheel up in SGR encoding: \x1b[<64;1;1M
+        _session!.write(Uint8List.fromList(utf8.encode('\x1b[<64;1;1M')));
+        _scrollAccumulator -= scrollThreshold;
+      } else {
+        // Swipe up = scroll down (show newer content)
+        // Mouse wheel down in SGR encoding: \x1b[<65;1;1M
+        _session!.write(Uint8List.fromList(utf8.encode('\x1b[<65;1;1M')));
+        _scrollAccumulator += scrollThreshold;
+      }
+    }
+  }
+
   void _sendInput(String text) {
     if (_session != null && text.isNotEmpty) {
       // Send text followed by carriage return (Enter key)
@@ -295,29 +324,20 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Terminal view with 10px scrollbar on right side
+            // Terminal view with swipe-to-scroll for tmux
             Expanded(
-              child: ScrollbarTheme(
-                data: ScrollbarThemeData(
-                  thickness: WidgetStateProperty.all(10),
-                  thumbColor: WidgetStateProperty.all(const Color(0xFF6366F1)),
-                  trackColor: WidgetStateProperty.all(const Color(0xFF2D2D44)),
-                  trackVisibility: WidgetStateProperty.all(true),
-                  thumbVisibility: WidgetStateProperty.all(true),
-                  radius: const Radius.circular(5),
-                  trackBorderColor: WidgetStateProperty.all(Colors.transparent),
-                  interactive: true,
-                ),
-                child: Scrollbar(
-                  controller: _terminalScrollController,
-                  child: TerminalView(
-                    terminal,
-                    focusNode: _terminalFocusNode,
-                    scrollController: _terminalScrollController,
-                    textStyle: TerminalStyle(
-                      fontSize: ref.watch(terminalConfigProvider).terminalFontSize,
-                      fontFamily: 'monospace',
-                    ),
+              child: GestureDetector(
+                // Capture vertical swipes and send mouse wheel events to tmux
+                onVerticalDragUpdate: (details) {
+                  _handleTerminalScroll(details.delta.dy);
+                },
+                child: TerminalView(
+                  terminal,
+                  focusNode: _terminalFocusNode,
+                  scrollController: _terminalScrollController,
+                  textStyle: TerminalStyle(
+                    fontSize: ref.watch(terminalConfigProvider).terminalFontSize,
+                    fontFamily: 'monospace',
                   ),
                 ),
               ),
