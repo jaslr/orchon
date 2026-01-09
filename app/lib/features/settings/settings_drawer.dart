@@ -9,7 +9,6 @@ import '../../core/auth/auth_service.dart';
 import '../../core/config.dart';
 import '../terminal/ssh_terminal_screen.dart';
 import '../terminal/quick_commands.dart';
-import '../threads/threads_screen.dart';
 import '../notifications/notifications_screen.dart';
 import 'terminal_config_screen.dart';
 
@@ -21,6 +20,45 @@ void _showDeploymentGroupsSheet(BuildContext context, WidgetRef ref) {
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
     builder: (context) => _DeploymentGroupsSheet(ref: ref),
+  );
+}
+
+void _showConnectionSettings(BuildContext context, WidgetRef ref) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: const Color(0xFF1A1A2E),
+      title: const Row(
+        children: [
+          Icon(Icons.wifi, color: Color(0xFF6366F1)),
+          SizedBox(width: 8),
+          Text('Connection Settings'),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('WebSocket Server', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+          const SizedBox(height: 4),
+          Text(AppConfig.wsUrl, style: const TextStyle(fontFamily: 'monospace')),
+          const SizedBox(height: 16),
+          Text('API Endpoint', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+          const SizedBox(height: 4),
+          Text(AppConfig.orchonUrl, style: const TextStyle(fontFamily: 'monospace')),
+          const SizedBox(height: 16),
+          Text('Droplet IP', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+          const SizedBox(height: 4),
+          Text(AppConfig.dropletIp, style: const TextStyle(fontFamily: 'monospace')),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
   );
 }
 
@@ -227,21 +265,6 @@ class SettingsDrawer extends ConsumerWidget {
                       showQuickCommands(context);
                     },
                   ),
-                  // All Threads
-                  _SettingsTile(
-                    icon: Icons.chat_bubble_outline,
-                    title: 'All Threads',
-                    subtitle: 'View conversation threads',
-                    onTap: () {
-                      Navigator.pop(context); // Close drawer
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ThreadsScreen(),
-                        ),
-                      );
-                    },
-                  ),
                   const Divider(color: Colors.grey, height: 32),
                   // Section: Settings
                   Padding(
@@ -283,7 +306,8 @@ class SettingsDrawer extends ConsumerWidget {
                     title: 'Connection',
                     subtitle: 'WebSocket server settings',
                     onTap: () {
-                      // TODO: Connection settings
+                      Navigator.pop(context); // Close drawer
+                      _showConnectionSettings(context, ref);
                     },
                   ),
                   _SettingsTile(
@@ -320,8 +344,32 @@ class SettingsDrawer extends ConsumerWidget {
                     icon: Icons.info_outline,
                     title: 'About',
                     subtitle: 'App information and licenses',
-                    onTap: () {
-                      // TODO: About screen
+                    onTap: () async {
+                      final packageInfo = await PackageInfo.fromPlatform();
+                      if (!context.mounted) return;
+                      showAboutDialog(
+                        context: context,
+                        applicationName: 'ORCHON',
+                        applicationVersion: '${packageInfo.version} (${packageInfo.buildNumber})',
+                        applicationIcon: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            'assets/icon.png',
+                            width: 64,
+                            height: 64,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.monitor_heart, size: 48, color: Color(0xFF6366F1)),
+                          ),
+                        ),
+                        children: [
+                          const SizedBox(height: 16),
+                          const Text('Infrastructure Observatory & DevOps Control Plane'),
+                          const SizedBox(height: 8),
+                          Text('Monitor deployments, manage Claude sessions, and control your infrastructure.',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                          const SizedBox(height: 16),
+                          Text('Built with Flutter', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                        ],
+                      );
                     },
                   ),
                   const Divider(color: Colors.grey, height: 32),
@@ -609,6 +657,7 @@ class _LaunchClaudeTile extends StatelessWidget {
             tooltip: 'Session options',
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
+            iconSize: 24,
           ),
           const SizedBox(width: 8),
           Icon(Icons.chevron_right, color: highlightColor),
@@ -653,11 +702,18 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
   List<Map<String, String>> _sessions = [];
   bool _isLoading = true;
   String? _error;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _loadSessions();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSessions() async {
@@ -677,16 +733,21 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
+        final sessions = data.map((s) => {
+          'name': s['name']?.toString() ?? 'unknown',
+          'windows': s['windows']?.toString() ?? '0',
+          'attached': s['attached']?.toString() ?? 'false',
+          'source': s['source']?.toString() ?? 'SSH/Manual',
+          'project': s['project']?.toString() ?? '',
+          'createdAt': s['createdAt']?.toString() ?? '',
+          'lastActivity': s['lastActivity']?.toString() ?? '',
+        }).toList();
+        debugPrint('[SESSIONS] Loaded ${sessions.length} sessions');
+        for (final s in sessions) {
+          debugPrint('[SESSIONS] - ${s['name']} (${s['source']})');
+        }
         setState(() {
-          _sessions = data.map((s) => {
-            'name': s['name']?.toString() ?? 'unknown',
-            'windows': s['windows']?.toString() ?? '0',
-            'attached': s['attached']?.toString() ?? 'false',
-            'source': s['source']?.toString() ?? 'SSH/Manual',
-            'project': s['project']?.toString() ?? '',
-            'createdAt': s['createdAt']?.toString() ?? '',
-            'lastActivity': s['lastActivity']?.toString() ?? '',
-          }).toList();
+          _sessions = sessions;
           _isLoading = false;
         });
       } else {
@@ -706,12 +767,20 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
         padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: Scrollbar(
+          controller: _scrollController,
+          thumbVisibility: true,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // Header
             Text(
               'CLAUDE SESSIONS',
@@ -724,25 +793,18 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
             ),
             const SizedBox(height: 16),
 
-            // Start New option (always at top)
-            _SessionOption(
-              icon: Icons.add_circle_outline,
-              title: 'Start New Session',
-              subtitle: 'Launch a fresh Claude instance',
-              color: const Color(0xFF6366F1),
-              onTap: () {
-                Navigator.pop(context); // Close bottom sheet
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SshTerminalScreen(
-                      launchMode: LaunchMode.claude,
-                    ),
-                  ),
-                );
-              },
+            // Project options - Start new sessions
+            Text(
+              'START NEW',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 2,
+                color: Colors.grey[600],
+              ),
             ),
+            const SizedBox(height: 8),
+            ..._buildProjectOptions(context),
 
             if (_isLoading)
               const Padding(
@@ -846,9 +908,55 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
               })),
             ],
           ],
+          ),
+        ),
         ),
       ),
     );
+  }
+
+  List<Widget> _buildProjectOptions(BuildContext context) {
+    final config = widget.ref.read(terminalConfigProvider);
+    final projects = config.projects;
+
+    return projects.map((project) {
+      return _SessionOption(
+        icon: _getProjectIcon(project.name),
+        title: project.name,
+        subtitle: project.directory,
+        color: const Color(0xFF6366F1),
+        onTap: () {
+          Navigator.pop(context); // Close bottom sheet
+          Navigator.pop(context); // Close drawer
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SshTerminalScreen(
+                launchMode: LaunchMode.claude,
+                projectDirectory: project.directory,
+              ),
+            ),
+          );
+        },
+      );
+    }).toList();
+  }
+
+  IconData _getProjectIcon(String projectName) {
+    switch (projectName.toLowerCase()) {
+      case 'livna':
+        return Icons.receipt_long;
+      case 'orchon':
+        return Icons.monitor_heart;
+      case 'littlelistoflights':
+        return Icons.lightbulb_outline;
+      case 'brontiq':
+        return Icons.book;
+      case 'agent deck':
+        return Icons.dashboard;
+      default:
+        return Icons.folder;
+    }
   }
 
   Future<void> _killSession(Map<String, String> session) async {

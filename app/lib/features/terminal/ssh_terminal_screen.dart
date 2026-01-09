@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -35,6 +36,8 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
   final _terminalFocusNode = FocusNode();
   SSHClient? _client;
   SSHSession? _session;
+  StreamSubscription<Uint8List>? _stdoutSubscription;
+  StreamSubscription<Uint8List>? _stderrSubscription;
   bool _isConnecting = true;
   String? _error;
   bool _showInputBar = false;
@@ -47,6 +50,22 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
   }
 
   Future<void> _connect() async {
+    // Cancel any existing stream subscriptions to prevent duplicate output
+    await _stdoutSubscription?.cancel();
+    await _stderrSubscription?.cancel();
+    _stdoutSubscription = null;
+    _stderrSubscription = null;
+
+    // Close existing session/client before reconnecting
+    try {
+      _session?.close();
+    } catch (_) {}
+    try {
+      _client?.close();
+    } catch (_) {}
+    _session = null;
+    _client = null;
+
     setState(() {
       _isConnecting = true;
       _error = null;
@@ -99,11 +118,12 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
       );
 
       // Handle terminal output - decode as UTF-8 for proper Unicode support
-      _session!.stdout.listen((data) {
+      // Store subscriptions so they can be cancelled on reconnect/dispose
+      _stdoutSubscription = _session!.stdout.listen((data) {
         terminal.write(utf8.decode(data, allowMalformed: true));
       });
 
-      _session!.stderr.listen((data) {
+      _stderrSubscription = _session!.stderr.listen((data) {
         terminal.write(utf8.decode(data, allowMalformed: true));
       });
 
@@ -180,6 +200,9 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
     _inputController.dispose();
     _inputFocusNode.dispose();
     _terminalFocusNode.dispose();
+    // Cancel stream subscriptions to prevent memory leaks
+    _stdoutSubscription?.cancel();
+    _stderrSubscription?.cancel();
     // Gracefully close SSH - ignore errors if already closed
     try {
       _session?.close();
@@ -300,44 +323,68 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
           top: BorderSide(color: Colors.grey[800]!),
         ),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            // Escape key
-            _buildToolbarButton('ESC', () => _sendSpecialKey('\x1b')),
-            // Tab key
-            _buildToolbarButton('TAB', () => _sendSpecialKey('\t')),
-            // Ctrl modifier
-            _buildToolbarButton(
-              'CTRL',
-              () => setState(() => _ctrlPressed = !_ctrlPressed),
-              isActive: _ctrlPressed,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Calculate if we need to use compact mode
+          final isCompact = constraints.maxWidth < 400;
+
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  // Escape key
+                  _buildToolbarButton('ESC', () => _sendSpecialKey('\x1b'), compact: isCompact),
+                  // Tab key
+                  _buildToolbarButton('TAB', () => _sendSpecialKey('\t'), compact: isCompact),
+                  // Ctrl modifier
+                  _buildToolbarButton(
+                    'CTRL',
+                    () => setState(() => _ctrlPressed = !_ctrlPressed),
+                    isActive: _ctrlPressed,
+                    compact: isCompact,
+                  ),
+                  // Divider
+                  _buildDivider(),
+                  // Arrow keys
+                  _buildToolbarButton('↑', () => _sendSpecialKey('\x1b[A'), compact: isCompact),
+                  _buildToolbarButton('↓', () => _sendSpecialKey('\x1b[B'), compact: isCompact),
+                  _buildToolbarButton('←', () => _sendSpecialKey('\x1b[D'), compact: isCompact),
+                  _buildToolbarButton('→', () => _sendSpecialKey('\x1b[C'), compact: isCompact),
+                  // Divider
+                  _buildDivider(),
+                  // Common ctrl shortcuts
+                  _buildToolbarButton('C', () => _sendCtrlKey('c'), isCtrl: true, compact: isCompact),
+                  _buildToolbarButton('D', () => _sendCtrlKey('d'), isCtrl: true, compact: isCompact),
+                  _buildToolbarButton('Q', () => _sendCtrlKey('q'), isCtrl: true, highlight: true, compact: isCompact),
+                ],
+              ),
             ),
-            // Divider
-            Container(width: 1, height: 24, color: Colors.grey[700]),
-            // Arrow keys
-            _buildToolbarButton('↑', () => _sendSpecialKey('\x1b[A')),
-            _buildToolbarButton('↓', () => _sendSpecialKey('\x1b[B')),
-            _buildToolbarButton('←', () => _sendSpecialKey('\x1b[D')),
-            _buildToolbarButton('→', () => _sendSpecialKey('\x1b[C')),
-            // Divider
-            Container(width: 1, height: 24, color: Colors.grey[700]),
-            // Common ctrl shortcuts
-            _buildToolbarButton('C', () => _sendCtrlKey('c'), isCtrl: true),
-            _buildToolbarButton('D', () => _sendCtrlKey('d'), isCtrl: true),
-            _buildToolbarButton('Q', () => _sendCtrlKey('q'), isCtrl: true, highlight: true),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildToolbarButton(String label, VoidCallback onPressed, {bool isActive = false, bool isCtrl = false, bool highlight = false}) {
+  Widget _buildDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Container(width: 1, height: 24, color: Colors.grey[700]),
+    );
+  }
+
+  Widget _buildToolbarButton(String label, VoidCallback onPressed, {bool isActive = false, bool isCtrl = false, bool highlight = false, bool compact = false}) {
     final showAsCtrl = isCtrl && !_ctrlPressed;
     final displayLabel = showAsCtrl ? '^$label' : label;
     final highlightColor = const Color(0xFF10B981); // Green for agent-deck shortcut
+
+    // Adjust padding based on compact mode
+    final horizontalPadding = compact ? 6.0 : 10.0;
+    final verticalPadding = compact ? 6.0 : 8.0;
+    final fontSize = compact ? 11.0 : 13.0;
 
     return Material(
       color: isActive ? const Color(0xFF6366F1) : (highlight ? highlightColor.withOpacity(0.2) : Colors.transparent),
@@ -350,7 +397,7 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
         },
         borderRadius: BorderRadius.circular(6),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
           decoration: highlight && !isActive ? BoxDecoration(
             borderRadius: BorderRadius.circular(6),
             border: Border.all(color: highlightColor.withOpacity(0.5)),
@@ -359,7 +406,7 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
             displayLabel,
             style: TextStyle(
               color: isActive ? Colors.white : (highlight ? highlightColor : Colors.grey[400]),
-              fontSize: 13,
+              fontSize: fontSize,
               fontWeight: FontWeight.w600,
               fontFamily: 'monospace',
             ),

@@ -210,10 +210,13 @@ class DeploymentsNotifier extends StateNotifier<DeploymentsState> {
 
   /// Fetch deployments from API
   Future<void> fetchDeployments({int limit = 100}) async {
+    debugPrint('[ORCHON] fetchDeployments() called');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
+      debugPrint('[ORCHON] Fetching from API...');
       final deployments = await _service.getRecentDeployments(limit: limit);
+      debugPrint('[ORCHON] Got ${deployments.length} deployments');
       state = state.copyWith(
         deployments: deployments,
         isLoading: false,

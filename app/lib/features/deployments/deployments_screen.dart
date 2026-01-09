@@ -7,7 +7,6 @@ import '../../core/orchon/orchon_service.dart';
 import '../../core/updates/update_dialog.dart';
 import '../../core/updates/update_service.dart';
 import '../settings/settings_drawer.dart';
-import '../threads/threads_screen.dart';
 import 'widgets/deployment_card.dart';
 import 'deployment_detail_screen.dart';
 
@@ -203,11 +202,6 @@ class _DeploymentsScreenState extends ConsumerState<DeploymentsScreen> {
                     ? _buildEmptyState()
                     : _buildDeploymentsList(deploymentsState),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showNewThreadSheet(context),
-        icon: const Icon(Icons.add),
-        label: const Text('New Terminal Session'),
-      ),
     );
   }
 
@@ -388,12 +382,4 @@ class _DeploymentsScreenState extends ConsumerState<DeploymentsScreen> {
     );
   }
 
-  void _showNewThreadSheet(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ThreadsScreen(),
-      ),
-    );
-  }
 }

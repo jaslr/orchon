@@ -56,31 +56,40 @@ class DeploymentCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        if (deployment.branch != null) ...[
-                          Icon(Icons.alt_route, size: 14, color: Colors.grey[500]),
-                          const SizedBox(width: 4),
-                          Text(
-                            deployment.branch!,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[400],
-                            ),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              if (deployment.branch != null) ...[
+                                Icon(Icons.alt_route, size: 14, color: Colors.grey[500]),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    deployment.branch!,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[400],
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                              if (deployment.shortCommit.isNotEmpty) ...[
+                                Icon(Icons.commit, size: 14, color: Colors.grey[500]),
+                                const SizedBox(width: 4),
+                                Text(
+                                  deployment.shortCommit,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey[400],
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                        ],
-                        if (deployment.shortCommit.isNotEmpty) ...[
-                          Icon(Icons.commit, size: 14, color: Colors.grey[500]),
-                          const SizedBox(width: 4),
-                          Text(
-                            deployment.shortCommit,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[400],
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-                        ],
-                        const Spacer(),
+                        ),
+                        const SizedBox(width: 8),
                         Text(
                           _formatTimestamp(deployment.completedAt ?? deployment.startedAt),
                           style: TextStyle(
