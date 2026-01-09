@@ -7,6 +7,9 @@ set -e
 BUILD_TYPE="${1:-debug}"
 source .env
 
+# Expected signing certificate CN - MUST match for OTA updates to work
+EXPECTED_CERT_CN="CN=Doewah, OU=Dev, O=Doewah, L=Local, ST=Dev, C=AU"
+
 # Get version from pubspec.yaml
 VERSION=$(grep 'version:' app/pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
 BUILD_NUMBER=$(grep 'version:' app/pubspec.yaml | sed 's/version: //' | cut -d'+' -f2)
@@ -23,6 +26,27 @@ fi
 if [ ! -f "$LOCAL_APK" ]; then
   echo "APK not found: $LOCAL_APK"
   echo "Build first with: flutter build apk --${BUILD_TYPE}"
+  exit 1
+fi
+
+# CRITICAL: Verify APK is signed with the correct certificate
+echo "Verifying APK signature..."
+CERT_INFO=$(jarsigner -verify -verbose -certs "$LOCAL_APK" 2>&1 | grep "X.509" | head -1 || true)
+
+if [ -z "$CERT_INFO" ]; then
+  echo "ERROR: APK is not signed or signature verification failed"
+  exit 1
+fi
+
+if echo "$CERT_INFO" | grep -q "Doewah"; then
+  echo "✓ APK signed with correct certificate (Doewah)"
+else
+  echo "ERROR: APK signed with WRONG certificate!"
+  echo "Expected: $EXPECTED_CERT_CN"
+  echo "Found: $CERT_INFO"
+  echo ""
+  echo "This would cause 'App not installed' errors on user devices."
+  echo "Check key.properties has absolute path to keystore."
   exit 1
 fi
 
