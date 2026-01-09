@@ -295,22 +295,13 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Terminal view with scrolling support
+            // Terminal view with scrolling support and visible scrollbar
             Expanded(
-              child: GestureDetector(
-                // Allow vertical swipe gestures for scrolling
-                onVerticalDragUpdate: (details) {
-                  // Scroll the terminal based on drag
-                  final dy = details.delta.dy;
-                  if (dy > 0) {
-                    // Scroll up (show older content)
-                    terminal.buffer.scrollUp(1);
-                  } else if (dy < 0) {
-                    // Scroll down (show newer content)
-                    terminal.buffer.scrollDown(1);
-                  }
-                  setState(() {});
-                },
+              child: Scrollbar(
+                controller: _terminalScrollController,
+                thumbVisibility: true,
+                thickness: 8,
+                radius: const Radius.circular(4),
                 child: TerminalView(
                   terminal,
                   focusNode: _terminalFocusNode,

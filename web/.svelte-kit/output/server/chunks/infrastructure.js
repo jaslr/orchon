@@ -315,6 +315,10 @@ const INFRASTRUCTURE = {
     repoOwner: "jvp-ux",
     localPath: "/home/chip/vastpuddle/junipa-organisations",
     productionUrl: "https://junipa-organisations.web.app",
+    isSourceRepo: true,
+    // Organisation portal - deploys to multiple tenant instances
+    gcpProject: "junipa-organisations",
+    // For fetching instances
     services: [
       { category: "hosting", provider: "firebase", serviceName: "Firebase Hosting", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.firebase.google.com/project/junipa-organisations/hosting" },
       { category: "hosting", provider: "gcp", serviceName: "Cloud Run (API)", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/run?project=junipa-organisations" },
@@ -364,6 +368,8 @@ const INFRASTRUCTURE = {
     repoOwner: "jvp-ux",
     localPath: "/home/chip/vastpuddle/junipa",
     productionUrl: "https://junipa.web.app",
+    isSourceRepo: true,
+    // Main app - deploys to multiple tenant instances on GCP
     services: [
       { category: "hosting", provider: "firebase", serviceName: "Firebase Hosting", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.firebase.google.com/project/junipa/hosting" },
       { category: "hosting", provider: "gcp", serviceName: "Cloud Run (API)", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/run?project=junipa" },
@@ -402,7 +408,9 @@ const INFRASTRUCTURE = {
     repoOwner: "jvp-ux",
     productionUrl: "https://junipa.appspot.com",
     deployMechanism: "gcp-cloudbuild",
-    // GCP Cloud Build triggered by Cloud Source Repos
+    sourceRepo: "junipa",
+    // Deployed from junipa repo
+    gcpProject: "junipa",
     services: [
       { category: "hosting", provider: "gcp", serviceName: "GCP App Engine", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/appengine?project=junipa" },
       { category: "ci", provider: "gcp", serviceName: "GCP Cloud Build", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/cloud-build/builds?project=junipa" }
@@ -426,6 +434,8 @@ const INFRASTRUCTURE = {
     repoOwner: "jvp-ux",
     productionUrl: "https://cedarcollege-prod.appspot.com",
     deployMechanism: "gcp-cloudbuild",
+    sourceRepo: "junipa",
+    gcpProject: "cedarcollege-prod",
     services: [
       { category: "hosting", provider: "gcp", serviceName: "GCP App Engine", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/appengine?project=cedarcollege-prod" },
       { category: "ci", provider: "gcp", serviceName: "GCP Cloud Build", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/cloud-build/builds?project=cedarcollege-prod" }
@@ -449,6 +459,8 @@ const INFRASTRUCTURE = {
     repoOwner: "jvp-ux",
     productionUrl: "https://menofbusiness-prod.appspot.com",
     deployMechanism: "gcp-cloudbuild",
+    sourceRepo: "junipa",
+    gcpProject: "menofbusiness-prod",
     services: [
       { category: "hosting", provider: "gcp", serviceName: "GCP App Engine", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/appengine?project=menofbusiness-prod" },
       { category: "ci", provider: "gcp", serviceName: "GCP Cloud Build", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/cloud-build/builds?project=menofbusiness-prod" }
@@ -472,6 +484,8 @@ const INFRASTRUCTURE = {
     repoOwner: "jvp-ux",
     productionUrl: "https://mjc-prod-2022b.appspot.com",
     deployMechanism: "gcp-cloudbuild",
+    sourceRepo: "junipa",
+    gcpProject: "mjc-prod-2022b",
     services: [
       { category: "hosting", provider: "gcp", serviceName: "GCP App Engine", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/appengine?project=mjc-prod-2022b" },
       { category: "ci", provider: "gcp", serviceName: "GCP Cloud Build", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/cloud-build/builds?project=mjc-prod-2022b" }
@@ -495,6 +509,8 @@ const INFRASTRUCTURE = {
     repoOwner: "jvp-ux",
     productionUrl: "https://mjc-tuncurry-prod.appspot.com",
     deployMechanism: "gcp-cloudbuild",
+    sourceRepo: "junipa",
+    gcpProject: "mjc-tuncurry-prod",
     services: [
       { category: "hosting", provider: "gcp", serviceName: "GCP App Engine", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/appengine?project=mjc-tuncurry-prod" },
       { category: "ci", provider: "gcp", serviceName: "GCP Cloud Build", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/cloud-build/builds?project=mjc-tuncurry-prod" }
@@ -518,6 +534,8 @@ const INFRASTRUCTURE = {
     repoOwner: "jvp-ux",
     productionUrl: "https://junipa-central-demo.appspot.com",
     deployMechanism: "gcp-cloudbuild",
+    sourceRepo: "junipa",
+    gcpProject: "junipa-central-demo",
     services: [
       { category: "hosting", provider: "gcp", serviceName: "GCP App Engine", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/appengine?project=junipa-central-demo" },
       { category: "ci", provider: "gcp", serviceName: "GCP Cloud Build", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/cloud-build/builds?project=junipa-central-demo" }
@@ -541,6 +559,8 @@ const INFRASTRUCTURE = {
     repoOwner: "jvp-ux",
     productionUrl: "https://junipa-west-demo.appspot.com",
     deployMechanism: "gcp-cloudbuild",
+    sourceRepo: "junipa",
+    gcpProject: "junipa-west-demo",
     services: [
       { category: "hosting", provider: "gcp", serviceName: "GCP App Engine", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/appengine?project=junipa-west-demo" },
       { category: "ci", provider: "gcp", serviceName: "GCP Cloud Build", status: "unknown", config: {}, discoveryMethod: "config_file", dashboardUrl: "https://console.cloud.google.com/cloud-build/builds?project=junipa-west-demo" }
@@ -633,9 +653,136 @@ function getAllProjects() {
     identity: infra.identity
   }));
 }
+function getSourceReposWithInstances() {
+  const result = [];
+  const sourceRepos = Object.entries(INFRASTRUCTURE).filter(([, infra]) => infra.isSourceRepo);
+  for (const [repoId, repoData] of sourceRepos) {
+    const instances = Object.entries(INFRASTRUCTURE).filter(([, infra]) => infra.sourceRepo === repoId).map(([instanceId, instanceData]) => ({
+      id: instanceId,
+      displayName: instanceData.displayName,
+      productionUrl: instanceData.productionUrl,
+      gcpProject: instanceData.gcpProject
+    }));
+    result.push({
+      id: repoId,
+      displayName: repoData.displayName,
+      identity: repoData.identity,
+      productionUrl: repoData.productionUrl,
+      instances
+    });
+  }
+  return result;
+}
+const GCP_PROJECTS = [
+  // Active Junipa Campus Projects
+  { projectId: "busyschools-cairns-prod", displayName: "Busy Schools Cairns", enabled: true, customDomain: "busyschools-cairns.junipa.com.au", type: "campus" },
+  { projectId: "busyschools-coolangatta-prod", displayName: "Busy Schools Coolangatta", enabled: true, customDomain: "busyschools-coolangatta.junipa.com.au", type: "campus" },
+  { projectId: "cedarcollege-prod", displayName: "Cedar College", enabled: true, customDomain: "cedarcollege.junipa.com.au", type: "campus" },
+  { projectId: "junipa", displayName: "Junipa Demo", enabled: true, customDomain: "demo2.junipa.com.au", type: "campus" },
+  { projectId: "junipa-central-demo", displayName: "Junipa Central Demo", enabled: true, customDomain: "junipacentral.junipa.com.au", type: "campus" },
+  { projectId: "junipa-west-demo", displayName: "Junipa West Demo", enabled: true, customDomain: "junipawest.junipa.com.au", type: "campus" },
+  { projectId: "menofbusiness-prod", displayName: "Men of Business", enabled: true, customDomain: "menofbusiness.junipa.com.au", type: "campus" },
+  { projectId: "mjc-prod-2022b", displayName: "MJC Main Campus", enabled: true, customDomain: "mjc.junipa.com.au", type: "campus" },
+  { projectId: "mjc-tuncurry-prod", displayName: "MJC Tuncurry", enabled: true, customDomain: "tuncurry-mjc.junipa.com.au", type: "campus" },
+  { projectId: "mjc-wallsend", displayName: "MJC Wallsend", enabled: true, customDomain: "mjc-wallsend.junipa.com.au", type: "campus" },
+  // Organisation Portal Projects (junipa-organisations repo)
+  { projectId: "busyschools-org", displayName: "Busy Schools Organisation", enabled: true, customDomain: "busyschools.junipa.com.au", type: "org-portal" },
+  { projectId: "junipa-org-hub", displayName: "Junipa Organisations Hub", enabled: true, customDomain: "organisation.junipa.com.au", type: "org-portal" },
+  { projectId: "junipa-org-mjc", displayName: "Junipa Org MJC", enabled: true, customDomain: "margaretjurdcollege.junipa.com.au", type: "org-portal" },
+  // Testing/Staging Projects
+  { projectId: "cedarcollege-testing", displayName: "Cedar College Testing", enabled: false, type: "testing" },
+  { projectId: "junipa-dev-saml", displayName: "Junipa Dev SAML", enabled: false, type: "testing" },
+  { projectId: "junipa-dev-wonde", displayName: "Junipa Dev Wonde", enabled: false, type: "testing" },
+  { projectId: "junipa-testing-project", displayName: "Junipa Testing Project", enabled: false, type: "testing" },
+  { projectId: "menofbusiness-test", displayName: "Men of Business Test", enabled: false, type: "testing" },
+  { projectId: "mjc-staging", displayName: "MJC Staging", enabled: false, type: "testing" },
+  { projectId: "test-junipa", displayName: "Test Junipa", enabled: false, type: "testing" },
+  { projectId: "test-junipa-experimental", displayName: "Test Junipa Experimental", enabled: false, type: "testing" },
+  // Infrastructure Projects
+  { projectId: "junipa-infra", displayName: "Junipa Infra", enabled: false, type: "infrastructure" },
+  { projectId: "junipa-gateway-2020", displayName: "Junipa Gateway", enabled: false, type: "infrastructure" },
+  { projectId: "junipa-client-app", displayName: "Junipa Client App", enabled: false, type: "infrastructure" },
+  { projectId: "junipa-support", displayName: "Junipa Support", enabled: false, type: "infrastructure" },
+  // Old/Deprecated Projects (disabled)
+  { projectId: "rlc-prod2", displayName: "RLC Prod", enabled: false, customDomain: "rlc.junipa.com.au", type: "other" },
+  { projectId: "allegra-prod", displayName: "Allegra Prod", enabled: false, type: "other" },
+  { projectId: "allegra-staging", displayName: "Allegra Staging", enabled: false, type: "other" },
+  { projectId: "djarragun-prod", displayName: "Djarragun Prod", enabled: false, type: "other" },
+  { projectId: "djarragun-test", displayName: "Djarragun Test", enabled: false, type: "other" },
+  { projectId: "djarragun-girls-academy", displayName: "Djarragun Girls Academy", enabled: false, type: "other" },
+  { projectId: "djarragun-girls-staging", displayName: "Djarragun Girls Staging", enabled: false, type: "other" },
+  { projectId: "gulfcc-prod", displayName: "Gulf CC Prod", enabled: false, type: "other" },
+  { projectId: "gulfcc-test", displayName: "Gulf CC Test", enabled: false, type: "other" },
+  { projectId: "mastery-springfield-prod", displayName: "Mastery Springfield Prod", enabled: false, type: "other" },
+  { projectId: "mastery-springfield-staging", displayName: "Mastery Springfield Staging", enabled: false, type: "other" },
+  { projectId: "mastery-southport", displayName: "Mastery Southport", enabled: false, type: "other" },
+  { projectId: "mastery-southport-staging", displayName: "Mastery Southport Staging", enabled: false, type: "other" },
+  { projectId: "mastery-coolangatta", displayName: "Mastery Coolangatta", enabled: false, type: "other" },
+  { projectId: "mastery-coolangatta-staging", displayName: "Mastery Coolangatta Staging", enabled: false, type: "other" },
+  { projectId: "msa-junipa-prod", displayName: "MSA Junipa Prod", enabled: false, type: "other" },
+  { projectId: "msa-junipa-test", displayName: "MSA Junipa Test", enabled: false, type: "other" },
+  { projectId: "olol-prod", displayName: "OLOL Prod", enabled: false, type: "other" }
+];
+const CLIENTS = [
+  {
+    id: "busy-schools",
+    displayName: "Busy Schools",
+    marketingUrl: "https://busyschools.com.au",
+    // Their marketing site, not ours
+    orgPortal: { gcpProject: "busyschools-org" },
+    // busyschools.junipa.com.au
+    campuses: [
+      { id: "busy-schools-cairns", displayName: "Busy Schools Cairns", gcpProject: "busyschools-cairns-prod" },
+      { id: "busy-schools-coolangatta", displayName: "Busy Schools Coolangatta", gcpProject: "busyschools-coolangatta-prod" }
+    ]
+  },
+  {
+    id: "margaret-jurd-college",
+    displayName: "Margaret Jurd College",
+    marketingUrl: "https://margaretjurdcollege.com.au",
+    // Their marketing site
+    orgPortal: { gcpProject: "junipa-org-mjc" },
+    // margaretjurdcollege.junipa.com.au
+    campuses: [
+      { id: "mjc-main", displayName: "MJC Main Campus", gcpProject: "mjc-prod-2022b" },
+      { id: "mjc-tuncurry", displayName: "MJC Tuncurry", gcpProject: "mjc-tuncurry-prod" },
+      { id: "mjc-wallsend", displayName: "MJC Wallsend", gcpProject: "mjc-wallsend" }
+    ]
+  },
+  {
+    id: "junipa-demo-org",
+    displayName: "Junipa Demo Organisation",
+    orgPortal: { gcpProject: "junipa-org-hub" },
+    // organisation.junipa.com.au
+    campuses: [
+      { id: "junipa-demo", displayName: "Junipa Demo", gcpProject: "junipa" },
+      { id: "junipa-central-demo", displayName: "Junipa Central Demo", gcpProject: "junipa-central-demo" },
+      { id: "junipa-west-demo", displayName: "Junipa West Demo", gcpProject: "junipa-west-demo" },
+      { id: "cedar-college", displayName: "Cedar College", gcpProject: "cedarcollege-prod" }
+    ]
+  },
+  {
+    id: "men-of-business",
+    displayName: "Men of Business",
+    // No org portal - standalone campus
+    campuses: [
+      { id: "men-of-business-main", displayName: "Men of Business", gcpProject: "menofbusiness-prod" }
+    ]
+  }
+];
+function getGcpProject(projectId) {
+  return GCP_PROJECTS.find((p) => p.projectId === projectId);
+}
+function getClients() {
+  return CLIENTS;
+}
 export {
+  GCP_PROJECTS as G,
   INFRASTRUCTURE as I,
   getProvidersByCategory as a,
   getAllProjects as b,
+  getSourceReposWithInstances as c,
+  getClients as d,
+  getGcpProject as e,
   getProjectInfrastructure as g
 };

@@ -10,7 +10,7 @@ return {
 	assets: new Set(["favicon.svg","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","logo.svg","manifest.json","robots.txt","sw.js"]),
 	mimeTypes: {".svg":"image/svg+xml",".png":"image/png",".json":"application/json",".txt":"text/plain",".js":"text/javascript"},
 	_: {
-		client: {start:"_app/immutable/entry/start.DggBPdmp.js",app:"_app/immutable/entry/app.D8q4LcGJ.js",imports:["_app/immutable/entry/start.DggBPdmp.js","_app/immutable/chunks/DV6nwRjG.js","_app/immutable/chunks/ppHdf72C.js","_app/immutable/chunks/CL4b-QGh.js","_app/immutable/chunks/DFDYhcTj.js","_app/immutable/entry/app.D8q4LcGJ.js","_app/immutable/chunks/CL4b-QGh.js","_app/immutable/chunks/DFDYhcTj.js","_app/immutable/chunks/DsnmJJEf.js","_app/immutable/chunks/ppHdf72C.js","_app/immutable/chunks/Dq793ZgP.js","_app/immutable/chunks/BzCjhwUL.js","_app/immutable/chunks/mSVTiZ1v.js","_app/immutable/chunks/DGsCO491.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.C7yPKywi.js",app:"_app/immutable/entry/app.DxDXb178.js",imports:["_app/immutable/entry/start.C7yPKywi.js","_app/immutable/chunks/DBLdSKmK.js","_app/immutable/chunks/B3m_Asyl.js","_app/immutable/chunks/bOSu8_9I.js","_app/immutable/chunks/Ctk_jbRy.js","_app/immutable/entry/app.DxDXb178.js","_app/immutable/chunks/bOSu8_9I.js","_app/immutable/chunks/Ctk_jbRy.js","_app/immutable/chunks/DsnmJJEf.js","_app/immutable/chunks/B3m_Asyl.js","_app/immutable/chunks/C3RYBViL.js","_app/immutable/chunks/CLEP-BiZ.js","_app/immutable/chunks/CMw6ZOtl.js","_app/immutable/chunks/Di9dn3sX.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('../output/server/nodes/0.js')),
 			__memo(() => import('../output/server/nodes/1.js')),
@@ -26,7 +26,8 @@ return {
 			__memo(() => import('../output/server/nodes/11.js')),
 			__memo(() => import('../output/server/nodes/12.js')),
 			__memo(() => import('../output/server/nodes/13.js')),
-			__memo(() => import('../output/server/nodes/14.js'))
+			__memo(() => import('../output/server/nodes/14.js')),
+			__memo(() => import('../output/server/nodes/15.js'))
 		],
 		remotes: {
 			
@@ -110,24 +111,31 @@ return {
 				endpoint: null
 			},
 			{
+				id: "/infrastructure/settings",
+				pattern: /^\/infrastructure\/settings\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 12 },
+				endpoint: null
+			},
+			{
 				id: "/login",
 				pattern: /^\/login\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 12 },
+				page: { layouts: [0,], errors: [1,], leaf: 13 },
 				endpoint: null
 			},
 			{
 				id: "/logout",
 				pattern: /^\/logout\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 13 },
+				page: { layouts: [0,], errors: [1,], leaf: 14 },
 				endpoint: null
 			},
 			{
 				id: "/projects",
 				pattern: /^\/projects\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 14 },
+				page: { layouts: [0,], errors: [1,], leaf: 15 },
 				endpoint: null
 			}
 		],

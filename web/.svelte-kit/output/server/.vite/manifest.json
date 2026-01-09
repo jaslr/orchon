@@ -40,6 +40,14 @@
       "_shared-server.js"
     ]
   },
+  "_building-2.js": {
+    "file": "chunks/building-2.js",
+    "name": "building-2",
+    "imports": [
+      "_index2.js",
+      "_Icon.js"
+    ]
+  },
   "_check.js": {
     "file": "chunks/check.js",
     "name": "check",
@@ -86,14 +94,6 @@
     "file": "chunks/context.js",
     "name": "context"
   },
-  "_database.js": {
-    "file": "chunks/database.js",
-    "name": "database",
-    "imports": [
-      "_index2.js",
-      "_Icon.js"
-    ]
-  },
   "_environment.js": {
     "file": "chunks/environment.js",
     "name": "environment"
@@ -133,6 +133,14 @@
   "_github.js": {
     "file": "chunks/github.js",
     "name": "github"
+  },
+  "_globe.js": {
+    "file": "chunks/globe.js",
+    "name": "globe",
+    "imports": [
+      "_index2.js",
+      "_Icon.js"
+    ]
   },
   "_index.js": {
     "file": "chunks/index.js",
@@ -238,14 +246,6 @@
       "_utils.js"
     ]
   },
-  "_shield.js": {
-    "file": "chunks/shield.js",
-    "name": "shield",
-    "imports": [
-      "_index2.js",
-      "_Icon.js"
-    ]
-  },
   "_state.svelte.js": {
     "file": "chunks/state.svelte.js",
     "name": "state.svelte",
@@ -348,7 +348,7 @@
       "_context.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.BA6E6h2w.css"
+      "_app/immutable/assets/_layout.BC0nKNuD.css"
     ]
   },
   "src/routes/+page.server.ts": {
@@ -426,9 +426,8 @@
       "_utils.js",
       "_state.svelte.js",
       "_refresh-cw.js",
-      "_database.js",
-      "_circle-x.js",
       "_triangle-alert.js",
+      "_circle-x.js",
       "_clock.js",
       "_plus.js",
       "_Icon.js",
@@ -594,13 +593,36 @@
     "isEntry": true,
     "imports": [
       "_index2.js",
+      "_settings.js",
       "_Icon.js",
+      "_building-2.js",
+      "_globe.js",
       "_external-link.js",
-      "_cloud.js",
-      "_shield.js",
-      "_activity.js",
-      "_git-branch.js",
-      "_database.js",
+      "_context.js"
+    ]
+  },
+  "src/routes/infrastructure/settings/+page.server.ts": {
+    "file": "entries/pages/infrastructure/settings/_page.server.ts.js",
+    "name": "entries/pages/infrastructure/settings/_page.server.ts",
+    "src": "src/routes/infrastructure/settings/+page.server.ts",
+    "isEntry": true,
+    "imports": [
+      "_infrastructure.js"
+    ]
+  },
+  "src/routes/infrastructure/settings/+page.svelte": {
+    "file": "entries/pages/infrastructure/settings/_page.svelte.js",
+    "name": "entries/pages/infrastructure/settings/_page.svelte",
+    "src": "src/routes/infrastructure/settings/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_arrow-left.js",
+      "_server.js",
+      "_building-2.js",
+      "_Icon.js",
+      "_globe.js",
+      "_external-link.js",
       "_context.js"
     ]
   },
@@ -665,9 +687,8 @@
       "_server.js",
       "_triangle-alert.js",
       "_git-branch.js",
-      "_shield.js",
-      "_database.js",
       "_cloud.js",
+      "_globe.js",
       "_external-link.js",
       "_context.js",
       "_layers.js"
