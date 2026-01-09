@@ -34,6 +34,7 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
   final _inputController = TextEditingController();
   final _inputFocusNode = FocusNode();
   final _terminalFocusNode = FocusNode();
+  final _terminalScrollController = ScrollController();
   SSHClient? _client;
   SSHSession? _session;
   StreamSubscription<Uint8List>? _stdoutSubscription;
@@ -200,6 +201,7 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
     _inputController.dispose();
     _inputFocusNode.dispose();
     _terminalFocusNode.dispose();
+    _terminalScrollController.dispose();
     // Cancel stream subscriptions to prevent memory leaks
     _stdoutSubscription?.cancel();
     _stderrSubscription?.cancel();
@@ -293,14 +295,30 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Terminal view
+            // Terminal view with scrolling support
             Expanded(
-              child: TerminalView(
-                terminal,
-                focusNode: _terminalFocusNode,
-                textStyle: TerminalStyle(
-                  fontSize: ref.watch(terminalConfigProvider).terminalFontSize,
-                  fontFamily: 'monospace',
+              child: GestureDetector(
+                // Allow vertical swipe gestures for scrolling
+                onVerticalDragUpdate: (details) {
+                  // Scroll the terminal based on drag
+                  final dy = details.delta.dy;
+                  if (dy > 0) {
+                    // Scroll up (show older content)
+                    terminal.buffer.scrollUp(1);
+                  } else if (dy < 0) {
+                    // Scroll down (show newer content)
+                    terminal.buffer.scrollDown(1);
+                  }
+                  setState(() {});
+                },
+                child: TerminalView(
+                  terminal,
+                  focusNode: _terminalFocusNode,
+                  scrollController: _terminalScrollController,
+                  textStyle: TerminalStyle(
+                    fontSize: ref.watch(terminalConfigProvider).terminalFontSize,
+                    fontFamily: 'monospace',
+                  ),
                 ),
               ),
             ),

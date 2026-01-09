@@ -818,8 +818,11 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
   @override
   Widget build(BuildContext context) {
     // Separate ORCHON App sessions from others for clarity
-    final orchonSessions = _sessions.where((s) => s['source'] == 'ORCHON App').toList();
-    final otherSessions = _sessions.where((s) => s['source'] != 'ORCHON App').toList();
+    // Sort by lastActivity (most recent first)
+    final orchonSessions = _sessions.where((s) => s['source'] == 'ORCHON App').toList()
+      ..sort((a, b) => (b['lastActivity'] ?? '').compareTo(a['lastActivity'] ?? ''));
+    final otherSessions = _sessions.where((s) => s['source'] != 'ORCHON App').toList()
+      ..sort((a, b) => (b['lastActivity'] ?? '').compareTo(a['lastActivity'] ?? ''));
 
     return SafeArea(
       child: Container(
