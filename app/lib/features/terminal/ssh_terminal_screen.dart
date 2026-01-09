@@ -231,6 +231,20 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
     setState(() => _ctrlPressed = false);
   }
 
+  // Enter tmux copy/scroll mode to scroll through history
+  // Send Ctrl+B (tmux prefix) followed by [ to enter copy mode
+  // In copy mode: arrows/PgUp/PgDn to scroll, q or Esc to exit
+  void _enterTmuxScrollMode() {
+    if (_session != null) {
+      // Ctrl+B (tmux prefix) = ASCII 2
+      _session!.write(Uint8List.fromList([2]));
+      // Small delay then send [
+      Future.delayed(const Duration(milliseconds: 50), () {
+        _session?.write(Uint8List.fromList(utf8.encode('[')));
+      });
+    }
+  }
+
   void _sendInput(String text) {
     if (_session != null && text.isNotEmpty) {
       // Send text followed by carriage return (Enter key)
@@ -363,6 +377,14 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
                   _buildToolbarButton('↓', () => _sendSpecialKey('\x1b[B'), compact: isCompact),
                   _buildToolbarButton('←', () => _sendSpecialKey('\x1b[D'), compact: isCompact),
                   _buildToolbarButton('→', () => _sendSpecialKey('\x1b[C'), compact: isCompact),
+                  // Divider
+                  _buildDivider(),
+                  // Tmux scroll mode - enters copy mode to scroll through history
+                  // Ctrl+B [ enters copy mode, use arrows/PgUp/PgDn to scroll, q or Esc to exit
+                  _buildToolbarButton('SCROLL', _enterTmuxScrollMode, compact: isCompact, highlight: true),
+                  // Page Up/Down for scrolling in scroll mode
+                  _buildToolbarButton('PgUp', () => _sendSpecialKey('\x1b[5~'), compact: isCompact),
+                  _buildToolbarButton('PgDn', () => _sendSpecialKey('\x1b[6~'), compact: isCompact),
                   // Divider
                   _buildDivider(),
                   // Common ctrl shortcuts
