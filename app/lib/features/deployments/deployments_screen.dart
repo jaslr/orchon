@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/config.dart';
 import '../../core/websocket/websocket_service.dart';
 import '../../core/orchon/orchon_service.dart';
@@ -39,9 +40,9 @@ class _DeploymentsScreenState extends ConsumerState<DeploymentsScreen> {
       debugPrint('WebSocket init error: $e');
     }
 
-    // Fetch deployments
+    // Fetch deployments (limit to 30 for homepage)
     try {
-      await ref.read(deploymentsProvider.notifier).fetchDeployments();
+      await ref.read(deploymentsProvider.notifier).fetchDeployments(limit: 30);
     } catch (e) {
       debugPrint('Deployments fetch error: $e');
     }
@@ -360,16 +361,55 @@ class _DeploymentsScreenState extends ConsumerState<DeploymentsScreen> {
       );
     }
 
+    // Show deployments + footer with link to web dashboard
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: filteredDeployments.length,
+      itemCount: filteredDeployments.length + 1, // +1 for footer
       itemBuilder: (context, index) {
+        // Footer at the end
+        if (index == filteredDeployments.length) {
+          return _buildFooter();
+        }
         final deployment = filteredDeployments[index];
         return DeploymentCard(
           deployment: deployment,
           onTap: () => _openDeploymentDetail(deployment),
         );
       },
+    );
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      margin: const EdgeInsets.only(top: 8, bottom: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[800]!, width: 1),
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Showing last 30 deployments',
+            style: TextStyle(color: Colors.grey[500], fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: () async {
+              final url = Uri.parse('https://orchon.pages.dev');
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+            },
+            icon: const Icon(Icons.open_in_new, size: 18),
+            label: const Text('View all on ORCHON Web'),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF6366F1),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

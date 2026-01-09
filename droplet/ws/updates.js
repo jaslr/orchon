@@ -228,6 +228,34 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify([]));
     }
+  } else if (req.method === 'GET' && req.url === '/projects') {
+    // List directories in /projects folder for session picker
+    // No auth required - project list is public
+    const projectsDir = '/projects';
+
+    try {
+      if (!fs.existsSync(projectsDir)) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify([]));
+        return;
+      }
+
+      const entries = fs.readdirSync(projectsDir, { withFileTypes: true });
+      const projects = entries
+        .filter(entry => entry.isDirectory() && !entry.name.startsWith('.'))
+        .map(entry => ({
+          name: entry.name,
+          directory: path.join(projectsDir, entry.name),
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(projects));
+    } catch (e) {
+      console.error('Error listing projects:', e);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify([]));
+    }
   } else if (req.method === 'POST' && req.url?.startsWith('/tmux-kill')) {
     // PROTECTED: Kill a tmux session
     if (!isAuthorized(req)) return unauthorized(res);

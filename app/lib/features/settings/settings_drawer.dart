@@ -700,20 +700,74 @@ class _SessionPickerSheet extends StatefulWidget {
 
 class _SessionPickerSheetState extends State<_SessionPickerSheet> {
   List<Map<String, String>> _sessions = [];
+  List<Map<String, String>> _projects = [];
   bool _isLoading = true;
+  bool _projectsLoading = true;
   String? _error;
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _loadSessions();
+    _loadData();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    // Load projects and sessions in parallel
+    await Future.wait([
+      _loadProjects(),
+      _loadSessions(),
+    ]);
+  }
+
+  Future<void> _loadProjects() async {
+    final config = widget.ref.read(terminalConfigProvider);
+
+    try {
+      // Fetch projects from droplet /projects endpoint
+      final url = 'http://${config.dropletIp}:8406/projects';
+      final response = await http.get(Uri.parse(url)).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => throw Exception('Connection timeout'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        final projects = data.map((p) => {
+          'name': p['name']?.toString() ?? 'unknown',
+          'directory': p['directory']?.toString() ?? '/projects',
+        }).toList();
+        debugPrint('[PROJECTS] Loaded ${projects.length} projects from /projects');
+        setState(() {
+          _projects = projects;
+          _projectsLoading = false;
+        });
+      } else {
+        // Fall back to config projects
+        debugPrint('[PROJECTS] API failed, using config fallback');
+        _useConfigProjects();
+      }
+    } catch (e) {
+      debugPrint('[PROJECTS] Error: $e, using config fallback');
+      _useConfigProjects();
+    }
+  }
+
+  void _useConfigProjects() {
+    final config = widget.ref.read(terminalConfigProvider);
+    setState(() {
+      _projects = config.projects.map((p) => {
+        'name': p.name,
+        'directory': p.directory,
+      }).toList();
+      _projectsLoading = false;
+    });
   }
 
   Future<void> _loadSessions() async {
@@ -743,9 +797,6 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
           'lastActivity': s['lastActivity']?.toString() ?? '',
         }).toList();
         debugPrint('[SESSIONS] Loaded ${sessions.length} sessions');
-        for (final s in sessions) {
-          debugPrint('[SESSIONS] - ${s['name']} (${s['source']})');
-        }
         setState(() {
           _sessions = sessions;
           _isLoading = false;
@@ -766,6 +817,10 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // Separate ORCHON App sessions from others for clarity
+    final orchonSessions = _sessions.where((s) => s['source'] == 'ORCHON App').toList();
+    final otherSessions = _sessions.where((s) => s['source'] != 'ORCHON App').toList();
+
     return SafeArea(
       child: Container(
         constraints: BoxConstraints(
@@ -804,8 +859,39 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
               ),
             ),
             const SizedBox(height: 8),
-            ..._buildProjectOptions(context),
+            if (_projectsLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              )
+            else
+              ..._buildProjectOptions(context),
 
+            // ORCHON App sessions (started from this app)
+            if (orchonSessions.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Divider(color: Colors.grey),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.phone_android, size: 14, color: Colors.indigo[300]),
+                  const SizedBox(width: 6),
+                  Text(
+                    'YOUR APP SESSIONS',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 2,
+                      color: Colors.indigo[300],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ..._buildSessionList(orchonSessions),
+            ],
+
+            // Other sessions (Claude Code, Agent Deck, SSH)
             if (_isLoading)
               const Padding(
                 padding: EdgeInsets.all(24),
@@ -821,12 +907,12 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
                   style: TextStyle(color: Colors.grey[500]),
                 ),
               )
-            else if (_sessions.isNotEmpty) ...[
+            else if (otherSessions.isNotEmpty) ...[
               const SizedBox(height: 8),
               const Divider(color: Colors.grey),
               const SizedBox(height: 8),
               Text(
-                'EXISTING SESSIONS',
+                'OTHER SESSIONS',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
@@ -835,77 +921,7 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
                 ),
               ),
               const SizedBox(height: 8),
-              ...(_sessions.map((session) {
-                final source = session['source'] ?? 'SSH/Manual';
-                final project = session['project'] ?? '';
-                final createdAt = session['createdAt'] ?? '';
-                final attached = session['attached'] == 'true';
-
-                // Format time ago
-                String timeAgo = '';
-                if (createdAt.isNotEmpty) {
-                  try {
-                    final created = DateTime.parse(createdAt);
-                    final diff = DateTime.now().difference(created);
-                    if (diff.inDays > 0) {
-                      timeAgo = '${diff.inDays}d ago';
-                    } else if (diff.inHours > 0) {
-                      timeAgo = '${diff.inHours}h ago';
-                    } else if (diff.inMinutes > 0) {
-                      timeAgo = '${diff.inMinutes}m ago';
-                    } else {
-                      timeAgo = 'just now';
-                    }
-                  } catch (_) {}
-                }
-
-                // Build subtitle with source info
-                final subtitle = [
-                  source,
-                  if (project.isNotEmpty) project,
-                  if (timeAgo.isNotEmpty) timeAgo,
-                  if (attached) '(attached)',
-                ].join(' - ');
-
-                // Pick icon based on source
-                IconData icon = Icons.terminal;
-                Color iconColor = Colors.grey[400]!;
-                if (source == 'Agent Deck') {
-                  icon = Icons.smart_toy;
-                  iconColor = Colors.blue[300]!;
-                } else if (source == 'Claude Code') {
-                  icon = Icons.code;
-                  iconColor = Colors.purple[300]!;
-                } else if (source == 'ORCHON App') {
-                  icon = Icons.phone_android;
-                  iconColor = Colors.indigo[300]!;
-                }
-
-                return _SessionOption(
-                  icon: icon,
-                  title: session['name'] ?? 'unknown',
-                  subtitle: subtitle,
-                  color: iconColor,
-                  trailing: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.red, size: 20),
-                    onPressed: () => _killSession(session),
-                    tooltip: 'Kill session',
-                  ),
-                  onTap: () {
-                    Navigator.pop(context); // Close bottom sheet
-                    Navigator.pop(context); // Close drawer
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SshTerminalScreen(
-                          launchMode: LaunchMode.claude,
-                          initialCommand: 'tmux attach -t ${session['name']}',
-                        ),
-                      ),
-                    );
-                  },
-                );
-              })),
+              ..._buildSessionList(otherSessions),
             ],
           ],
           ),
@@ -915,15 +931,89 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
     );
   }
 
-  List<Widget> _buildProjectOptions(BuildContext context) {
-    final config = widget.ref.read(terminalConfigProvider);
-    final projects = config.projects;
+  List<Widget> _buildSessionList(List<Map<String, String>> sessions) {
+    return sessions.map((session) {
+      final source = session['source'] ?? 'SSH/Manual';
+      final project = session['project'] ?? '';
+      final createdAt = session['createdAt'] ?? '';
+      final attached = session['attached'] == 'true';
 
-    return projects.map((project) {
+      // Format time ago
+      String timeAgo = '';
+      if (createdAt.isNotEmpty) {
+        try {
+          final created = DateTime.parse(createdAt);
+          final diff = DateTime.now().difference(created);
+          if (diff.inDays > 0) {
+            timeAgo = '${diff.inDays}d ago';
+          } else if (diff.inHours > 0) {
+            timeAgo = '${diff.inHours}h ago';
+          } else if (diff.inMinutes > 0) {
+            timeAgo = '${diff.inMinutes}m ago';
+          } else {
+            timeAgo = 'just now';
+          }
+        } catch (_) {}
+      }
+
+      // Build subtitle with source info
+      final subtitleParts = <String>[];
+      if (source != 'ORCHON App') subtitleParts.add(source); // Don't repeat for app sessions
+      if (project.isNotEmpty) subtitleParts.add(project);
+      if (timeAgo.isNotEmpty) subtitleParts.add(timeAgo);
+      if (attached) subtitleParts.add('(attached)');
+      final subtitle = subtitleParts.join(' - ');
+
+      // Pick icon based on source
+      IconData icon = Icons.terminal;
+      Color iconColor = Colors.grey[400]!;
+      if (source == 'Agent Deck') {
+        icon = Icons.smart_toy;
+        iconColor = Colors.blue[300]!;
+      } else if (source == 'Claude Code') {
+        icon = Icons.code;
+        iconColor = Colors.purple[300]!;
+      } else if (source == 'ORCHON App') {
+        icon = Icons.phone_android;
+        iconColor = Colors.indigo[300]!;
+      }
+
       return _SessionOption(
-        icon: _getProjectIcon(project.name),
-        title: project.name,
-        subtitle: project.directory,
+        icon: icon,
+        title: session['name'] ?? 'unknown',
+        subtitle: subtitle,
+        color: iconColor,
+        trailing: IconButton(
+          icon: const Icon(Icons.close, color: Colors.red, size: 20),
+          onPressed: () => _killSession(session),
+          tooltip: 'Kill session',
+        ),
+        onTap: () {
+          Navigator.pop(context); // Close bottom sheet
+          Navigator.pop(context); // Close drawer
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SshTerminalScreen(
+                launchMode: LaunchMode.claude,
+                initialCommand: 'tmux attach -t ${session['name']}',
+              ),
+            ),
+          );
+        },
+      );
+    }).toList();
+  }
+
+  List<Widget> _buildProjectOptions(BuildContext context) {
+    return _projects.map((project) {
+      final name = project['name'] ?? 'unknown';
+      final directory = project['directory'] ?? '/projects';
+
+      return _SessionOption(
+        icon: _getProjectIcon(name),
+        title: name,
+        subtitle: directory,
         color: const Color(0xFF6366F1),
         onTap: () {
           Navigator.pop(context); // Close bottom sheet
@@ -933,7 +1023,7 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
             MaterialPageRoute(
               builder: (context) => SshTerminalScreen(
                 launchMode: LaunchMode.claude,
-                projectDirectory: project.directory,
+                projectDirectory: directory,
               ),
             ),
           );
