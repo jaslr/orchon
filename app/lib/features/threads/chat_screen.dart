@@ -23,15 +23,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
   final _focusNode = FocusNode();
   bool _initialMessageSent = false;
+  bool _userHasScrolledUp = false;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     // Send initial message after a short delay to ensure thread is ready
     if (widget.initialMessage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _sendInitialMessage();
       });
+    }
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.offset;
+    // User is "at bottom" if within 100 pixels of the bottom
+    final atBottom = maxScroll - currentScroll < 100;
+    if (!atBottom && !_userHasScrolledUp) {
+      setState(() => _userHasScrolledUp = true);
+    } else if (atBottom && _userHasScrolledUp) {
+      setState(() => _userHasScrolledUp = false);
     }
   }
 
@@ -50,13 +65,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _controller.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  void _scrollToBottom() {
+  void _scrollToBottom({bool force = false}) {
+    // Don't auto-scroll if user has manually scrolled up (unless forced)
+    if (_userHasScrolledUp && !force) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -74,8 +93,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     // Scroll to bottom when new messages arrive
     ref.listen(chatProvider(widget.thread.id), (previous, next) {
-      if (previous?.messages.length != next.messages.length ||
-          previous?.streamingContent != next.streamingContent) {
+      // Force scroll when new message is added (user sent a message)
+      if (previous?.messages.length != next.messages.length) {
+        _scrollToBottom(force: true);
+        setState(() => _userHasScrolledUp = false);
+      }
+      // Regular scroll for streaming content (respects user scroll position)
+      else if (previous?.streamingContent != next.streamingContent) {
         _scrollToBottom();
       }
     });
@@ -131,7 +155,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         children: [
           Expanded(
             flex: 9,
-            child: _buildMessageList(chatState),
+            child: Stack(
+              children: [
+                _buildMessageList(chatState),
+                // Show "scroll to bottom" button when user has scrolled up
+                if (_userHasScrolledUp && chatState.isStreaming)
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: FloatingActionButton.small(
+                      onPressed: () {
+                        setState(() => _userHasScrolledUp = false);
+                        _scrollToBottom(force: true);
+                      },
+                      child: const Icon(Icons.arrow_downward),
+                    ),
+                  ),
+              ],
+            ),
           ),
           if (chatState.pendingConfirmation != null)
             _buildConfirmationBar(chatState),

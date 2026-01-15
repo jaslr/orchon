@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/thread.dart';
@@ -32,13 +33,20 @@ class ThreadsState {
 /// Threads state notifier
 class ThreadsNotifier extends StateNotifier<ThreadsState> {
   final WebSocketService _wsService;
+  StreamSubscription? _subscription;
 
   ThreadsNotifier(this._wsService) : super(const ThreadsState()) {
     _listenToMessages();
   }
 
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
   void _listenToMessages() {
-    _wsService.messages.listen((message) {
+    _subscription = _wsService.messages.listen((message) {
       switch (message.type) {
         case 'thread.created':
           _handleThreadCreated(message.data);
@@ -178,13 +186,20 @@ class ChatNotifier extends StateNotifier<ChatState> {
   final String threadId;
   final WebSocketService _wsService;
   String? _currentMessageId;
+  StreamSubscription? _subscription;
 
   ChatNotifier(this.threadId, this._wsService) : super(const ChatState()) {
     _listenToMessages();
   }
 
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
   void _listenToMessages() {
-    _wsService.messages.listen((message) {
+    _subscription = _wsService.messages.listen((message) {
       if (message.threadId != threadId) return;
 
       switch (message.type) {
