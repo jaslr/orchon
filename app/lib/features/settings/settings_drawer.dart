@@ -12,6 +12,18 @@ import '../terminal/quick_commands.dart';
 import '../notifications/notifications_screen.dart';
 import 'terminal_config_screen.dart';
 
+/// Shows the Claude session picker bottom sheet
+void showSessionPicker(BuildContext context, WidgetRef ref) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: const Color(0xFF1A1A2E),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (context) => _SessionPickerSheet(ref: ref),
+  );
+}
+
 void _showDeploymentGroupsSheet(BuildContext context, WidgetRef ref) {
   showModalBottomSheet(
     context: context,
@@ -653,7 +665,7 @@ class _LaunchClaudeTile extends StatelessWidget {
         children: [
           IconButton(
             icon: Icon(Icons.list, color: highlightColor),
-            onPressed: () => _showSessionPicker(context),
+            onPressed: () => showSessionPicker(context, ref),
             tooltip: 'Session options',
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -674,17 +686,6 @@ class _LaunchClaudeTile extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  void _showSessionPicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1A1A2E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => _SessionPickerSheet(ref: ref),
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:xterm/xterm.dart';
 import 'package:http/http.dart' as http;
 import '../../core/config.dart';
 import '../settings/terminal_config_screen.dart';
+import '../settings/settings_drawer.dart' show showSessionPicker;
 
 enum LaunchMode { bash, claude }
 
@@ -357,21 +358,12 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final modeName = widget.launchMode == LaunchMode.claude ? 'Claude' : 'Terminal';
-
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: Row(
           children: [
-            Icon(
-              widget.launchMode == LaunchMode.claude
-                ? Icons.smart_toy
-                : Icons.terminal,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(modeName),
+            const Text('Terminal'),
             if (_isConnecting) ...[
               const SizedBox(width: 8),
               const SizedBox(
@@ -384,27 +376,18 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
         ),
         backgroundColor: Colors.black,
         actions: [
-          // Toggle text input bar (for voice typing)
-          IconButton(
-            icon: Icon(
-              _showInputBar ? Icons.keyboard_hide : Icons.keyboard,
-              color: _showInputBar ? const Color(0xFF6366F1) : null,
-            ),
-            onPressed: () {
-              setState(() {
-                _showInputBar = !_showInputBar;
-              });
-              if (_showInputBar) {
-                _inputFocusNode.requestFocus();
-              }
-            },
-            tooltip: _showInputBar ? 'Hide input bar' : 'Show input bar (voice typing)',
-          ),
           if (_error != null)
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: _connect,
               tooltip: 'Reconnect',
+            ),
+          // Session list button (only for Claude mode)
+          if (widget.launchMode == LaunchMode.claude)
+            IconButton(
+              icon: const Icon(Icons.list),
+              onPressed: () => showSessionPicker(context, ref),
+              tooltip: 'Claude sessions',
             ),
         ],
       ),
@@ -527,6 +510,10 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
                   _buildToolbarButton('C', () => _sendCtrlKey('c'), isCtrl: true, compact: isCompact),
                   _buildToolbarButton('D', () => _sendCtrlKey('d'), isCtrl: true, compact: isCompact),
                   _buildToolbarButton('Q', () => _sendCtrlKey('q'), isCtrl: true, highlight: true, compact: isCompact),
+                  // Divider
+                  _buildDivider(),
+                  // Keyboard toggle for voice typing input
+                  _buildKeyboardButton(compact: isCompact),
                 ],
               ),
             ),
@@ -577,6 +564,36 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
               fontWeight: FontWeight.w600,
               fontFamily: 'monospace',
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKeyboardButton({bool compact = false}) {
+    final horizontalPadding = compact ? 6.0 : 10.0;
+    final verticalPadding = compact ? 6.0 : 8.0;
+
+    return Material(
+      color: _showInputBar ? const Color(0xFF6366F1) : Colors.transparent,
+      borderRadius: BorderRadius.circular(6),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _showInputBar = !_showInputBar;
+          });
+          if (_showInputBar) {
+            _inputFocusNode.requestFocus();
+          }
+          _terminalFocusNode.requestFocus();
+        },
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
+          child: Icon(
+            _showInputBar ? Icons.keyboard_hide : Icons.keyboard,
+            size: compact ? 18 : 20,
+            color: _showInputBar ? Colors.white : Colors.grey[400],
           ),
         ),
       ),
