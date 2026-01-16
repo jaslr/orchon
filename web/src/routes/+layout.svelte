@@ -36,8 +36,7 @@
 		}
 	});
 
-	// Check if we're on admin routes (they have their own layout)
-	let isAdminRoute = $derived(page.url.pathname.startsWith('/admin'));
+	// Check if we're on login route (it has its own layout)
 	let isLoginRoute = $derived(page.url.pathname === '/login');
 </script>
 
@@ -48,8 +47,8 @@
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 </svelte:head>
 
-{#if isAdminRoute || isLoginRoute}
-	<!-- Admin and login pages use their own layout -->
+{#if isLoginRoute}
+	<!-- Login page uses its own layout -->
 	{@render children()}
 {:else}
 	<!-- Main app layout with shared header and nav -->

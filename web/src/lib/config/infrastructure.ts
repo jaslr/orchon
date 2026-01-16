@@ -267,6 +267,28 @@ export const INFRASTRUCTURE: Record<string, {
   },
 
   // ==========================================================================
+  // VIOLET - Design System / Component Library
+  // ==========================================================================
+  violet: {
+    displayName: 'Violet',
+    identity: 'jaslr',
+    repoOwner: 'jaslr',
+    localPath: '/home/chip/violet',
+    deployMechanism: 'local-wrangler',
+    services: [
+      { category: 'ci', provider: 'github', serviceName: 'GitHub Actions', status: 'unknown', config: {}, discoveryMethod: 'config_file', dashboardUrl: 'https://github.com/jaslr/violet/actions' },
+    ],
+    stack: {
+      framework: 'sveltekit',
+      language: 'typescript',
+      css: ['tailwind'],
+      testing: [],
+      buildTool: 'vite',
+      packageManager: 'npm',
+    },
+  },
+
+  // ==========================================================================
   // WWC - Work With Chip (Portfolio)
   // ==========================================================================
   wwc: {
