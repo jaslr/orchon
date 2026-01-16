@@ -93,9 +93,17 @@ ssh root@209.38.85.244 "cd /root/projects/orchon && git pull && systemctl restar
 
 ### Flutter App (OTA)
 
+**IMPORTANT:** Flutter is installed at `/home/chip/flutter/bin/flutter`. Add to PATH before building:
+```bash
+export PATH="$PATH:/home/chip/flutter/bin"
+```
+
+**NEVER tell the user to deploy manually. Always build and deploy automatically.**
+
 ```bash
 # 1. Bump version in app/pubspec.yaml
 # 2. Build APK
+export PATH="$PATH:/home/chip/flutter/bin"
 cd app && flutter build apk --release \
   --dart-define=ORCHON_API_SECRET=$(grep API_SECRET ../.env | cut -d= -f2) \
   --dart-define=WS_URL=ws://209.38.85.244:8405
