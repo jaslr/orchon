@@ -1,5 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { INFRASTRUCTURE } from '$lib/config/infrastructure';
+import type { TechStack, InfraService } from '$lib/types/infrastructure';
 
 export interface PersonalProject {
   id: string;
@@ -11,6 +12,8 @@ export interface PersonalProject {
   identity: string;
   localPath?: string;
   description?: string;
+  stack?: Omit<TechStack, 'projectId'>;
+  services: Omit<InfraService, 'id' | 'projectId' | 'lastChecked'>[];
 }
 
 // Define personal projects (non-Junipa)
@@ -48,6 +51,8 @@ export const load: PageServerLoad = async () => {
         database,
         identity: infra.identity,
         localPath: infra.localPath,
+        stack: infra.stack,
+        services: infra.services,
       };
       return project;
     })
@@ -63,6 +68,7 @@ export const load: PageServerLoad = async () => {
       hostingProvider: 'none',
       identity: 'jaslr',
       description: 'Design system / component library',
+      services: [],
     },
   ];
 

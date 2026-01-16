@@ -27,7 +27,9 @@ const load = async () => {
       hostingProvider,
       database,
       identity: infra.identity,
-      localPath: infra.localPath
+      localPath: infra.localPath,
+      stack: infra.stack,
+      services: infra.services
     };
     return project;
   }).filter((p) => p !== null);
@@ -39,7 +41,8 @@ const load = async () => {
       repoUrl: "https://github.com/jaslr/violet",
       hostingProvider: "none",
       identity: "jaslr",
-      description: "Design system / component library"
+      description: "Design system / component library",
+      services: []
     }
   ];
   return {
