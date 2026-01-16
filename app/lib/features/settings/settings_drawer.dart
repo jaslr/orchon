@@ -851,30 +851,8 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
             ),
             const SizedBox(height: 16),
 
-            // Project options - Start new sessions
-            Text(
-              'START NEW',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-                letterSpacing: 2,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            if (_projectsLoading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-              )
-            else
-              ..._buildProjectOptions(context),
-
-            // ORCHON App sessions (started from this app)
+            // ORCHON App sessions (started from this app) - Resume existing
             if (orchonSessions.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              const Divider(color: Colors.grey),
-              const SizedBox(height: 8),
               Row(
                 children: [
                   Icon(Icons.phone_android, size: 14, color: Colors.indigo[300]),
@@ -892,6 +870,9 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
               ),
               const SizedBox(height: 8),
               ..._buildSessionList(orchonSessions),
+              const SizedBox(height: 8),
+              const Divider(color: Colors.grey),
+              const SizedBox(height: 8),
             ],
 
             // Other sessions (Claude Code, Agent Deck, SSH)
@@ -911,9 +892,6 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
                 ),
               )
             else if (otherSessions.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              const Divider(color: Colors.grey),
-              const SizedBox(height: 8),
               Text(
                 'OTHER SESSIONS',
                 style: TextStyle(
@@ -925,7 +903,29 @@ class _SessionPickerSheetState extends State<_SessionPickerSheet> {
               ),
               const SizedBox(height: 8),
               ..._buildSessionList(otherSessions),
+              const SizedBox(height: 8),
+              const Divider(color: Colors.grey),
+              const SizedBox(height: 8),
             ],
+
+            // Project options - Start new sessions
+            Text(
+              'START NEW',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 2,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (_projectsLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              )
+            else
+              ..._buildProjectOptions(context),
           ],
           ),
         ),

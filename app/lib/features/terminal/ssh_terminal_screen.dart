@@ -233,30 +233,81 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
 
   // Track scroll accumulator for smooth scrolling
   double _scrollAccumulator = 0;
+  // Track last pointer Y position for drag-based scrolling
+  double? _lastPointerY;
+  // Track if we're in tmux copy mode (for scrolling history)
+  bool _inCopyMode = false;
+  // Track scroll direction to detect when entering copy mode
+  bool _scrollingUp = false;
 
-  // Handle terminal scroll by sending mouse wheel events to tmux
-  // tmux with mouse mode on will respond to these escape sequences
+  // Handle terminal scroll using tmux copy-mode for reliable history access
+  // This works regardless of tmux mouse mode setting
   void _handleTerminalScroll(double deltaY) {
     if (_session == null) return;
 
-    // Accumulate scroll delta (negative = scroll up, positive = scroll down)
+    // Accumulate scroll delta (positive = swipe down = scroll up to see older content)
     _scrollAccumulator += deltaY;
 
-    // Send scroll event every ~20 pixels of movement
-    const scrollThreshold = 20.0;
+    // Send scroll event every ~40 pixels of movement (slightly larger threshold for smoother feel)
+    const scrollThreshold = 40.0;
 
     while (_scrollAccumulator.abs() >= scrollThreshold) {
       if (_scrollAccumulator > 0) {
         // Swipe down = scroll up (show older content)
-        // Mouse wheel up in SGR encoding: \x1b[<64;1;1M
-        _session!.write(Uint8List.fromList(utf8.encode('\x1b[<64;1;1M')));
+        _scrollingUp = true;
+
+        // Enter tmux copy-mode if not already in it
+        // Ctrl+B [ enters copy mode (prefix + [)
+        if (!_inCopyMode) {
+          // Send Ctrl+B (tmux prefix)
+          _session!.write(Uint8List.fromList([2])); // Ctrl+B = ASCII 2
+          // Small delay then send [ to enter copy mode
+          Future.delayed(const Duration(milliseconds: 50), () {
+            _session?.write(Uint8List.fromList(utf8.encode('[')));
+          });
+          _inCopyMode = true;
+          // Wait a bit for copy mode to activate before scrolling
+          Future.delayed(const Duration(milliseconds: 100), () {
+            // Send Page Up to scroll in copy mode: \x1b[5~
+            _session?.write(Uint8List.fromList(utf8.encode('\x1b[5~')));
+          });
+        } else {
+          // Already in copy mode, just send Page Up
+          _session!.write(Uint8List.fromList(utf8.encode('\x1b[5~')));
+        }
         _scrollAccumulator -= scrollThreshold;
       } else {
         // Swipe up = scroll down (show newer content)
-        // Mouse wheel down in SGR encoding: \x1b[<65;1;1M
-        _session!.write(Uint8List.fromList(utf8.encode('\x1b[<65;1;1M')));
+        _scrollingUp = false;
+
+        if (_inCopyMode) {
+          // In copy mode, send Page Down: \x1b[6~
+          _session!.write(Uint8List.fromList(utf8.encode('\x1b[6~')));
+        }
+        // If not in copy mode, scrolling down does nothing (already at bottom)
         _scrollAccumulator += scrollThreshold;
       }
+    }
+  }
+
+  // Enter tmux copy mode for scrolling history
+  void _enterCopyMode() {
+    if (!_inCopyMode && _session != null) {
+      // Send Ctrl+B (tmux prefix) then [ to enter copy mode
+      _session!.write(Uint8List.fromList([2])); // Ctrl+B = ASCII 2
+      Future.delayed(const Duration(milliseconds: 50), () {
+        _session?.write(Uint8List.fromList(utf8.encode('[')));
+      });
+      _inCopyMode = true;
+    }
+  }
+
+  // Exit tmux copy mode (call this when user taps or performs other actions)
+  void _exitCopyMode() {
+    if (_inCopyMode && _session != null) {
+      // Send 'q' to exit copy mode
+      _session!.write(Uint8List.fromList(utf8.encode('q')));
+      _inCopyMode = false;
     }
   }
 
@@ -325,11 +376,30 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
         child: Column(
           children: [
             // Terminal view with swipe-to-scroll for tmux
+            // GestureDetector with opaque behavior to capture ALL vertical drags for scroll
+            // Taps still work because we only handle drag, not tap
             Expanded(
               child: GestureDetector(
-                // Capture vertical swipes and send mouse wheel events to tmux
+                behavior: HitTestBehavior.opaque,
+                onVerticalDragStart: (details) {
+                  _lastPointerY = details.globalPosition.dy;
+                },
                 onVerticalDragUpdate: (details) {
-                  _handleTerminalScroll(details.delta.dy);
+                  if (_lastPointerY != null) {
+                    final delta = details.globalPosition.dy - _lastPointerY!;
+                    _handleTerminalScroll(delta);
+                    _lastPointerY = details.globalPosition.dy;
+                  }
+                },
+                onVerticalDragEnd: (details) {
+                  _lastPointerY = null;
+                  _scrollAccumulator = 0;
+                },
+                onTapDown: (details) {
+                  // Exit copy mode if in it (so user can type again)
+                  _exitCopyMode();
+                  // Forward tap to terminal for focus
+                  _terminalFocusNode.requestFocus();
                 },
                 child: TerminalView(
                   terminal,
@@ -387,9 +457,38 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
                   ),
                   // Divider
                   _buildDivider(),
-                  // Arrow keys
-                  _buildToolbarButton('↑', () => _sendSpecialKey('\x1b[A'), compact: isCompact),
-                  _buildToolbarButton('↓', () => _sendSpecialKey('\x1b[B'), compact: isCompact),
+                  // Scroll mode toggle (enters/exits tmux copy mode)
+                  _buildToolbarButton(
+                    _inCopyMode ? 'EXIT' : 'SCROLL',
+                    () {
+                      if (_inCopyMode) {
+                        _exitCopyMode();
+                        setState(() {});
+                      } else {
+                        _enterCopyMode();
+                        setState(() {});
+                      }
+                    },
+                    isActive: _inCopyMode,
+                    compact: isCompact,
+                  ),
+                  // Arrow keys (work as scroll in copy mode)
+                  _buildToolbarButton('↑', () {
+                    if (_inCopyMode) {
+                      // In copy mode, arrow up scrolls up one line
+                      _sendSpecialKey('\x1b[A');
+                    } else {
+                      _sendSpecialKey('\x1b[A');
+                    }
+                  }, compact: isCompact),
+                  _buildToolbarButton('↓', () {
+                    if (_inCopyMode) {
+                      // In copy mode, arrow down scrolls down one line
+                      _sendSpecialKey('\x1b[B');
+                    } else {
+                      _sendSpecialKey('\x1b[B');
+                    }
+                  }, compact: isCompact),
                   _buildToolbarButton('←', () => _sendSpecialKey('\x1b[D'), compact: isCompact),
                   _buildToolbarButton('→', () => _sendSpecialKey('\x1b[C'), compact: isCompact),
                   // Divider
