@@ -32,7 +32,7 @@ class TerminalConfig {
     this.sshUser = 'root',
     this.claudeCommand = 'IS_SANDBOX=1 claude --dangerously-skip-permissions',
     this.projects = const [],
-    this.terminalFontScale = 100,
+    this.terminalFontScale = 80, // Smaller default for mobile screens
   });
 
   // Get actual font size from scale (base size is 14)

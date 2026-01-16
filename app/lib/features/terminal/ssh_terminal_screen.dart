@@ -151,6 +151,11 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
       await Future.delayed(const Duration(milliseconds: 800));
 
       if (widget.initialCommand != null) {
+        // If attaching to tmux, disable echo first to prevent duplicate input display
+        if (widget.initialCommand!.contains('tmux attach')) {
+          _session?.write(Uint8List.fromList(utf8.encode('stty -echo\n')));
+          await Future.delayed(const Duration(milliseconds: 100));
+        }
         _session?.write(Uint8List.fromList(utf8.encode('${widget.initialCommand}\n')));
       } else if (widget.launchMode == LaunchMode.claude) {
         // Generate a unique session name for tracking
@@ -173,6 +178,11 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
         terminal.write('[Launching Claude in session...]\r\n');
         _session?.write(Uint8List.fromList(utf8.encode('tmux send-keys -t "$sessionName" "${config.claudeCommand}" Enter\n')));
         await Future.delayed(const Duration(milliseconds: 300));
+
+        // Disable echo on outer PTY before attaching to tmux
+        // This prevents duplicate input display when Claude shows streaming input
+        _session?.write(Uint8List.fromList(utf8.encode('stty -echo\n')));
+        await Future.delayed(const Duration(milliseconds: 100));
 
         // Attach to the session
         _session?.write(Uint8List.fromList(utf8.encode('tmux attach -t "$sessionName"\n')));
