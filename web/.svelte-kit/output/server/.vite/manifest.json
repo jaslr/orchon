@@ -412,15 +412,14 @@
       "_index2.js",
       "_index3.js",
       "_activity.js",
-      "_layers.js",
-      "_cloud.js",
       "_Icon.js",
       "_folder-git-2.js",
       "_server.js",
+      "_layers.js",
       "_settings.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.DwxsUsq2.css"
+      "_app/immutable/assets/_layout.GinpRqoa.css"
     ]
   },
   "src/routes/+page.server.ts": {
@@ -454,16 +453,7 @@
     "file": "entries/pages/admin/_layout.svelte.js",
     "name": "entries/pages/admin/_layout.svelte",
     "src": "src/routes/admin/+layout.svelte",
-    "isEntry": true,
-    "imports": [
-      "_index2.js",
-      "_index3.js",
-      "_arrow-left.js",
-      "_Icon.js",
-      "_folder-git-2.js",
-      "_settings.js",
-      "_context.js"
-    ]
+    "isEntry": true
   },
   "src/routes/admin/+page.server.ts": {
     "file": "entries/pages/admin/_page.server.ts.js",

@@ -1,0 +1,1 @@
+import{H as o,C as _,P as c,Q as T,R as d,T as b,U as p,N as y,M as f}from"./Dnd2HTQh.js";import{B as E}from"./-9B-tiFA.js";function m(t,i,u=!1){_&&c();var e=new E(t),h=u?T:0;function n(a,r){if(_){const l=d(t)===b;if(a===l){var s=p();y(s),e.anchor=s,f(!1),e.ensure(a,r),f(!0);return}}e.ensure(a,r)}o(()=>{var a=!1;i((r,s=!0)=>{a=!0,n(s,r)}),a||n(!1,null)},h)}export{m as i};

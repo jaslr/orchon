@@ -1,11 +1,10 @@
 import { w as spread_props, x as attr_class, y as stringify, z as head } from "../../chunks/index2.js";
 import { p as page } from "../../chunks/index3.js";
 import { A as Activity } from "../../chunks/activity.js";
-import { L as Layers } from "../../chunks/layers.js";
-import { C as Cloud } from "../../chunks/cloud.js";
 import { I as Icon } from "../../chunks/Icon.js";
 import { F as Folder_git_2 } from "../../chunks/folder-git-2.js";
 import { S as Server } from "../../chunks/server.js";
+import { L as Layers } from "../../chunks/layers.js";
 import { S as Settings } from "../../chunks/settings.js";
 function Droplets($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
@@ -31,6 +30,49 @@ function Droplets($$renderer, $$props) {
        * @description Lucide SVG icon component, renders SVG Element with children.
        *
        * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNNyAxNi4zYzIuMiAwIDQtMS44MyA0LTQuMDUgMC0xLjE2LS41Ny0yLjI2LTEuNzEtMy4xOVM3LjI5IDYuNzUgNyA1LjNjLS4yOSAxLjQ1LTEuMTQgMi44NC0yLjI5IDMuNzZTMyAxMS4xIDMgMTIuMjVjMCAyLjIyIDEuOCA0LjA1IDQgNC4wNXoiIC8+CiAgPHBhdGggZD0iTTEyLjU2IDYuNkExMC45NyAxMC45NyAwIDAgMCAxNCAzLjAyYy41IDIuNSAyIDQuOSA0IDYuNXMzIDMuNSAzIDUuNWE2Ljk4IDYuOTggMCAwIDEtMTEuOTEgNC45NyIgLz4KPC9zdmc+Cg==) - https://lucide.dev/icons/droplets
+       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
+       *
+       * @param {Object} props - Lucide icons props and any valid SVG attribute
+       * @returns {FunctionalComponent} Svelte component
+       *
+       */
+      props,
+      {
+        iconNode,
+        children: ($$renderer3) => {
+          props.children?.($$renderer3);
+          $$renderer3.push(`<!---->`);
+        },
+        $$slots: { default: true }
+      }
+    ]));
+  });
+}
+function Image($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { $$slots, $$events, ...props } = $$props;
+    const iconNode = [
+      [
+        "rect",
+        {
+          "width": "18",
+          "height": "18",
+          "x": "3",
+          "y": "3",
+          "rx": "2",
+          "ry": "2"
+        }
+      ],
+      ["circle", { "cx": "9", "cy": "9", "r": "2" }],
+      ["path", { "d": "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" }]
+    ];
+    Icon($$renderer2, spread_props([
+      { name: "image" },
+      /**
+       * @component @name Image
+       * @description Lucide SVG icon component, renders SVG Element with children.
+       *
+       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cmVjdCB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHg9IjMiIHk9IjMiIHJ4PSIyIiByeT0iMiIgLz4KICA8Y2lyY2xlIGN4PSI5IiBjeT0iOSIgcj0iMiIgLz4KICA8cGF0aCBkPSJtMjEgMTUtMy4wODYtMy4wODZhMiAyIDAgMCAwLTIuODI4IDBMNiAyMSIgLz4KPC9zdmc+Cg==) - https://lucide.dev/icons/image
        * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
        *
        * @param {Object} props - Lucide icons props and any valid SVG attribute
@@ -90,19 +132,13 @@ function Map($$renderer, $$props) {
 function MainNav($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let currentPath = page.url.pathname;
+    let isInfraActive = currentPath.startsWith("/infrastructure") || currentPath.startsWith("/admin/projects") || currentPath.startsWith("/admin/repos");
+    let isConfigActive = currentPath.startsWith("/admin/media");
     $$renderer2.push(`<nav class="flex flex-col gap-1 py-2"><a href="/"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(currentPath === "/" ? "bg-gray-800 border-l-2 border-blue-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
     Activity($$renderer2, {
       class: `w-4 h-4 ${stringify(currentPath === "/" ? "text-blue-400" : "text-gray-500")} shrink-0`
     });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(currentPath === "/" ? "text-white" : "text-gray-300")} truncate`)}>Console</div></div></a> <a href="/projects"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(currentPath === "/projects" || currentPath.startsWith("/projects") ? "bg-gray-800 border-l-2 border-blue-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
-    Layers($$renderer2, {
-      class: `w-4 h-4 ${stringify(currentPath === "/projects" || currentPath.startsWith("/projects") ? "text-blue-400" : "text-gray-500")} shrink-0`
-    });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(currentPath === "/projects" || currentPath.startsWith("/projects") ? "text-white" : "text-gray-300")} truncate`)}>Projects</div></div></a> <a href="/deployments"${attr_class(`flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors ${stringify(currentPath === "/deployments" || currentPath.startsWith("/deployments") ? "bg-gray-800/50 border-l-2 border-blue-400" : "hover:bg-gray-800/30 border-l-2 border-transparent")}`)}>`);
-    Cloud($$renderer2, {
-      class: `w-3.5 h-3.5 ${stringify(currentPath === "/deployments" || currentPath.startsWith("/deployments") ? "text-blue-400" : "text-gray-500")} shrink-0`
-    });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(currentPath === "/deployments" || currentPath.startsWith("/deployments") ? "text-white" : "text-gray-400")} truncate`)}>Deployments</div></div></a> <a href="/vastpuddle"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(currentPath.startsWith("/vastpuddle") ? "bg-gray-800 border-l-2 border-emerald-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(currentPath === "/" ? "text-white" : "text-gray-300")} truncate`)}>Console</div></div></a> <a href="/vastpuddle"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(currentPath.startsWith("/vastpuddle") ? "bg-gray-800 border-l-2 border-emerald-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
     Droplets($$renderer2, {
       class: `w-4 h-4 ${stringify(currentPath.startsWith("/vastpuddle") ? "text-emerald-400" : "text-gray-500")} shrink-0`
     });
@@ -110,15 +146,27 @@ function MainNav($$renderer, $$props) {
     Folder_git_2($$renderer2, {
       class: `w-4 h-4 ${stringify(currentPath.startsWith("/projects-infra") ? "text-violet-400" : "text-gray-500")} shrink-0`
     });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(currentPath.startsWith("/projects-infra") ? "text-white" : "text-gray-300")} truncate`)}>My Projects</div></div></a> <a href="/admin/infra"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(currentPath.startsWith("/admin/infra") || currentPath.startsWith("/infrastructure") ? "bg-gray-800 border-l-2 border-blue-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(currentPath.startsWith("/projects-infra") ? "text-white" : "text-gray-300")} truncate`)}>My Projects</div></div></a> <a href="/infrastructure/map"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(isInfraActive ? "bg-gray-800 border-l-2 border-blue-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
     Server($$renderer2, {
-      class: `w-4 h-4 ${stringify(currentPath.startsWith("/admin/infra") || currentPath.startsWith("/infrastructure") ? "text-blue-400" : "text-gray-500")} shrink-0`
+      class: `w-4 h-4 ${stringify(isInfraActive ? "text-blue-400" : "text-gray-500")} shrink-0`
     });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(currentPath.startsWith("/admin/infra") || currentPath.startsWith("/infrastructure") ? "text-white" : "text-gray-300")} truncate`)}>Infrastructure</div></div></a> <a href="/infrastructure/map"${attr_class(`flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors ${stringify(currentPath === "/infrastructure/map" ? "bg-gray-800/50 border-l-2 border-blue-400" : "hover:bg-gray-800/30 border-l-2 border-transparent")}`)}>`);
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(isInfraActive ? "text-white" : "text-gray-300")} truncate`)}>Infrastructure</div></div></a> <a href="/infrastructure/map"${attr_class(`flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors ${stringify(currentPath === "/infrastructure/map" ? "bg-gray-800/50 border-l-2 border-blue-400" : "hover:bg-gray-800/30 border-l-2 border-transparent")}`)}>`);
     Map($$renderer2, {
       class: `w-3.5 h-3.5 ${stringify(currentPath === "/infrastructure/map" ? "text-blue-400" : "text-gray-500")} shrink-0`
     });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(currentPath === "/infrastructure/map" ? "text-white" : "text-gray-400")} truncate`)}>Map</div></div></a></nav>`);
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(currentPath === "/infrastructure/map" ? "text-white" : "text-gray-400")} truncate`)}>Map</div></div></a> <a href="/admin/projects"${attr_class(`flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors ${stringify(currentPath.startsWith("/admin/projects") ? "bg-gray-800/50 border-l-2 border-blue-400" : "hover:bg-gray-800/30 border-l-2 border-transparent")}`)}>`);
+    Layers($$renderer2, {
+      class: `w-3.5 h-3.5 ${stringify(currentPath.startsWith("/admin/projects") ? "text-blue-400" : "text-gray-500")} shrink-0`
+    });
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(currentPath.startsWith("/admin/projects") ? "text-white" : "text-gray-400")} truncate`)}>Projects</div></div></a> <a href="/admin/repos"${attr_class(`flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors ${stringify(currentPath.startsWith("/admin/repos") ? "bg-gray-800/50 border-l-2 border-blue-400" : "hover:bg-gray-800/30 border-l-2 border-transparent")}`)}>`);
+    Settings($$renderer2, {
+      class: `w-3.5 h-3.5 ${stringify(currentPath.startsWith("/admin/repos") ? "text-blue-400" : "text-gray-500")} shrink-0`
+    });
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(currentPath.startsWith("/admin/repos") ? "text-white" : "text-gray-400")} truncate`)}>Config</div></div></a> <a href="/admin/media"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(isConfigActive ? "bg-gray-800 border-l-2 border-amber-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
+    Image($$renderer2, {
+      class: `w-4 h-4 ${stringify(isConfigActive ? "text-amber-400" : "text-gray-500")} shrink-0`
+    });
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(isConfigActive ? "text-white" : "text-gray-300")} truncate`)}>Media</div></div></a></nav>`);
   });
 }
 function _layout($$renderer, $$props) {

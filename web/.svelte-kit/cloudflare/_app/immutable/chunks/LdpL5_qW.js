@@ -1,0 +1,1 @@
+import{C as c,P as s,H as l,Q as _}from"./Dnd2HTQh.js";import{B as i}from"./-9B-tiFA.js";function f(n,o,r){c&&s();var a=new i(n);l(()=>{var e=o()??null;a.ensure(e,e&&(t=>r(t,e)))},_)}const u=Object.freeze(Object.defineProperty({__proto__:null},Symbol.toStringTag,{value:"Module"}));export{u as _,f as c};
