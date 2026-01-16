@@ -23,7 +23,9 @@ export const nodes = [
 	() => import('./nodes/19'),
 	() => import('./nodes/20'),
 	() => import('./nodes/21'),
-	() => import('./nodes/22')
+	() => import('./nodes/22'),
+	() => import('./nodes/23'),
+	() => import('./nodes/24')
 ];
 
 export const server_loads = [0];
@@ -47,7 +49,9 @@ export const dictionary = {
 		"/infrastructure/settings": [~19],
 		"/login": [~20],
 		"/logout": [~21],
-		"/projects": [~22]
+		"/projects-infra": [~23],
+		"/projects": [~22],
+		"/vastpuddle": [~24]
 	};
 
 export const hooks = {

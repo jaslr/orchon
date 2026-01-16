@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { Activity, Layers, Cloud, Server, Map } from '@lucide/svelte';
+	import { Activity, Layers, Cloud, Server, Map, Droplets, FolderGit2 } from '@lucide/svelte';
 
 	// Determine active route
 	let currentPath = $derived(page.url.pathname);
@@ -44,6 +44,33 @@
 		</div>
 	</a>
 
+	<!-- Vast Puddle (Junipa Infrastructure) -->
+	<a
+		href="/vastpuddle"
+		class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors {currentPath.startsWith('/vastpuddle')
+			? 'bg-gray-800 border-l-2 border-emerald-500'
+			: 'hover:bg-gray-800/50 border-l-2 border-transparent'}"
+	>
+		<Droplets class="w-4 h-4 {currentPath.startsWith('/vastpuddle') ? 'text-emerald-400' : 'text-gray-500'} shrink-0" />
+		<div class="flex-1 min-w-0">
+			<div class="font-medium text-sm {currentPath.startsWith('/vastpuddle') ? 'text-white' : 'text-gray-300'} truncate">Vast Puddle</div>
+		</div>
+	</a>
+
+	<!-- Personal Projects Infrastructure -->
+	<a
+		href="/projects-infra"
+		class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors {currentPath.startsWith('/projects-infra')
+			? 'bg-gray-800 border-l-2 border-violet-500'
+			: 'hover:bg-gray-800/50 border-l-2 border-transparent'}"
+	>
+		<FolderGit2 class="w-4 h-4 {currentPath.startsWith('/projects-infra') ? 'text-violet-400' : 'text-gray-500'} shrink-0" />
+		<div class="flex-1 min-w-0">
+			<div class="font-medium text-sm {currentPath.startsWith('/projects-infra') ? 'text-white' : 'text-gray-300'} truncate">My Projects</div>
+		</div>
+	</a>
+
+	<!-- Legacy Infrastructure (Admin) -->
 	<a
 		href="/admin/infra"
 		class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors {currentPath.startsWith('/admin/infra') || currentPath.startsWith('/infrastructure')

@@ -73,8 +73,16 @@
 		"src/routes/logout/+page.server.ts",
 		"src/routes/+layout.server.ts"
 	],
+	"/projects-infra": [
+		"src/routes/projects-infra/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
 	"/projects": [
 		"src/routes/projects/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/vastpuddle": [
+		"src/routes/vastpuddle/+page.server.ts",
 		"src/routes/+layout.server.ts"
 	]
 }

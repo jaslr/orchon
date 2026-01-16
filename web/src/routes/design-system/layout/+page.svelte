@@ -348,6 +348,184 @@
 		</div>
 	</section>
 
+	<!-- Small Viewport / Mobile Layout -->
+	<section class="mb-12">
+		<h2 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">Small Viewport / Mobile Layout</h2>
+		<p class="text-sm text-gray-400 mb-4">
+			Mobile-first responsive design patterns. Primary breakpoint: <code class="text-blue-400">lg:</code> (1024px).
+		</p>
+
+		<!-- Breakpoints Reference -->
+		<div class="mb-6">
+			<div class="text-xs text-gray-500 mb-2">Breakpoints</div>
+			<div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="border-b border-gray-800">
+							<th class="px-4 py-2 text-left text-xs text-gray-500 font-medium">Prefix</th>
+							<th class="px-4 py-2 text-left text-xs text-gray-500 font-medium">Min Width</th>
+							<th class="px-4 py-2 text-left text-xs text-gray-500 font-medium">Usage</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-800">
+						<tr>
+							<td class="px-4 py-3"><code class="text-blue-400">sm:</code></td>
+							<td class="px-4 py-3 text-gray-400">640px</td>
+							<td class="px-4 py-3 text-xs text-gray-500">Minor adjustments</td>
+						</tr>
+						<tr>
+							<td class="px-4 py-3"><code class="text-blue-400">md:</code></td>
+							<td class="px-4 py-3 text-gray-400">768px</td>
+							<td class="px-4 py-3 text-xs text-gray-500">Tablet layouts, grid columns</td>
+						</tr>
+						<tr class="bg-gray-800/30">
+							<td class="px-4 py-3"><code class="text-green-400">lg:</code></td>
+							<td class="px-4 py-3 text-gray-300">1024px</td>
+							<td class="px-4 py-3 text-xs text-gray-300">Primary breakpoint - sidebar visible</td>
+						</tr>
+						<tr>
+							<td class="px-4 py-3"><code class="text-blue-400">xl:</code></td>
+							<td class="px-4 py-3 text-gray-400">1280px</td>
+							<td class="px-4 py-3 text-xs text-gray-500">Wide desktop</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<!-- Navigation Changes -->
+		<div class="mb-6">
+			<div class="text-xs text-gray-500 mb-2">Navigation Pattern</div>
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<!-- Mobile nav preview -->
+				<div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+					<div class="px-3 py-2 border-b border-gray-800 text-xs text-gray-500">Mobile (&lt;1024px)</div>
+					<div class="bg-gray-950 p-2">
+						<div class="flex border-b border-gray-700">
+							<div class="flex-1 py-2 text-center text-xs text-white border-b-2 border-blue-500">Console</div>
+							<div class="flex-1 py-2 text-center text-xs text-gray-400">Projects</div>
+							<div class="flex-1 py-2 text-center text-xs text-gray-400">Deploys</div>
+							<div class="flex-1 py-2 text-center text-xs text-gray-400">Infra</div>
+						</div>
+						<div class="h-16 flex items-center justify-center text-xs text-gray-500">Content</div>
+					</div>
+				</div>
+				<!-- Desktop nav preview -->
+				<div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+					<div class="px-3 py-2 border-b border-gray-800 text-xs text-gray-500">Desktop (1024px+)</div>
+					<div class="flex bg-gray-950">
+						<div class="w-24 shrink-0 border-r border-gray-700 p-2 space-y-1">
+							<div class="h-5 bg-gray-700 rounded text-xs"></div>
+							<div class="h-5 bg-gray-800 rounded text-xs"></div>
+							<div class="h-5 bg-gray-800 rounded text-xs"></div>
+						</div>
+						<div class="flex-1 h-24 flex items-center justify-center text-xs text-gray-500">Content</div>
+					</div>
+				</div>
+			</div>
+			<pre class="mt-4 text-xs text-gray-400 bg-gray-900 border border-gray-800 p-4 rounded overflow-x-auto"><code>{`<!-- Sidebar (desktop only) -->
+<aside class="hidden lg:flex lg:flex-col w-[12rem] shrink-0 border-r border-gray-800">
+  <MainNav />
+</aside>
+
+<!-- Mobile tabs (mobile only) -->
+<div class="lg:hidden border-b border-gray-800">
+  <div class="flex">
+    <a href="/" class="flex-1 py-2 text-center text-sm">Console</a>
+    <a href="/projects" class="flex-1 py-2 text-center text-sm">Projects</a>
+    <!-- ... -->
+  </div>
+</div>`}</code></pre>
+		</div>
+
+		<!-- Touch Targets -->
+		<div class="mb-6">
+			<div class="text-xs text-gray-500 mb-2">Touch-Friendly Tap Targets</div>
+			<div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+				<p class="text-sm text-gray-400 mb-4">
+					Minimum tap target: <code class="text-blue-400">44x44px</code> (Apple HIG) / <code class="text-blue-400">48x48px</code> (Material).
+				</p>
+				<div class="flex items-end gap-6">
+					<div class="text-center">
+						<div class="w-11 h-11 bg-gray-700 rounded flex items-center justify-center mb-2 border border-dashed border-gray-500">
+							<div class="w-5 h-5 bg-blue-500 rounded"></div>
+						</div>
+						<div class="text-xs text-gray-500">44px min</div>
+						<code class="text-xs text-gray-600">p-2</code>
+					</div>
+					<div class="text-center">
+						<div class="w-12 h-12 bg-gray-700 rounded flex items-center justify-center mb-2 border border-dashed border-gray-500">
+							<div class="w-5 h-5 bg-blue-500 rounded"></div>
+						</div>
+						<div class="text-xs text-gray-500">48px ideal</div>
+						<code class="text-xs text-gray-600">p-3</code>
+					</div>
+				</div>
+				<div class="mt-4 text-xs text-gray-500">
+					<p>Patterns used:</p>
+					<ul class="mt-1 space-y-1 text-gray-400">
+						<li>- Mobile nav tabs: <code class="text-blue-400">flex-1 py-2</code> (full width, generous height)</li>
+						<li>- Icon buttons: <code class="text-blue-400">p-2 -m-2</code> (visual size + touch padding)</li>
+						<li>- List items: <code class="text-blue-400">py-2.5</code> or <code class="text-blue-400">py-3</code> minimum</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<!-- Content Stacking -->
+		<div class="mb-6">
+			<div class="text-xs text-gray-500 mb-2">Content Stacking</div>
+			<div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+				<p class="text-sm text-gray-400 mb-4">
+					Side-by-side panels stack vertically on small screens.
+				</p>
+				<pre class="text-xs text-gray-400 bg-gray-800 p-3 rounded overflow-x-auto"><code>{`<!-- Two-column to stacked -->
+<div class="flex flex-col lg:flex-row gap-4">
+  <div class="flex-1">Panel A</div>
+  <div class="flex-1">Panel B</div>
+</div>
+
+<!-- Split panel (Projects page) -->
+<div class="flex flex-col lg:flex-row min-h-0">
+  <aside class="hidden lg:flex w-[18rem]">List</aside>
+  <div class="flex-1">Detail</div>
+</div>`}</code></pre>
+			</div>
+		</div>
+
+		<!-- Mobile Considerations -->
+		<div>
+			<div class="text-xs text-gray-500 mb-2">Mobile-Specific Considerations</div>
+			<div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden divide-y divide-gray-800">
+				<div class="px-4 py-3">
+					<div class="text-sm text-gray-300 mb-1">Safe area insets</div>
+					<code class="text-xs text-gray-500">env(safe-area-inset-bottom)</code>
+					<span class="text-xs text-gray-500 ml-2">for notched devices</span>
+				</div>
+				<div class="px-4 py-3">
+					<div class="text-sm text-gray-300 mb-1">Horizontal scrolling</div>
+					<code class="text-xs text-gray-500">overflow-x-auto</code>
+					<span class="text-xs text-gray-500 ml-2">with scroll snap for carousels</span>
+				</div>
+				<div class="px-4 py-3">
+					<div class="text-sm text-gray-300 mb-1">Text truncation</div>
+					<code class="text-xs text-gray-500">truncate</code> or <code class="text-xs text-gray-500">line-clamp-2</code>
+					<span class="text-xs text-gray-500 ml-2">to prevent overflow</span>
+				</div>
+				<div class="px-4 py-3">
+					<div class="text-sm text-gray-300 mb-1">Font sizes</div>
+					<code class="text-xs text-gray-500">text-sm</code> minimum
+					<span class="text-xs text-gray-500 ml-2">(14px) for readability</span>
+				</div>
+				<div class="px-4 py-3">
+					<div class="text-sm text-gray-300 mb-1">Viewport meta</div>
+					<code class="text-xs text-gray-500">width=device-width, initial-scale=1</code>
+					<span class="text-xs text-gray-500 ml-2">prevents zoom issues</span>
+				</div>
+			</div>
+		</div>
+	</section>
+
 	<!-- Z-Index Layers -->
 	<section>
 		<h2 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">Z-Index Layers</h2>

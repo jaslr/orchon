@@ -2,26 +2,13 @@
 	import '../app.css';
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
-	import { Radio, Settings } from '@lucide/svelte';
+	import { Settings } from '@lucide/svelte';
 	import MainNav from '$lib/components/MainNav.svelte';
-	import { sseClient } from '$lib/services/sse-client';
 
 	let { children, data } = $props();
 
-	// SSE connection status - poll the actual client status
-	let sseConnected = $state(false);
-	let showConnectionDetails = $state(false);
-
-	// Poll SSE connection status every second
-	$effect(() => {
-		if (!browser) return;
-		const interval = setInterval(() => {
-			sseConnected = sseClient.isConnected;
-		}, 1000);
-		// Initial check
-		sseConnected = sseClient.isConnected;
-		return () => clearInterval(interval);
-	});
+	// User menu dropdown state
+	let showUserMenu = $state(false);
 
 	// Register service worker for PWA
 	$effect(() => {
@@ -33,21 +20,17 @@
 		}
 	});
 
-	function formatTime(isoString: string): string {
-		return new Date(isoString).toLocaleTimeString();
-	}
-
-	// Close connection details when clicking outside
+	// Close user menu when clicking outside
 	function handleClickOutside(event: MouseEvent) {
 		const target = event.target as Element;
-		if (showConnectionDetails && !target.closest('.connection-status')) {
-			showConnectionDetails = false;
+		if (showUserMenu && !target.closest('.user-menu')) {
+			showUserMenu = false;
 		}
 	}
 
 	$effect(() => {
 		if (!browser) return;
-		if (showConnectionDetails) {
+		if (showUserMenu) {
 			document.addEventListener('click', handleClickOutside);
 			return () => document.removeEventListener('click', handleClickOutside);
 		}
@@ -77,34 +60,38 @@
 				<div class="flex items-center gap-3">
 					<a href="/" class="flex items-center gap-3">
 						<img src="/logo.svg" alt="Orchon logo" class="w-8 h-8 text-gray-200" />
-						<div>
-							<h1 class="text-lg font-semibold text-gray-100" style="font-family: 'Roboto', sans-serif;">Orchon</h1>
-							<p class="text-xs text-gray-500">Infrastructure Observatory</p>
-						</div>
+						<h1 class="text-lg font-semibold text-gray-100" style="font-family: 'Roboto', sans-serif;">Orchon</h1>
 					</a>
 				</div>
-				<!-- Right side: SSE status + Settings -->
-				<div class="flex items-center gap-4">
-					<!-- SSE Connection Status (clickable) -->
-					<div class="relative connection-status">
-						<button
-							onclick={() => showConnectionDetails = !showConnectionDetails}
-							class="flex items-center gap-2 text-xs px-2 py-1 rounded hover:bg-gray-800 transition-colors cursor-pointer"
-						>
-							<Radio class="w-3 h-3 {sseConnected ? 'text-green-400' : 'text-gray-500'}" />
-							<span class="{sseConnected ? 'text-green-400' : 'text-gray-500'}">
-								{sseConnected ? 'Live' : 'Offline'}
-							</span>
-						</button>
-					</div>
-					<!-- Settings cog -->
-					<a
-						href="/admin"
-						class="p-2 -m-2 text-gray-400 hover:text-gray-200 transition-colors"
-						title="Settings"
+				<!-- Right side: User menu -->
+				<div class="relative user-menu">
+					<button
+						onclick={() => showUserMenu = !showUserMenu}
+						class="p-2 -m-2 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
+						title="Menu"
 					>
 						<Settings class="w-5 h-5" />
-					</a>
+					</button>
+					{#if showUserMenu}
+						<div class="absolute right-0 top-full mt-2 w-40 bg-gray-800 border border-gray-700 rounded-lg shadow-lg overflow-hidden z-50">
+							<div class="px-3 py-2 border-b border-gray-700 text-xs text-gray-400">
+								Logged in
+							</div>
+							<a
+								href="/admin"
+								class="block px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors"
+								onclick={() => showUserMenu = false}
+							>
+								Settings
+							</a>
+							<button
+								class="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors cursor-pointer"
+								onclick={() => showUserMenu = false}
+							>
+								Logout
+							</button>
+						</div>
+					{/if}
 				</div>
 			</div>
 		</header>

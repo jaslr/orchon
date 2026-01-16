@@ -263,14 +263,6 @@
       "_Icon.js"
     ]
   },
-  "_radio.js": {
-    "file": "chunks/radio.js",
-    "name": "radio",
-    "imports": [
-      "_index2.js",
-      "_Icon.js"
-    ]
-  },
   "_refresh-cw.js": {
     "file": "chunks/refresh-cw.js",
     "name": "refresh-cw",
@@ -282,6 +274,14 @@
   "_repos.js": {
     "file": "chunks/repos.js",
     "name": "repos"
+  },
+  "_school.js": {
+    "file": "chunks/school.js",
+    "name": "school",
+    "imports": [
+      "_index2.js",
+      "_Icon.js"
+    ]
   },
   "_server.js": {
     "file": "chunks/server.js",
@@ -430,14 +430,13 @@
       "_activity.js",
       "_layers.js",
       "_cloud.js",
-      "_server.js",
       "_Icon.js",
-      "_radio.js",
-      "_settings.js",
-      "_context.js"
+      "_folder-git-2.js",
+      "_server.js",
+      "_settings.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.DhbdhLi_.css"
+      "_app/immutable/assets/_layout.hWcW_nEG.css"
     ]
   },
   "src/routes/+page.server.ts": {
@@ -705,7 +704,7 @@
       "_chevron-down.js",
       "_x.js",
       "_git-branch.js",
-      "_radio.js",
+      "_Icon.js",
       "_cloud.js",
       "_server.js",
       "_check.js",
@@ -793,7 +792,7 @@
       "_building-2.js",
       "_globe.js",
       "_external-link.js",
-      "_Icon.js",
+      "_school.js",
       "_package.js",
       "_context.js"
     ]
@@ -855,6 +854,32 @@
       "_auth.js"
     ]
   },
+  "src/routes/projects-infra/+page.server.ts": {
+    "file": "entries/pages/projects-infra/_page.server.ts.js",
+    "name": "entries/pages/projects-infra/_page.server.ts",
+    "src": "src/routes/projects-infra/+page.server.ts",
+    "isEntry": true,
+    "imports": [
+      "_infrastructure.js"
+    ]
+  },
+  "src/routes/projects-infra/+page.svelte": {
+    "file": "entries/pages/projects-infra/_page.svelte.js",
+    "name": "entries/pages/projects-infra/_page.svelte",
+    "src": "src/routes/projects-infra/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_zoom-out.js",
+      "_folder-git-2.js",
+      "_database.js",
+      "_cloud.js",
+      "_globe.js",
+      "_external-link.js",
+      "_git-branch.js",
+      "_context.js"
+    ]
+  },
   "src/routes/projects/+page.server.ts": {
     "file": "entries/pages/projects/_page.server.ts.js",
     "name": "entries/pages/projects/_page.server.ts",
@@ -895,6 +920,32 @@
     ],
     "css": [
       "_app/immutable/assets/_page.CXPR0kzH.css"
+    ]
+  },
+  "src/routes/vastpuddle/+page.server.ts": {
+    "file": "entries/pages/vastpuddle/_page.server.ts.js",
+    "name": "entries/pages/vastpuddle/_page.server.ts",
+    "src": "src/routes/vastpuddle/+page.server.ts",
+    "isEntry": true,
+    "imports": [
+      "_infrastructure.js"
+    ]
+  },
+  "src/routes/vastpuddle/+page.svelte": {
+    "file": "entries/pages/vastpuddle/_page.svelte.js",
+    "name": "entries/pages/vastpuddle/_page.svelte",
+    "src": "src/routes/vastpuddle/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_settings.js",
+      "_zoom-out.js",
+      "_building-2.js",
+      "_globe.js",
+      "_external-link.js",
+      "_school.js",
+      "_package.js",
+      "_context.js"
     ]
   }
 }

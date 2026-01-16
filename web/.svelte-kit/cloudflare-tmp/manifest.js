@@ -10,7 +10,7 @@ return {
 	assets: new Set(["favicon.svg","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","logo.svg","manifest.json","robots.txt","sw.js"]),
 	mimeTypes: {".svg":"image/svg+xml",".png":"image/png",".json":"application/json",".txt":"text/plain",".js":"text/javascript"},
 	_: {
-		client: {start:"_app/immutable/entry/start.CgUG71-4.js",app:"_app/immutable/entry/app.BMRXvYJa.js",imports:["_app/immutable/entry/start.CgUG71-4.js","_app/immutable/chunks/DhisZZcJ.js","_app/immutable/chunks/Bobjs0eu.js","_app/immutable/chunks/BZ9E3_SD.js","_app/immutable/chunks/w6f9Dn5M.js","_app/immutable/chunks/C_ntH7U2.js","_app/immutable/chunks/7Z-uf5tq.js","_app/immutable/entry/app.BMRXvYJa.js","_app/immutable/chunks/BZ9E3_SD.js","_app/immutable/chunks/w6f9Dn5M.js","_app/immutable/chunks/C_ntH7U2.js","_app/immutable/chunks/DsnmJJEf.js","_app/immutable/chunks/Bobjs0eu.js","_app/immutable/chunks/7Z-uf5tq.js","_app/immutable/chunks/B-25t-Xl.js","_app/immutable/chunks/ybUTsV0v.js","_app/immutable/chunks/DWV1ksMT.js","_app/immutable/chunks/D6GbuAV1.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.BQagRe6P.js",app:"_app/immutable/entry/app.CgiK0E34.js",imports:["_app/immutable/entry/start.BQagRe6P.js","_app/immutable/chunks/DUFUtOrg.js","_app/immutable/chunks/BmSu2Yhg.js","_app/immutable/chunks/VB45bhtT.js","_app/immutable/chunks/CgppWemH.js","_app/immutable/chunks/D3xLfT3q.js","_app/immutable/chunks/CNKuqfku.js","_app/immutable/entry/app.CgiK0E34.js","_app/immutable/chunks/VB45bhtT.js","_app/immutable/chunks/CgppWemH.js","_app/immutable/chunks/D3xLfT3q.js","_app/immutable/chunks/DsnmJJEf.js","_app/immutable/chunks/BmSu2Yhg.js","_app/immutable/chunks/CNKuqfku.js","_app/immutable/chunks/CuIfUMuc.js","_app/immutable/chunks/B2L2jHYA.js","_app/immutable/chunks/0u-3TZwK.js","_app/immutable/chunks/Vb7vi_9G.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('../output/server/nodes/0.js')),
 			__memo(() => import('../output/server/nodes/1.js')),
@@ -34,7 +34,9 @@ return {
 			__memo(() => import('../output/server/nodes/19.js')),
 			__memo(() => import('../output/server/nodes/20.js')),
 			__memo(() => import('../output/server/nodes/21.js')),
-			__memo(() => import('../output/server/nodes/22.js'))
+			__memo(() => import('../output/server/nodes/22.js')),
+			__memo(() => import('../output/server/nodes/23.js')),
+			__memo(() => import('../output/server/nodes/24.js'))
 		],
 		remotes: {
 			
@@ -181,10 +183,24 @@ return {
 				endpoint: null
 			},
 			{
+				id: "/projects-infra",
+				pattern: /^\/projects-infra\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 23 },
+				endpoint: null
+			},
+			{
 				id: "/projects",
 				pattern: /^\/projects\/?$/,
 				params: [],
 				page: { layouts: [0,], errors: [1,], leaf: 22 },
+				endpoint: null
+			},
+			{
+				id: "/vastpuddle",
+				pattern: /^\/vastpuddle\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 24 },
 				endpoint: null
 			}
 		],

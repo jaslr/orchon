@@ -3,11 +3,52 @@ import { p as page } from "../../chunks/index3.js";
 import { A as Activity } from "../../chunks/activity.js";
 import { L as Layers } from "../../chunks/layers.js";
 import { C as Cloud } from "../../chunks/cloud.js";
-import { S as Server } from "../../chunks/server.js";
 import { I as Icon } from "../../chunks/Icon.js";
-import { R as Radio } from "../../chunks/radio.js";
+import { F as Folder_git_2 } from "../../chunks/folder-git-2.js";
+import { S as Server } from "../../chunks/server.js";
 import { S as Settings } from "../../chunks/settings.js";
-import { j as escape_html } from "../../chunks/context.js";
+function Droplets($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { $$slots, $$events, ...props } = $$props;
+    const iconNode = [
+      [
+        "path",
+        {
+          "d": "M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"
+        }
+      ],
+      [
+        "path",
+        {
+          "d": "M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"
+        }
+      ]
+    ];
+    Icon($$renderer2, spread_props([
+      { name: "droplets" },
+      /**
+       * @component @name Droplets
+       * @description Lucide SVG icon component, renders SVG Element with children.
+       *
+       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNNyAxNi4zYzIuMiAwIDQtMS44MyA0LTQuMDUgMC0xLjE2LS41Ny0yLjI2LTEuNzEtMy4xOVM3LjI5IDYuNzUgNyA1LjNjLS4yOSAxLjQ1LTEuMTQgMi44NC0yLjI5IDMuNzZTMyAxMS4xIDMgMTIuMjVjMCAyLjIyIDEuOCA0LjA1IDQgNC4wNXoiIC8+CiAgPHBhdGggZD0iTTEyLjU2IDYuNkExMC45NyAxMC45NyAwIDAgMCAxNCAzLjAyYy41IDIuNSAyIDQuOSA0IDYuNXMzIDMuNSAzIDUuNWE2Ljk4IDYuOTggMCAwIDEtMTEuOTEgNC45NyIgLz4KPC9zdmc+Cg==) - https://lucide.dev/icons/droplets
+       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
+       *
+       * @param {Object} props - Lucide icons props and any valid SVG attribute
+       * @returns {FunctionalComponent} Svelte component
+       *
+       */
+      props,
+      {
+        iconNode,
+        children: ($$renderer3) => {
+          props.children?.($$renderer3);
+          $$renderer3.push(`<!---->`);
+        },
+        $$slots: { default: true }
+      }
+    ]));
+  });
+}
 function Map($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { $$slots, $$events, ...props } = $$props;
@@ -61,7 +102,15 @@ function MainNav($$renderer, $$props) {
     Cloud($$renderer2, {
       class: `w-3.5 h-3.5 ${stringify(currentPath === "/deployments" || currentPath.startsWith("/deployments") ? "text-blue-400" : "text-gray-500")} shrink-0`
     });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(currentPath === "/deployments" || currentPath.startsWith("/deployments") ? "text-white" : "text-gray-400")} truncate`)}>Deployments</div></div></a> <a href="/admin/infra"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(currentPath.startsWith("/admin/infra") || currentPath.startsWith("/infrastructure") ? "bg-gray-800 border-l-2 border-blue-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(currentPath === "/deployments" || currentPath.startsWith("/deployments") ? "text-white" : "text-gray-400")} truncate`)}>Deployments</div></div></a> <a href="/vastpuddle"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(currentPath.startsWith("/vastpuddle") ? "bg-gray-800 border-l-2 border-emerald-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
+    Droplets($$renderer2, {
+      class: `w-4 h-4 ${stringify(currentPath.startsWith("/vastpuddle") ? "text-emerald-400" : "text-gray-500")} shrink-0`
+    });
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(currentPath.startsWith("/vastpuddle") ? "text-white" : "text-gray-300")} truncate`)}>Vast Puddle</div></div></a> <a href="/projects-infra"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(currentPath.startsWith("/projects-infra") ? "bg-gray-800 border-l-2 border-violet-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
+    Folder_git_2($$renderer2, {
+      class: `w-4 h-4 ${stringify(currentPath.startsWith("/projects-infra") ? "text-violet-400" : "text-gray-500")} shrink-0`
+    });
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(currentPath.startsWith("/projects-infra") ? "text-white" : "text-gray-300")} truncate`)}>My Projects</div></div></a> <a href="/admin/infra"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(currentPath.startsWith("/admin/infra") || currentPath.startsWith("/infrastructure") ? "bg-gray-800 border-l-2 border-blue-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
     Server($$renderer2, {
       class: `w-4 h-4 ${stringify(currentPath.startsWith("/admin/infra") || currentPath.startsWith("/infrastructure") ? "text-blue-400" : "text-gray-500")} shrink-0`
     });
@@ -89,13 +138,13 @@ function _layout($$renderer, $$props) {
       $$renderer2.push(`<!---->`);
     } else {
       $$renderer2.push("<!--[!-->");
-      $$renderer2.push(`<div class="min-h-screen bg-gray-900 text-white flex flex-col"><header class="shrink-0 px-4 py-3 border-b border-gray-800"><div class="flex items-center justify-between"><div class="flex items-center gap-3"><a href="/" class="flex items-center gap-3"><img src="/logo.svg" alt="Orchon logo" class="w-8 h-8 text-gray-200"/> <div><h1 class="text-lg font-semibold text-gray-100" style="font-family: 'Roboto', sans-serif;">Orchon</h1> <p class="text-xs text-gray-500">Infrastructure Observatory</p></div></a></div> <div class="flex items-center gap-4"><div class="relative connection-status"><button class="flex items-center gap-2 text-xs px-2 py-1 rounded hover:bg-gray-800 transition-colors cursor-pointer">`);
-      Radio($$renderer2, {
-        class: `w-3 h-3 ${stringify("text-gray-500")}`
-      });
-      $$renderer2.push(`<!----> <span${attr_class("text-gray-500")}>${escape_html("Offline")}</span></button></div> <a href="/admin" class="p-2 -m-2 text-gray-400 hover:text-gray-200 transition-colors" title="Settings">`);
+      $$renderer2.push(`<div class="min-h-screen bg-gray-900 text-white flex flex-col"><header class="shrink-0 px-4 py-3 border-b border-gray-800"><div class="flex items-center justify-between"><div class="flex items-center gap-3"><a href="/" class="flex items-center gap-3"><img src="/logo.svg" alt="Orchon logo" class="w-8 h-8 text-gray-200"/> <h1 class="text-lg font-semibold text-gray-100" style="font-family: 'Roboto', sans-serif;">Orchon</h1></a></div> <div class="relative user-menu"><button class="p-2 -m-2 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer" title="Menu">`);
       Settings($$renderer2, { class: "w-5 h-5" });
-      $$renderer2.push(`<!----></a></div></div></header> <div class="flex-1 flex flex-col lg:flex-row min-h-0"><aside class="hidden lg:flex lg:flex-col w-[12rem] shrink-0 border-r border-gray-800 bg-gray-900">`);
+      $$renderer2.push(`<!----></button> `);
+      {
+        $$renderer2.push("<!--[!-->");
+      }
+      $$renderer2.push(`<!--]--></div></div></header> <div class="flex-1 flex flex-col lg:flex-row min-h-0"><aside class="hidden lg:flex lg:flex-col w-[12rem] shrink-0 border-r border-gray-800 bg-gray-900">`);
       MainNav($$renderer2);
       $$renderer2.push(`<!----></aside> <div class="lg:hidden border-b border-gray-800 bg-gray-900"><div class="flex"><a href="/"${attr_class(`flex-1 py-2 text-center text-sm ${stringify(page.url.pathname === "/" ? "text-white border-b-2 border-blue-500" : "text-gray-400")}`)}>Console</a> <a href="/projects"${attr_class(`flex-1 py-2 text-center text-sm ${stringify(page.url.pathname.startsWith("/projects") ? "text-white border-b-2 border-blue-500" : "text-gray-400")}`)}>Projects</a> <a href="/deployments"${attr_class(`flex-1 py-2 text-center text-sm ${stringify(page.url.pathname.startsWith("/deployments") ? "text-white border-b-2 border-blue-500" : "text-gray-400")}`)}>Deploys</a> <a href="/admin/infra"${attr_class(`flex-1 py-2 text-center text-sm ${stringify(page.url.pathname.startsWith("/admin/infra") ? "text-white border-b-2 border-blue-500" : "text-gray-400")}`)}>Infra</a></div></div> <main class="flex-1 flex flex-col overflow-hidden min-w-0">`);
       children($$renderer2);

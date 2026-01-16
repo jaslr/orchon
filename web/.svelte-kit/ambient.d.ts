@@ -40,7 +40,6 @@ declare module '$env/static/private' {
 	export const npm_config_noproxy: string;
 	export const VIPSHOME: string;
 	export const HOME: string;
-	export const OLDPWD: string;
 	export const TERM_PROGRAM_VERSION: string;
 	export const NVM_BIN: string;
 	export const npm_package_json: string;
@@ -142,7 +141,6 @@ declare module '$env/dynamic/private' {
 		npm_config_noproxy: string;
 		VIPSHOME: string;
 		HOME: string;
-		OLDPWD: string;
 		TERM_PROGRAM_VERSION: string;
 		NVM_BIN: string;
 		npm_package_json: string;
