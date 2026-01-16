@@ -105,7 +105,7 @@ export PATH="$PATH:/home/chip/flutter/bin"
 # 2. Build APK
 export PATH="$PATH:/home/chip/flutter/bin"
 cd app && flutter build apk --release \
-  --dart-define=ORCHON_API_SECRET=$(grep "^API_SECRET=" /home/chip/orchon/.env | cut -d= -f2) \
+  --dart-define=ORCHON_API_SECRET=$(grep "^API_SECRET=" .env | cut -d= -f2) \
   --dart-define=WS_URL=ws://209.38.85.244:8405
 
 # 3. Publish to OTA server
