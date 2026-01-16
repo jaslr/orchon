@@ -38,14 +38,15 @@ class TerminalConfig {
   // Get actual font size from scale (base size is 14)
   double get terminalFontSize => 14.0 * (terminalFontScale / 100.0);
 
-  // Sensible defaults
+  // Sensible defaults - all projects consolidated in /root/projects
   static const List<ProjectConfig> defaultProjects = [
-    ProjectConfig(name: 'Livna', directory: '/root/projects/livna'),
-    ProjectConfig(name: 'Brontiq', directory: '/root/projects/brontiq'),
     ProjectConfig(name: 'ORCHON', directory: '/root/projects/orchon'),
+    ProjectConfig(name: 'Livna', directory: '/root/projects/livna'),
     ProjectConfig(name: 'LittleListOfLights', directory: '/root/projects/littlelistoflights'),
-    ProjectConfig(name: 'ORCHON', directory: '/root/orchon'),
-    ProjectConfig(name: 'Agent Deck', directory: '/root/agent-deck'),
+    ProjectConfig(name: 'Brontiq', directory: '/root/projects/brontiq'),
+    ProjectConfig(name: 'Agent Deck', directory: '/root/projects/agent-deck'),
+    ProjectConfig(name: 'Loadmanagement', directory: '/root/projects/loadmanagement'),
+    ProjectConfig(name: 'Vastpuddle', directory: '/root/projects/vastpuddle'),
   ];
 
   TerminalConfig copyWith({
