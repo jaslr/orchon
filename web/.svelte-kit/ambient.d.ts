@@ -31,13 +31,14 @@ declare module '$env/static/private' {
 	export const USER: string;
 	export const CLAUDE_CODE_ENTRYPOINT: string;
 	export const npm_config_user_agent: string;
+	export const CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY: string;
 	export const JAVA_TOOL_OPTIONS: string;
 	export const GIT_EDITOR: string;
 	export const GIT_ASKPASS: string;
 	export const npm_node_execpath: string;
 	export const SHLVL: string;
-	export const WT_PROFILE_ID: string;
 	export const npm_config_noproxy: string;
+	export const VIPSHOME: string;
 	export const HOME: string;
 	export const OLDPWD: string;
 	export const TERM_PROGRAM_VERSION: string;
@@ -68,7 +69,6 @@ declare module '$env/static/private' {
 	export const NODE: string;
 	export const npm_package_name: string;
 	export const COREPACK_ENABLE_AUTO_PIN: string;
-	export const WT_SESSION: string;
 	export const ATLASSIAN_URL: string;
 	export const ATLASSIAN_EMAIL: string;
 	export const XDG_RUNTIME_DIR: string;
@@ -90,6 +90,7 @@ declare module '$env/static/private' {
 	export const NVM_CD_FLAGS: string;
 	export const XDG_DATA_DIRS: string;
 	export const npm_config_global_prefix: string;
+	export const CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: string;
 	export const npm_command: string;
 	export const WSL2_GUI_APPS_ENABLED: string;
 	export const TMUX_PANE: string;
@@ -132,13 +133,14 @@ declare module '$env/dynamic/private' {
 		USER: string;
 		CLAUDE_CODE_ENTRYPOINT: string;
 		npm_config_user_agent: string;
+		CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY: string;
 		JAVA_TOOL_OPTIONS: string;
 		GIT_EDITOR: string;
 		GIT_ASKPASS: string;
 		npm_node_execpath: string;
 		SHLVL: string;
-		WT_PROFILE_ID: string;
 		npm_config_noproxy: string;
+		VIPSHOME: string;
 		HOME: string;
 		OLDPWD: string;
 		TERM_PROGRAM_VERSION: string;
@@ -169,7 +171,6 @@ declare module '$env/dynamic/private' {
 		NODE: string;
 		npm_package_name: string;
 		COREPACK_ENABLE_AUTO_PIN: string;
-		WT_SESSION: string;
 		ATLASSIAN_URL: string;
 		ATLASSIAN_EMAIL: string;
 		XDG_RUNTIME_DIR: string;
@@ -191,6 +192,7 @@ declare module '$env/dynamic/private' {
 		NVM_CD_FLAGS: string;
 		XDG_DATA_DIRS: string;
 		npm_config_global_prefix: string;
+		CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: string;
 		npm_command: string;
 		WSL2_GUI_APPS_ENABLED: string;
 		TMUX_PANE: string;

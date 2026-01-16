@@ -1,10 +1,10 @@
-import { w as spread_props, z as head, F as ensure_array_like, x as attr_class, G as attr, y as stringify } from "../../../chunks/index2.js";
+import { z as head, F as ensure_array_like, x as attr_class, G as attr, y as stringify } from "../../../chunks/index2.js";
 import "@sveltejs/kit/internal";
 import "../../../chunks/exports.js";
 import "../../../chunks/utils.js";
 import "@sveltejs/kit/internal/server";
 import "../../../chunks/state.svelte.js";
-import { I as Icon } from "../../../chunks/Icon.js";
+import { F as Funnel } from "../../../chunks/funnel.js";
 import { X } from "../../../chunks/x.js";
 import { C as Cloud } from "../../../chunks/cloud.js";
 import { L as Loader } from "../../../chunks/loader.js";
@@ -13,42 +13,6 @@ import { G as Git_branch } from "../../../chunks/git-branch.js";
 import { E as External_link } from "../../../chunks/external-link.js";
 import { C as Clock } from "../../../chunks/clock.js";
 import { j as escape_html } from "../../../chunks/context.js";
-function Funnel($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      [
-        "path",
-        {
-          "d": "M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
-        }
-      ]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "funnel" },
-      /**
-       * @component @name Funnel
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTAgMjBhMSAxIDAgMCAwIC41NTMuODk1bDIgMUExIDEgMCAwIDAgMTQgMjF2LTdhMiAyIDAgMCAxIC41MTctMS4zNDFMMjEuNzQgNC42N0ExIDEgMCAwIDAgMjEgM0gzYTEgMSAwIDAgMC0uNzQyIDEuNjdsNy4yMjUgNy45ODlBMiAyIDAgMCAxIDEwIDE0eiIgLz4KPC9zdmc+Cg==) - https://lucide.dev/icons/funnel
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: ($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        },
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
 function _page($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { data } = $$props;

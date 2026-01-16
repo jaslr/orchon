@@ -1,5 +1,7 @@
 import { I as INFRASTRUCTURE, c as getSourceReposWithInstances, d as getClients, e as getGcpProject } from "../../../../chunks/infrastructure.js";
+var define_PACKAGE_INFO_default = { name: "orchon-web", version: "0.0.91", description: "ORCHON Web Dashboard - SvelteKit frontend", dependencyCount: 9, devDependencyCount: 11, keyPackages: ["svelte", "@sveltejs/kit", "tailwindcss", "d3-force", "pixi.js", "vite", "typescript", "@lucide/svelte"] };
 const load = async () => {
+  const packageInfo = define_PACKAGE_INFO_default;
   const projects = Object.entries(INFRASTRUCTURE).map(([id, infra]) => ({
     id,
     displayName: infra.displayName,
@@ -44,7 +46,7 @@ const load = async () => {
       campuses
     };
   });
-  return { projects, sourceRepos, clients };
+  return { projects, sourceRepos, clients, packageInfo };
 };
 export {
   load

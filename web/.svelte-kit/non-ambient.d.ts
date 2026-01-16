@@ -27,7 +27,7 @@ export {};
 
 declare module "$app/types" {
 	export interface AppTypes {
-		RouteId(): "/" | "/admin" | "/admin/infra" | "/admin/media" | "/admin/projects" | "/admin/repos" | "/api" | "/api/logos" | "/api/logos/[...path]" | "/api/scan" | "/deployments" | "/ecosystem" | "/infrastructure" | "/infrastructure/map" | "/infrastructure/settings" | "/login" | "/logout" | "/projects";
+		RouteId(): "/" | "/admin" | "/admin/infra" | "/admin/media" | "/admin/projects" | "/admin/repos" | "/api" | "/api/logos" | "/api/logos/[...path]" | "/api/scan" | "/deployments" | "/design-system" | "/design-system/colors" | "/design-system/components" | "/design-system/data-display" | "/design-system/layout" | "/design-system/typography" | "/ecosystem" | "/infrastructure" | "/infrastructure/map" | "/infrastructure/settings" | "/login" | "/logout" | "/projects";
 		RouteParams(): {
 			"/api/logos/[...path]": { path: string }
 		};
@@ -43,6 +43,12 @@ declare module "$app/types" {
 			"/api/logos/[...path]": { path: string };
 			"/api/scan": Record<string, never>;
 			"/deployments": Record<string, never>;
+			"/design-system": Record<string, never>;
+			"/design-system/colors": Record<string, never>;
+			"/design-system/components": Record<string, never>;
+			"/design-system/data-display": Record<string, never>;
+			"/design-system/layout": Record<string, never>;
+			"/design-system/typography": Record<string, never>;
 			"/ecosystem": Record<string, never>;
 			"/infrastructure": Record<string, never>;
 			"/infrastructure/map": Record<string, never>;
@@ -51,7 +57,7 @@ declare module "$app/types" {
 			"/logout": Record<string, never>;
 			"/projects": Record<string, never>
 		};
-		Pathname(): "/" | "/admin" | "/admin/" | "/admin/infra" | "/admin/infra/" | "/admin/media" | "/admin/media/" | "/admin/projects" | "/admin/projects/" | "/admin/repos" | "/admin/repos/" | "/api" | "/api/" | "/api/logos" | "/api/logos/" | `/api/logos/${string}` & {} | `/api/logos/${string}/` & {} | "/api/scan" | "/api/scan/" | "/deployments" | "/deployments/" | "/ecosystem" | "/ecosystem/" | "/infrastructure" | "/infrastructure/" | "/infrastructure/map" | "/infrastructure/map/" | "/infrastructure/settings" | "/infrastructure/settings/" | "/login" | "/login/" | "/logout" | "/logout/" | "/projects" | "/projects/";
+		Pathname(): "/" | "/admin" | "/admin/" | "/admin/infra" | "/admin/infra/" | "/admin/media" | "/admin/media/" | "/admin/projects" | "/admin/projects/" | "/admin/repos" | "/admin/repos/" | "/api" | "/api/" | "/api/logos" | "/api/logos/" | `/api/logos/${string}` & {} | `/api/logos/${string}/` & {} | "/api/scan" | "/api/scan/" | "/deployments" | "/deployments/" | "/design-system" | "/design-system/" | "/design-system/colors" | "/design-system/colors/" | "/design-system/components" | "/design-system/components/" | "/design-system/data-display" | "/design-system/data-display/" | "/design-system/layout" | "/design-system/layout/" | "/design-system/typography" | "/design-system/typography/" | "/ecosystem" | "/ecosystem/" | "/infrastructure" | "/infrastructure/" | "/infrastructure/map" | "/infrastructure/map/" | "/infrastructure/settings" | "/infrastructure/settings/" | "/login" | "/login/" | "/logout" | "/logout/" | "/projects" | "/projects/";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
 		Asset(): "/favicon.svg" | "/icons/apple-touch-icon.png" | "/icons/icon-192.png" | "/icons/icon-512.png" | "/icons/icon-maskable-512.png" | "/logo.svg" | "/manifest.json" | "/robots.txt" | "/sw.js" | string & {};
 	}

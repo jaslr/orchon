@@ -16,25 +16,38 @@ export const nodes = [
 	() => import('./nodes/12'),
 	() => import('./nodes/13'),
 	() => import('./nodes/14'),
-	() => import('./nodes/15')
+	() => import('./nodes/15'),
+	() => import('./nodes/16'),
+	() => import('./nodes/17'),
+	() => import('./nodes/18'),
+	() => import('./nodes/19'),
+	() => import('./nodes/20'),
+	() => import('./nodes/21'),
+	() => import('./nodes/22')
 ];
 
 export const server_loads = [0];
 
 export const dictionary = {
-		"/": [~3],
-		"/admin": [~4,[2]],
-		"/admin/infra": [~5,[2]],
-		"/admin/media": [~6,[2]],
-		"/admin/projects": [~7,[2]],
-		"/admin/repos": [~8,[2]],
-		"/deployments": [~9],
-		"/ecosystem": [10],
-		"/infrastructure/map": [~11],
-		"/infrastructure/settings": [~12],
-		"/login": [~13],
-		"/logout": [~14],
-		"/projects": [~15]
+		"/": [~4],
+		"/admin": [~5,[2]],
+		"/admin/infra": [~6,[2]],
+		"/admin/media": [~7,[2]],
+		"/admin/projects": [~8,[2]],
+		"/admin/repos": [~9,[2]],
+		"/deployments": [~10],
+		"/design-system": [11,[3]],
+		"/design-system/colors": [12,[3]],
+		"/design-system/components": [13,[3]],
+		"/design-system/data-display": [14,[3]],
+		"/design-system/layout": [15,[3]],
+		"/design-system/typography": [16,[3]],
+		"/ecosystem": [17],
+		"/infrastructure/map": [~18],
+		"/infrastructure/settings": [~19],
+		"/login": [~20],
+		"/logout": [~21],
+		"/projects": [~22]
 	};
 
 export const hooks = {

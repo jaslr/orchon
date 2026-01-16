@@ -9,40 +9,9 @@ import { X } from "../../../../chunks/x.js";
 import { S as Server } from "../../../../chunks/server.js";
 import { T as Trash_2 } from "../../../../chunks/trash-2.js";
 import { I as Icon } from "../../../../chunks/Icon.js";
+import { C as Code } from "../../../../chunks/code.js";
 import { L as Layers } from "../../../../chunks/layers.js";
 import { j as escape_html } from "../../../../chunks/context.js";
-function Code($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      ["path", { "d": "m16 18 6-6-6-6" }],
-      ["path", { "d": "m8 6-6 6 6 6" }]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "code" },
-      /**
-       * @component @name Code
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJtMTYgMTggNi02LTYtNiIgLz4KICA8cGF0aCBkPSJtOCA2LTYgNiA2IDYiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/code
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: ($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        },
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
 function Upload($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { $$slots, $$events, ...props } = $$props;

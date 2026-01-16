@@ -35,6 +35,25 @@
 		"src/routes/deployments/+page.server.ts",
 		"src/routes/+layout.server.ts"
 	],
+	"/design-system": [
+		"src/routes/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/design-system/colors": [
+		"src/routes/+layout.server.ts"
+	],
+	"/design-system/components": [
+		"src/routes/+layout.server.ts"
+	],
+	"/design-system/data-display": [
+		"src/routes/+layout.server.ts"
+	],
+	"/design-system/layout": [
+		"src/routes/+layout.server.ts"
+	],
+	"/design-system/typography": [
+		"src/routes/+layout.server.ts"
+	],
 	"/ecosystem": [
 		"src/routes/+layout.server.ts"
 	],

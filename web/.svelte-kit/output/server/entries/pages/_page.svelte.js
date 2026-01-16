@@ -1,75 +1,11 @@
-import { w as spread_props, z as head, F as ensure_array_like, G as attr, y as stringify, x as attr_class } from "../../chunks/index2.js";
+import { z as head, F as ensure_array_like, G as attr, y as stringify, x as attr_class } from "../../chunks/index2.js";
 import { C as Cloud } from "../../chunks/cloud.js";
-import { I as Icon } from "../../chunks/Icon.js";
+import { A as Arrow_right } from "../../chunks/arrow-right.js";
 import { L as Loader } from "../../chunks/loader.js";
 import { C as Circle_check_big, a as Circle_x } from "../../chunks/circle-x.js";
+import { G as Git_commit_horizontal } from "../../chunks/git-commit-horizontal.js";
 import { E as External_link } from "../../chunks/external-link.js";
 import { j as escape_html } from "../../chunks/context.js";
-function Arrow_right($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      ["path", { "d": "M5 12h14" }],
-      ["path", { "d": "m12 5 7 7-7 7" }]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "arrow-right" },
-      /**
-       * @component @name ArrowRight
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNNSAxMmgxNCIgLz4KICA8cGF0aCBkPSJtMTIgNSA3IDctNyA3IiAvPgo8L3N2Zz4K) - https://lucide.dev/icons/arrow-right
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: ($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        },
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function Git_commit_horizontal($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      ["circle", { "cx": "12", "cy": "12", "r": "3" }],
-      ["line", { "x1": "3", "x2": "9", "y1": "12", "y2": "12" }],
-      ["line", { "x1": "15", "x2": "21", "y1": "12", "y2": "12" }]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "git-commit-horizontal" },
-      /**
-       * @component @name GitCommitHorizontal
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIzIiAvPgogIDxsaW5lIHgxPSIzIiB4Mj0iOSIgeTE9IjEyIiB5Mj0iMTIiIC8+CiAgPGxpbmUgeDE9IjE1IiB4Mj0iMjEiIHkxPSIxMiIgeTI9IjEyIiAvPgo8L3N2Zz4K) - https://lucide.dev/icons/git-commit-horizontal
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: ($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        },
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
 function _page($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { data } = $$props;

@@ -52,10 +52,12 @@ export interface ResolvedClient {
   }[];
 }
 
+// Declare the Vite-injected package info
+declare const __PACKAGE_INFO__: PackageInfo;
+
 export const load: PageServerLoad = async () => {
-  // Package info is not available in Cloudflare Workers (no fs access)
-  // This could be populated at build time via vite define if needed
-  const packageInfo: PackageInfo | null = null;
+  // Package info injected at build time via vite.config.ts
+  const packageInfo: PackageInfo = __PACKAGE_INFO__;
 
   // Convert infrastructure to sorted project nodes
   const projects: ProjectNode[] = Object.entries(INFRASTRUCTURE)

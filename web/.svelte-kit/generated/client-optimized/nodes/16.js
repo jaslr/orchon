@@ -1,0 +1,1 @@
+export { default as component } from "../../../../src/routes/design-system/typography/+page.svelte";

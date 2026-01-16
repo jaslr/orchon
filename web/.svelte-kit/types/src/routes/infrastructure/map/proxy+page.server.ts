@@ -9,6 +9,15 @@ import {
   type Client
 } from '$lib/config/infrastructure';
 
+export interface PackageInfo {
+  name: string;
+  version: string;
+  description: string;
+  dependencyCount: number;
+  devDependencyCount: number;
+  keyPackages: string[];
+}
+
 export interface ProjectNode {
   id: string;
   displayName: string;
@@ -44,7 +53,13 @@ export interface ResolvedClient {
   }[];
 }
 
+// Declare the Vite-injected package info
+declare const __PACKAGE_INFO__: PackageInfo;
+
 export const load = async () => {
+  // Package info injected at build time via vite.config.ts
+  const packageInfo: PackageInfo = __PACKAGE_INFO__;
+
   // Convert infrastructure to sorted project nodes
   const projects: ProjectNode[] = Object.entries(INFRASTRUCTURE)
     .map(([id, infra]) => ({
@@ -101,6 +116,6 @@ export const load = async () => {
     };
   });
 
-  return { projects, sourceRepos, clients };
+  return { projects, sourceRepos, clients, packageInfo };
 };
 ;null as any as PageServerLoad;

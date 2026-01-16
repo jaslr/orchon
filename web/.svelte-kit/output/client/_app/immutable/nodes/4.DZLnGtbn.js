@@ -1,1 +1,0 @@
-import"../chunks/DsnmJJEf.js";import"../chunks/B9KOWQ4p.js";import{f as t,a}from"../chunks/bOSu8_9I.js";var i=t('<div class="p-6 text-gray-400">Redirecting...</div>');function n(o){var r=i();a(o,r)}export{n as component};

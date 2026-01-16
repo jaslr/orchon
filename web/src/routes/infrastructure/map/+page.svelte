@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { ResolvedClient } from './+page.server';
+	import type { ResolvedClient, PackageInfo } from './+page.server';
 	import {
 		ExternalLink,
 		ZoomIn,
@@ -14,7 +14,8 @@
 		School,
 		Globe,
 		Network,
-		Settings
+		Settings,
+		Package
 	} from '@lucide/svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -628,8 +629,8 @@
 							{#each pos.instancePositions as instPos (instPos.id)}
 								<path
 									d="M {pos.x + REPO_WIDTH} {pos.y + REPO_HEIGHT / 2}
-									   C {pos.x + REPO_WIDTH + HORIZONTAL_GAP / 2} {pos.y + REPO_HEIGHT / 2},
-									     {instPos.x - HORIZONTAL_GAP / 2} {instPos.y + INSTANCE_HEIGHT / 2},
+									   C {pos.x + REPO_WIDTH + COL1_TO_COL2_GAP / 2} {pos.y + REPO_HEIGHT / 2},
+									     {instPos.x - COL1_TO_COL2_GAP / 2} {instPos.y + INSTANCE_HEIGHT / 2},
 									     {instPos.x} {instPos.y + INSTANCE_HEIGHT / 2}"
 									fill="none"
 									stroke="rgba(99, 102, 241, 0.4)"
@@ -765,64 +766,87 @@
 	</div>
 
 	<!-- Legend -->
-	<div class="shrink-0 px-4 py-2 bg-gray-900/90 border-t border-gray-800 flex items-center gap-6 flex-wrap">
-		{#if viewMode === 'ownership'}
-			<div class="flex items-center gap-3">
-				<span class="text-xs text-gray-500">Hierarchy:</span>
-				<div class="flex items-center gap-1.5">
-					<Building2 class="w-3.5 h-3.5 text-gray-400" />
-					<span class="text-xs text-gray-400">Client</span>
-				</div>
-				<div class="flex items-center gap-1.5">
-					<Network class="w-3.5 h-3.5 text-emerald-400" />
-					<span class="text-xs text-gray-400">Org Portal</span>
-				</div>
-				<div class="flex items-center gap-1.5">
-					<School class="w-3.5 h-3.5 text-blue-400" />
-					<span class="text-xs text-gray-400">Campus</span>
-				</div>
-			</div>
-			<div class="flex items-center gap-3">
-				<span class="text-xs text-gray-500">Lines:</span>
-				<div class="flex items-center gap-1.5">
-					<div class="w-6 h-0.5 rounded bg-purple-500"></div>
-					<span class="text-xs text-gray-400">to org portal</span>
-				</div>
-				<div class="flex items-center gap-1.5">
-					<div class="w-6 h-0.5 rounded bg-emerald-500 opacity-60" style="background: repeating-linear-gradient(90deg, rgb(16 185 129 / 0.6) 0px, rgb(16 185 129 / 0.6) 4px, transparent 4px, transparent 8px);"></div>
-					<span class="text-xs text-gray-400">to campus</span>
-				</div>
-			</div>
-		{:else if viewMode === 'repos'}
-			<div class="flex items-center gap-3">
-				<span class="text-xs text-gray-500">Identity:</span>
-				{#each Object.entries(identityColors) as [identity, color] (identity)}
+	<div class="shrink-0 px-4 py-2 bg-gray-900/90 border-t border-gray-800 flex items-center justify-between gap-6 flex-wrap">
+		<div class="flex items-center gap-6 flex-wrap">
+			{#if viewMode === 'ownership'}
+				<div class="flex items-center gap-3">
+					<span class="text-xs text-gray-500">Hierarchy:</span>
 					<div class="flex items-center gap-1.5">
-						<div class="w-3 h-3 rounded" style="background-color: {color};"></div>
-						<span class="text-xs text-gray-400">{identity}</span>
+						<Building2 class="w-3.5 h-3.5 text-gray-400" />
+						<span class="text-xs text-gray-400">Client</span>
 					</div>
-				{/each}
-			</div>
-			<div class="flex items-center gap-3">
-				<span class="text-xs text-gray-500">Node Types:</span>
-				<div class="flex items-center gap-1.5">
-					<FolderGit2 class="w-3.5 h-3.5 text-indigo-400" />
-					<span class="text-xs text-gray-400">Source Repo</span>
-				</div>
-				<div class="flex items-center gap-1.5">
-					<Server class="w-3.5 h-3.5 text-emerald-400" />
-					<span class="text-xs text-gray-400">Deployed Instance</span>
-				</div>
-			</div>
-		{:else}
-			<div class="flex items-center gap-3">
-				<span class="text-xs text-gray-500">Identity:</span>
-				{#each Object.entries(identityColors) as [identity, color] (identity)}
 					<div class="flex items-center gap-1.5">
-						<div class="w-3 h-3 rounded" style="background-color: {color};"></div>
-						<span class="text-xs text-gray-400">{identity}</span>
+						<Network class="w-3.5 h-3.5 text-emerald-400" />
+						<span class="text-xs text-gray-400">Org Portal</span>
 					</div>
-				{/each}
+					<div class="flex items-center gap-1.5">
+						<School class="w-3.5 h-3.5 text-blue-400" />
+						<span class="text-xs text-gray-400">Campus</span>
+					</div>
+				</div>
+				<div class="flex items-center gap-3">
+					<span class="text-xs text-gray-500">Lines:</span>
+					<div class="flex items-center gap-1.5">
+						<div class="w-6 h-0.5 rounded bg-purple-500"></div>
+						<span class="text-xs text-gray-400">to org portal</span>
+					</div>
+					<div class="flex items-center gap-1.5">
+						<div class="w-6 h-0.5 rounded bg-emerald-500 opacity-60" style="background: repeating-linear-gradient(90deg, rgb(16 185 129 / 0.6) 0px, rgb(16 185 129 / 0.6) 4px, transparent 4px, transparent 8px);"></div>
+						<span class="text-xs text-gray-400">to campus</span>
+					</div>
+				</div>
+			{:else if viewMode === 'repos'}
+				<div class="flex items-center gap-3">
+					<span class="text-xs text-gray-500">Identity:</span>
+					{#each Object.entries(identityColors) as [identity, color] (identity)}
+						<div class="flex items-center gap-1.5">
+							<div class="w-3 h-3 rounded" style="background-color: {color};"></div>
+							<span class="text-xs text-gray-400">{identity}</span>
+						</div>
+					{/each}
+				</div>
+				<div class="flex items-center gap-3">
+					<span class="text-xs text-gray-500">Node Types:</span>
+					<div class="flex items-center gap-1.5">
+						<FolderGit2 class="w-3.5 h-3.5 text-indigo-400" />
+						<span class="text-xs text-gray-400">Source Repo</span>
+					</div>
+					<div class="flex items-center gap-1.5">
+						<Server class="w-3.5 h-3.5 text-emerald-400" />
+						<span class="text-xs text-gray-400">Deployed Instance</span>
+					</div>
+				</div>
+			{:else}
+				<div class="flex items-center gap-3">
+					<span class="text-xs text-gray-500">Identity:</span>
+					{#each Object.entries(identityColors) as [identity, color] (identity)}
+						<div class="flex items-center gap-1.5">
+							<div class="w-3 h-3 rounded" style="background-color: {color};"></div>
+							<span class="text-xs text-gray-400">{identity}</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
+
+		<!-- Package Info -->
+		{#if data.packageInfo}
+			<div class="flex items-center gap-4 text-xs border-l border-gray-700 pl-4">
+				<div class="flex items-center gap-1.5">
+					<Package class="w-3.5 h-3.5 text-cyan-500" />
+					<span class="text-gray-400 font-mono">{data.packageInfo.name}</span>
+					<span class="text-cyan-400 font-mono">v{data.packageInfo.version}</span>
+				</div>
+				<div class="flex items-center gap-2 text-gray-500">
+					<span>{data.packageInfo.dependencyCount} deps</span>
+					<span class="text-gray-600">|</span>
+					<span>{data.packageInfo.devDependencyCount} dev</span>
+				</div>
+				<div class="flex items-center gap-1.5 text-gray-600">
+					{#each data.packageInfo.keyPackages.slice(0, 4) as pkg (pkg)}
+						<span class="px-1.5 py-0.5 bg-gray-800 rounded text-[10px] text-gray-400">{pkg.replace('@', '').split('/').pop()}</span>
+					{/each}
+				</div>
 			</div>
 		{/if}
 	</div>
