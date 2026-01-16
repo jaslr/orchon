@@ -1,8 +1,7 @@
 import { z as head, F as ensure_array_like, G as attr, y as stringify, x as attr_class } from "../../chunks/index2.js";
 import { C as Cloud } from "../../chunks/cloud.js";
 import { A as Arrow_right } from "../../chunks/arrow-right.js";
-import { L as Loader } from "../../chunks/loader.js";
-import { C as Circle_check_big, a as Circle_x } from "../../chunks/circle-x.js";
+import { L as Loader, C as Circle_check_big, a as Circle_x } from "../../chunks/loader.js";
 import { G as Git_commit_horizontal } from "../../chunks/git-commit-horizontal.js";
 import { E as External_link } from "../../chunks/external-link.js";
 import { j as escape_html } from "../../chunks/context.js";

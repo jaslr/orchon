@@ -1,4 +1,4 @@
-import { F as ensure_array_like, K as attr_style, y as stringify, x as attr_class } from "../../../../chunks/index2.js";
+import { F as ensure_array_like, J as attr_style, y as stringify, x as attr_class } from "../../../../chunks/index2.js";
 import { A as Activity } from "../../../../chunks/activity.js";
 import { L as Layers } from "../../../../chunks/layers.js";
 import { S as Settings } from "../../../../chunks/settings.js";

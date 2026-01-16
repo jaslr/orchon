@@ -1,4 +1,4 @@
-import { F as ensure_array_like, x as attr_class, y as stringify, K as attr_style, J as clsx } from "../../../../chunks/index2.js";
+import { F as ensure_array_like, x as attr_class, y as stringify, J as attr_style, K as clsx } from "../../../../chunks/index2.js";
 import { j as escape_html } from "../../../../chunks/context.js";
 function _page($$renderer) {
   const textSizes = [

@@ -72,14 +72,6 @@
       "_Icon.js"
     ]
   },
-  "_circle-x.js": {
-    "file": "chunks/circle-x.js",
-    "name": "circle-x",
-    "imports": [
-      "_index2.js",
-      "_Icon.js"
-    ]
-  },
   "_client.js": {
     "file": "chunks/client.js",
     "name": "client",
@@ -333,14 +325,6 @@
       "_Icon.js"
     ]
   },
-  "_triangle-alert.js": {
-    "file": "chunks/triangle-alert.js",
-    "name": "triangle-alert",
-    "imports": [
-      "_index2.js",
-      "_Icon.js"
-    ]
-  },
   "_type.js": {
     "file": "chunks/type.js",
     "name": "type",
@@ -436,7 +420,7 @@
       "_settings.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.hWcW_nEG.css"
+      "_app/immutable/assets/_layout.CvwN8Wps.css"
     ]
   },
   "src/routes/+page.server.ts": {
@@ -461,7 +445,6 @@
       "_cloud.js",
       "_arrow-right.js",
       "_loader.js",
-      "_circle-x.js",
       "_git-commit-horizontal.js",
       "_external-link.js",
       "_context.js"
@@ -477,7 +460,6 @@
       "_index3.js",
       "_arrow-left.js",
       "_Icon.js",
-      "_server.js",
       "_folder-git-2.js",
       "_settings.js",
       "_context.js"
@@ -499,32 +481,13 @@
     "file": "entries/pages/admin/infra/_page.server.ts.js",
     "name": "entries/pages/admin/infra/_page.server.ts",
     "src": "src/routes/admin/infra/+page.server.ts",
-    "isEntry": true,
-    "imports": [
-      "_shared-server.js"
-    ]
+    "isEntry": true
   },
   "src/routes/admin/infra/+page.svelte": {
     "file": "entries/pages/admin/infra/_page.svelte.js",
     "name": "entries/pages/admin/infra/_page.svelte",
     "src": "src/routes/admin/infra/+page.svelte",
-    "isEntry": true,
-    "imports": [
-      "_index2.js",
-      "_exports.js",
-      "_utils.js",
-      "_state.svelte.js",
-      "_refresh-cw.js",
-      "_database.js",
-      "_circle-x.js",
-      "_triangle-alert.js",
-      "_clock.js",
-      "_plus.js",
-      "_Icon.js",
-      "_trash-2.js",
-      "_cloud.js",
-      "_context.js"
-    ]
+    "isEntry": true
   },
   "src/routes/admin/media/+page.server.ts": {
     "file": "entries/pages/admin/media/_page.server.ts.js",
@@ -645,7 +608,6 @@
       "_x.js",
       "_cloud.js",
       "_loader.js",
-      "_circle-x.js",
       "_git-branch.js",
       "_external-link.js",
       "_clock.js",
@@ -721,7 +683,6 @@
       "_cloud.js",
       "_arrow-right.js",
       "_loader.js",
-      "_circle-x.js",
       "_git-branch.js",
       "_layers.js",
       "_git-commit-horizontal.js",
@@ -907,7 +868,6 @@
       "_Icon.js",
       "_plus.js",
       "_server.js",
-      "_triangle-alert.js",
       "_git-branch.js",
       "_shield.js",
       "_database.js",

@@ -1,4 +1,4 @@
-import { w as spread_props, F as ensure_array_like, x as attr_class, G as attr, K as attr_style, y as stringify } from "../../../../chunks/index2.js";
+import { w as spread_props, F as ensure_array_like, x as attr_class, G as attr, J as attr_style, y as stringify } from "../../../../chunks/index2.js";
 import "@sveltejs/kit/internal";
 import "../../../../chunks/exports.js";
 import "../../../../chunks/utils.js";

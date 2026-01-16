@@ -2,7 +2,6 @@ import { w as spread_props, F as ensure_array_like, G as attr, x as attr_class, 
 import { p as page } from "../../../chunks/index3.js";
 import { A as Arrow_left } from "../../../chunks/arrow-left.js";
 import { I as Icon } from "../../../chunks/Icon.js";
-import { S as Server } from "../../../chunks/server.js";
 import { F as Folder_git_2 } from "../../../chunks/folder-git-2.js";
 import { S as Settings } from "../../../chunks/settings.js";
 import { j as escape_html } from "../../../chunks/context.js";
@@ -87,12 +86,6 @@ function _layout($$renderer, $$props) {
     let { children } = $$props;
     const navItems = [
       {
-        href: "/admin/infra",
-        label: "Infrastructure",
-        icon: Server,
-        description: "Health & recovery"
-      },
-      {
         href: "/admin/media",
         label: "Media",
         icon: Image,
@@ -116,7 +109,7 @@ function _layout($$renderer, $$props) {
     }
     $$renderer2.push(`<div class="min-h-screen bg-gray-900 text-white flex flex-col"><header class="shrink-0 px-4 py-3 border-b border-gray-800 flex items-center justify-between"><div class="flex items-center gap-4"><a href="/" class="p-2 -m-2 text-gray-400 hover:text-gray-200 transition-colors" title="Back to Dashboard">`);
     Arrow_left($$renderer2, { class: "w-5 h-5" });
-    $$renderer2.push(`<!----></a> <div><h1 class="text-lg font-semibold text-gray-100">Admin</h1> <p class="text-xs text-gray-500">Manage projects, media, and settings</p></div></div> <form method="POST" action="/logout"><button type="submit" class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-red-400 transition-colors">`);
+    $$renderer2.push(`<!----></a> <div><h1 class="text-lg font-semibold text-gray-100">Settings</h1></div></div> <form method="POST" action="/logout"><button type="submit" class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-red-400 transition-colors">`);
     Log_out($$renderer2, { class: "w-4 h-4" });
     $$renderer2.push(`<!----> <span>Logout</span></button></form></header> <div class="flex flex-1 overflow-hidden"><nav class="w-56 shrink-0 border-r border-gray-800 bg-gray-900/50 overflow-y-auto"><div class="p-4 space-y-1"><!--[-->`);
     const each_array = ensure_array_like(navItems);

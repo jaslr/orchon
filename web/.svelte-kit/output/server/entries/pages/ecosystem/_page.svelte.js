@@ -1,4 +1,4 @@
-import { G as attr, y as stringify, x as attr_class, F as ensure_array_like, K as attr_style, z as head } from "../../../chunks/index2.js";
+import { G as attr, y as stringify, x as attr_class, F as ensure_array_like, J as attr_style, z as head } from "../../../chunks/index2.js";
 import { p as page } from "../../../chunks/index3.js";
 import { a as getProvidersByCategory, b as getAllProjects, I as INFRASTRUCTURE } from "../../../chunks/infrastructure.js";
 import { k as ssr_context, j as escape_html } from "../../../chunks/context.js";

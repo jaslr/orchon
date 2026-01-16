@@ -5,14 +5,12 @@
 		Image,
 		FolderGit2,
 		Settings,
-		LogOut,
-		Server
+		LogOut
 	} from '@lucide/svelte';
 
 	let { children } = $props();
 
 	const navItems = [
-		{ href: '/admin/infra', label: 'Infrastructure', icon: Server, description: 'Health & recovery' },
 		{ href: '/admin/media', label: 'Media', icon: Image, description: 'Upload & manage logos' },
 		{ href: '/admin/projects', label: 'Projects', icon: FolderGit2, description: 'Repos & groups' },
 		{ href: '/admin/repos', label: 'Config', icon: Settings, description: 'Tech stack detection' }
@@ -35,8 +33,7 @@
 				<ArrowLeft class="w-5 h-5" />
 			</a>
 			<div>
-				<h1 class="text-lg font-semibold text-gray-100">Admin</h1>
-				<p class="text-xs text-gray-500">Manage projects, media, and settings</p>
+				<h1 class="text-lg font-semibold text-gray-100">Settings</h1>
 			</div>
 		</div>
 		<form method="POST" action="/logout">

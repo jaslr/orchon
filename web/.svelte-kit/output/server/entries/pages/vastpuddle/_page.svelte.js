@@ -1,4 +1,4 @@
-import { z as head, x as attr_class, K as attr_style, y as stringify, F as ensure_array_like, G as attr } from "../../../chunks/index2.js";
+import { z as head, x as attr_class, J as attr_style, y as stringify, F as ensure_array_like, G as attr } from "../../../chunks/index2.js";
 import { S as Settings } from "../../../chunks/settings.js";
 import { A as Arrow_up_a_z, a as Zoom_out, Z as Zoom_in, F as Focus } from "../../../chunks/zoom-out.js";
 import { B as Building_2 } from "../../../chunks/building-2.js";

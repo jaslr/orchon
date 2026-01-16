@@ -1,4 +1,4 @@
-import { z as head, x as attr_class, K as attr_style, F as ensure_array_like, G as attr, y as stringify } from "../../../chunks/index2.js";
+import { z as head, x as attr_class, J as attr_style, F as ensure_array_like, G as attr, y as stringify } from "../../../chunks/index2.js";
 import { A as Arrow_up_a_z, a as Zoom_out, Z as Zoom_in, F as Focus } from "../../../chunks/zoom-out.js";
 import { F as Folder_git_2 } from "../../../chunks/folder-git-2.js";
 import { D as Database } from "../../../chunks/database.js";

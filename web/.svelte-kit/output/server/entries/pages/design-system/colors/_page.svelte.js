@@ -1,4 +1,4 @@
-import { w as spread_props, F as ensure_array_like, K as attr_style, y as stringify, x as attr_class } from "../../../../chunks/index2.js";
+import { w as spread_props, F as ensure_array_like, J as attr_style, y as stringify, x as attr_class } from "../../../../chunks/index2.js";
 import { C as Check } from "../../../../chunks/check.js";
 import { I as Icon } from "../../../../chunks/Icon.js";
 import { j as escape_html } from "../../../../chunks/context.js";
