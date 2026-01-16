@@ -88,7 +88,7 @@ cd backend && fly deploy --now
 ### Droplet Services
 
 ```bash
-ssh root@209.38.85.244 "cd /root/orchon && git pull && systemctl restart orchon-bot orchon-ws orchon-updates orchon-proxy"
+ssh root@209.38.85.244 "cd /root/projects/orchon && git pull && systemctl restart orchon-bot orchon-ws orchon-updates orchon-proxy"
 ```
 
 ### Flutter App (OTA)
@@ -133,7 +133,15 @@ flutter build apk --release --dart-define=ORCHON_API_SECRET=<new>
 |----------|---------|
 | `.env` | Root config (droplet IP, secrets) |
 | `backend/.env` | Fly.io secrets (DATABASE_URL, API_SECRET) |
-| `/root/orchon/.env` | Droplet runtime config |
+| `/root/projects/orchon/.env` | Droplet runtime config |
+
+### Droplet Paths
+
+| Path | Purpose |
+|------|---------|
+| `/root/projects/orchon/` | Main project directory on VPS |
+| `/root/projects/orchon/releases/` | OTA APK releases |
+| `/root/projects/orchon/droplet/` | Service scripts |
 
 ---
 

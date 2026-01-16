@@ -53,13 +53,13 @@ fi
 echo "Publishing ${APK_NAME} to droplet..."
 
 # Create releases directory on droplet
-ssh -i ${DROPLET_SSH_KEY} root@${DROPLET_IP} "mkdir -p /root/orchon/releases"
+ssh -i ${DROPLET_SSH_KEY} root@${DROPLET_IP} "mkdir -p /root/projects/orchon/releases"
 
 # Copy APK to droplet with correct name
-scp -i ${DROPLET_SSH_KEY} "$LOCAL_APK" root@${DROPLET_IP}:/root/orchon/releases/${APK_NAME}
+scp -i ${DROPLET_SSH_KEY} "$LOCAL_APK" root@${DROPLET_IP}:/root/projects/orchon/releases/${APK_NAME}
 
 # Update version.json on droplet
-ssh -i ${DROPLET_SSH_KEY} root@${DROPLET_IP} "cat > /root/orchon/releases/version.json << EOF
+ssh -i ${DROPLET_SSH_KEY} root@${DROPLET_IP} "cat > /root/projects/orchon/releases/version.json << EOF
 {
   \"version\": \"${VERSION}\",
   \"buildNumber\": ${BUILD_NUMBER},
