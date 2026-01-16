@@ -8,6 +8,15 @@ import {
   type Client
 } from '$lib/config/infrastructure';
 
+export interface PackageInfo {
+  name: string;
+  version: string;
+  description: string;
+  dependencyCount: number;
+  devDependencyCount: number;
+  keyPackages: string[];
+}
+
 export interface ProjectNode {
   id: string;
   displayName: string;
@@ -44,6 +53,10 @@ export interface ResolvedClient {
 }
 
 export const load: PageServerLoad = async () => {
+  // Package info is not available in Cloudflare Workers (no fs access)
+  // This could be populated at build time via vite define if needed
+  const packageInfo: PackageInfo | null = null;
+
   // Convert infrastructure to sorted project nodes
   const projects: ProjectNode[] = Object.entries(INFRASTRUCTURE)
     .map(([id, infra]) => ({
@@ -100,5 +113,5 @@ export const load: PageServerLoad = async () => {
     };
   });
 
-  return { projects, sourceRepos, clients };
+  return { projects, sourceRepos, clients, packageInfo };
 };
