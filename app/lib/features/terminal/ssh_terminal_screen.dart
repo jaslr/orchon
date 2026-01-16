@@ -298,7 +298,7 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
       Future.delayed(const Duration(milliseconds: 50), () {
         _session?.write(Uint8List.fromList(utf8.encode('[')));
       });
-      _inCopyMode = true;
+      setState(() => _inCopyMode = true);
     }
   }
 
@@ -307,8 +307,34 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
     if (_inCopyMode && _session != null) {
       // Send 'q' to exit copy mode
       _session!.write(Uint8List.fromList(utf8.encode('q')));
-      _inCopyMode = false;
+      setState(() => _inCopyMode = false);
     }
+  }
+
+  // Scroll up in tmux (Page Up) - enters copy mode if needed
+  void _scrollUp() {
+    if (_session == null) return;
+    if (!_inCopyMode) {
+      // Enter copy mode first
+      _session!.write(Uint8List.fromList([2])); // Ctrl+B
+      Future.delayed(const Duration(milliseconds: 50), () {
+        _session?.write(Uint8List.fromList(utf8.encode('[')));
+        // Then scroll up after copy mode activates
+        Future.delayed(const Duration(milliseconds: 100), () {
+          _session?.write(Uint8List.fromList(utf8.encode('\x1b[5~'))); // Page Up
+        });
+      });
+      setState(() => _inCopyMode = true);
+    } else {
+      // Already in copy mode, just Page Up
+      _session!.write(Uint8List.fromList(utf8.encode('\x1b[5~')));
+    }
+  }
+
+  // Scroll down in tmux (Page Down) - only works in copy mode
+  void _scrollDown() {
+    if (_session == null || !_inCopyMode) return;
+    _session!.write(Uint8List.fromList(utf8.encode('\x1b[6~'))); // Page Down
   }
 
   void _sendInput(String text) {
@@ -457,38 +483,32 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
                   ),
                   // Divider
                   _buildDivider(),
-                  // Scroll mode toggle (enters/exits tmux copy mode)
+                  // Scroll buttons - Page Up/Down for tmux history
                   _buildToolbarButton(
-                    _inCopyMode ? 'EXIT' : 'SCROLL',
-                    () {
-                      if (_inCopyMode) {
-                        _exitCopyMode();
-                        setState(() {});
-                      } else {
-                        _enterCopyMode();
-                        setState(() {});
-                      }
-                    },
+                    'PgUp',
+                    _scrollUp,
                     isActive: _inCopyMode,
                     compact: isCompact,
                   ),
-                  // Arrow keys (work as scroll in copy mode)
-                  _buildToolbarButton('↑', () {
-                    if (_inCopyMode) {
-                      // In copy mode, arrow up scrolls up one line
-                      _sendSpecialKey('\x1b[A');
-                    } else {
-                      _sendSpecialKey('\x1b[A');
-                    }
-                  }, compact: isCompact),
-                  _buildToolbarButton('↓', () {
-                    if (_inCopyMode) {
-                      // In copy mode, arrow down scrolls down one line
-                      _sendSpecialKey('\x1b[B');
-                    } else {
-                      _sendSpecialKey('\x1b[B');
-                    }
-                  }, compact: isCompact),
+                  _buildToolbarButton(
+                    'PgDn',
+                    _scrollDown,
+                    isActive: _inCopyMode,
+                    compact: isCompact,
+                  ),
+                  // Exit scroll mode button (only shown when in copy mode)
+                  if (_inCopyMode)
+                    _buildToolbarButton(
+                      'EXIT',
+                      _exitCopyMode,
+                      highlight: true,
+                      compact: isCompact,
+                    ),
+                  // Divider
+                  _buildDivider(),
+                  // Arrow keys
+                  _buildToolbarButton('↑', () => _sendSpecialKey('\x1b[A'), compact: isCompact),
+                  _buildToolbarButton('↓', () => _sendSpecialKey('\x1b[B'), compact: isCompact),
                   _buildToolbarButton('←', () => _sendSpecialKey('\x1b[D'), compact: isCompact),
                   _buildToolbarButton('→', () => _sendSpecialKey('\x1b[C'), compact: isCompact),
                   // Divider
