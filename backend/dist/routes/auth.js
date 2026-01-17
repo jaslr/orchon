@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import bcrypt from 'bcrypt';
 import { query, ensureDb } from '../db/client.js';
+import { env } from '../config/env.js';
 export const authRoutes = new Hono();
 const SALT_ROUNDS = 10;
 // Verify email + password
@@ -38,12 +39,17 @@ authRoutes.post('/verify', async (c) => {
         }
         // Update last login timestamp
         await query('UPDATE allowed_users SET last_login_at = NOW() WHERE id = $1', [user.id]);
+        // Return access token for API calls
+        // The app stores this after login instead of needing build-time secrets
         return c.json({
             authorized: true,
             user: {
                 email: user.email,
                 name: user.name,
             },
+            // Include API token so app can make authenticated requests
+            // This eliminates the need to bake ORCHON_API_SECRET into the build
+            accessToken: env.apiSecret || null,
         });
     }
     catch (err) {

@@ -1,5 +1,22 @@
 # ORCHON - Infrastructure Observatory & DevOps Control Plane
 
+## Browser Automation
+
+**Primary: agent-browser CLI** (try first) | **Backup: Chrome DevTools MCP**
+
+```bash
+agent-browser open <url>        # Navigate
+agent-browser snapshot -i       # Get elements with refs (@e1, @e2)
+agent-browser click @e1         # Click by ref
+agent-browser fill @e2 "text"   # Fill input
+agent-browser screenshot        # Take screenshot
+agent-browser close             # Close browser
+```
+
+Fall back to Chrome DevTools MCP only if agent-browser fails.
+
+---
+
 ## Project Overview
 
 **ORCHON** is a comprehensive infrastructure monitoring and DevOps control platform with multiple interfaces:

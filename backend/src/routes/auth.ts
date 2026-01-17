@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import bcrypt from 'bcrypt';
 import { query, ensureDb } from '../db/client.js';
+import { env } from '../config/env.js';
 
 export const authRoutes = new Hono();
 
@@ -58,12 +59,17 @@ authRoutes.post('/verify', async (c) => {
       [user.id]
     );
 
+    // Return access token for API calls
+    // The app stores this after login instead of needing build-time secrets
     return c.json({
       authorized: true,
       user: {
         email: user.email,
         name: user.name,
       },
+      // Include API token so app can make authenticated requests
+      // This eliminates the need to bake ORCHON_API_SECRET into the build
+      accessToken: env.apiSecret || null,
     });
   } catch (err) {
     console.error('Auth verification error:', err);

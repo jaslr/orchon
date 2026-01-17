@@ -12,6 +12,7 @@ export declare const env: {
     readonly resendApiKey: string;
     readonly apiSecret: string;
     readonly gcpServiceAccountKey: string;
+    readonly dropletIp: string;
 };
 export declare function validateEnv(): void;
 //# sourceMappingURL=env.d.ts.map

@@ -21,6 +21,8 @@ export const env = {
     apiSecret: process.env.API_SECRET || '',
     // GCP Cloud Build
     gcpServiceAccountKey: process.env.GCP_SERVICE_ACCOUNT_KEY || '',
+    // Ecosystem Health
+    dropletIp: process.env.DROPLET_IP || '209.38.85.244',
 };
 // Validate required env vars in production
 export function validateEnv() {

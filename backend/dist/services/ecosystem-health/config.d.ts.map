@@ -1,0 +1,1 @@
+{"version":3,"file":"config.d.ts","sourceRoot":"","sources":["../../../src/services/ecosystem-health/config.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,aAAa,EAAE,MAAM,YAAY,CAAC;AAGhD,eAAO,MAAM,UAAU,QAA4C,CAAC;AAGpE,eAAO,MAAM,aAAa,OAAO,CAAC;AAGlC,eAAO,MAAM,kBAAkB,OAAO,CAAC;AAGvC,eAAO,MAAM,SAAS,QAAQ,CAAC;AAG/B,eAAO,MAAM,gBAAgB,EAAE,aAAa,EAoB3C,CAAC"}

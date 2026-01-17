@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import '../config.dart';
+import '../auth/auth_service.dart';
 import '../../models/deployment.dart';
 
 /// State for deployments list
@@ -40,12 +41,24 @@ class DeploymentsState {
 class OrchonService {
   final http.Client _client;
 
+  /// Access token for API authentication (from auth provider)
+  /// Falls back to build-time secret if not available
+  String? _accessToken;
+
   /// Retry configuration
   static const int _maxRetries = 3;
   static const Duration _requestTimeout = Duration(seconds: 15);
   static const Duration _initialBackoff = Duration(milliseconds: 500);
 
-  OrchonService({http.Client? client}) : _client = client ?? http.Client();
+  OrchonService({http.Client? client, String? accessToken})
+      : _client = client ?? http.Client(),
+        _accessToken = accessToken;
+
+  /// Update the access token (called when auth state changes)
+  void updateToken(String? token) {
+    _accessToken = token;
+    debugPrint('[ORCHON] Token updated: ${token != null ? "yes" : "no"}');
+  }
 
   /// Execute HTTP GET with retry and exponential backoff
   Future<http.Response> _getWithRetry(Uri uri) async {
@@ -179,10 +192,11 @@ class OrchonService {
   }
 
   Map<String, String> get _authHeaders {
-    final secret = AppConfig.orchonApiSecret;
+    // Use stored access token from auth, fall back to build-time secret
+    final token = _accessToken ?? AppConfig.orchonApiSecret;
     return {
       'Content-Type': 'application/json',
-      if (secret.isNotEmpty) 'Authorization': 'Bearer $secret',
+      if (token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
   }
 
@@ -248,8 +262,20 @@ class DeploymentsNotifier extends StateNotifier<DeploymentsState> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Provider for OrchonService instance
+/// Gets access token from auth provider for API authentication
 final orchonServiceProvider = Provider<OrchonService>((ref) {
-  final service = OrchonService();
+  // Get access token from auth provider (received from backend after login)
+  final authNotifier = ref.read(authProvider.notifier);
+  final token = authNotifier.accessToken;
+
+  final service = OrchonService(accessToken: token);
+
+  // Listen for auth changes and update token
+  ref.listen(authProvider, (previous, next) {
+    final newToken = ref.read(authProvider.notifier).accessToken;
+    service.updateToken(newToken);
+  });
+
   ref.onDispose(service.dispose);
   return service;
 });

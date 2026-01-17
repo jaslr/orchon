@@ -152,4 +152,49 @@ export interface ProjectStatusSummary {
     unknown: number;
 }
 export declare function getProjectStatusSummary(): Promise<ProjectStatusSummary>;
+export interface RecoveryAction {
+    id: string;
+    serviceId: string;
+    name: string;
+    actionType: 'fly-api' | 'github-workflow' | 'gcp-api' | 'ssh-command';
+    config: Record<string, unknown>;
+    createdAt: Date;
+    updatedAt: Date;
+}
+export interface ActionExecution {
+    id: string;
+    actionId: string;
+    triggeredBy: 'manual' | 'auto-heal';
+    status: 'pending' | 'running' | 'success' | 'failure';
+    output?: string;
+    startedAt: Date;
+    completedAt?: Date;
+}
+export declare function getAllRecoveryActions(): Promise<RecoveryAction[]>;
+export declare function getRecoveryActionsByService(serviceId: string): Promise<RecoveryAction[]>;
+export declare function getRecoveryActionById(id: string): Promise<RecoveryAction | null>;
+export declare function createRecoveryAction(action: {
+    serviceId: string;
+    name: string;
+    actionType: RecoveryAction['actionType'];
+    config: Record<string, unknown>;
+}): Promise<RecoveryAction>;
+export declare function updateRecoveryAction(id: string, updates: Partial<{
+    name: string;
+    actionType: RecoveryAction['actionType'];
+    config: Record<string, unknown>;
+}>): Promise<RecoveryAction | null>;
+export declare function deleteRecoveryAction(id: string): Promise<boolean>;
+export declare function createActionExecution(execution: {
+    actionId: string;
+    triggeredBy: 'manual' | 'auto-heal';
+}): Promise<ActionExecution>;
+export declare function updateActionExecution(id: string, updates: {
+    status: ActionExecution['status'];
+    output?: string;
+}): Promise<ActionExecution | null>;
+export declare function getRecentExecutions(limit: number): Promise<(ActionExecution & {
+    actionName: string;
+    serviceId: string;
+})[]>;
 //# sourceMappingURL=queries.d.ts.map

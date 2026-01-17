@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -62,6 +63,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   static const _emailKey = 'auth_email';
   static const _passwordKey = 'auth_password';
   static const _userNameKey = 'auth_user_name';
+  static const _accessTokenKey = 'auth_access_token';
+
+  /// Stored access token for API calls (received from backend after login)
+  /// This replaces the need for build-time ORCHON_API_SECRET
+  String? _accessToken;
+  String? get accessToken => _accessToken;
 
   AuthNotifier() : super(const AuthState()) {
     _loadStoredAuth();
@@ -73,6 +80,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final prefs = await SharedPreferences.getInstance();
       final email = prefs.getString(_emailKey);
       final password = prefs.getString(_passwordKey);
+
+      // Load stored access token
+      _accessToken = prefs.getString(_accessTokenKey);
+      debugPrint('[AuthService] Loaded stored access token: ${_accessToken != null ? "yes" : "no"}');
 
       if (email != null && email.isNotEmpty && password != null && password.isNotEmpty) {
         // Re-verify with backend on each startup
@@ -143,6 +154,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
             await prefs.setString(_userNameKey, user.name!);
           }
 
+          // Store access token from backend (used for API calls)
+          // This eliminates the need for build-time ORCHON_API_SECRET
+          final token = data['accessToken'] as String?;
+          if (token != null && token.isNotEmpty) {
+            _accessToken = token;
+            await prefs.setString(_accessTokenKey, token);
+            debugPrint('[AuthService] Stored access token from backend');
+          }
+
           state = AuthState(
             status: AuthStatus.authenticated,
             user: user,
@@ -192,7 +212,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await prefs.remove(_emailKey);
     await prefs.remove(_passwordKey);
     await prefs.remove(_userNameKey);
+    await prefs.remove(_accessTokenKey);
 
+    _accessToken = null;
     state = const AuthState(status: AuthStatus.unauthenticated);
     debugPrint('[AuthService] Signed out');
   }
@@ -201,3 +223,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier();
 });
+
+/// Helper to get the current access token from anywhere
+/// Prefers the stored token from auth, falls back to build-time secret
+String getApiToken(WidgetRef? ref) {
+  if (ref != null) {
+    final token = ref.read(authProvider.notifier).accessToken;
+    if (token != null && token.isNotEmpty) return token;
+  }
+  // Fallback to build-time secret (for backwards compatibility)
+  return AppConfig.orchonApiSecret;
+}

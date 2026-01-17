@@ -417,7 +417,7 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            const Text('Terminal'),
+            const Text('Terminal', style: TextStyle(fontSize: 15)),
             if (_isConnecting) ...[
               const SizedBox(width: 8),
               const SizedBox(
@@ -530,6 +530,23 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 mainAxisSize: MainAxisSize.max,
                 children: [
+                  // Keyboard toggle (far left)
+                  _buildKeyboardButton(compact: isCompact),
+                  // Divider
+                  _buildDivider(),
+                  // Common ctrl shortcuts (most used)
+                  _buildToolbarButton('C', () => _sendCtrlKey('c'), isCtrl: true, compact: isCompact),
+                  _buildToolbarButton('D', () => _sendCtrlKey('d'), isCtrl: true, compact: isCompact),
+                  _buildToolbarButton('Q', () => _sendCtrlKey('q'), isCtrl: true, highlight: true, compact: isCompact),
+                  // Divider
+                  _buildDivider(),
+                  // Arrow keys
+                  _buildToolbarButton('↑', () => _sendSpecialKey('\x1b[A'), compact: isCompact),
+                  _buildToolbarButton('↓', () => _sendSpecialKey('\x1b[B'), compact: isCompact),
+                  _buildToolbarButton('←', () => _sendSpecialKey('\x1b[D'), compact: isCompact),
+                  _buildToolbarButton('→', () => _sendSpecialKey('\x1b[C'), compact: isCompact),
+                  // Divider
+                  _buildDivider(),
                   // Escape key
                   _buildToolbarButton('ESC', () => _sendSpecialKey('\x1b'), compact: isCompact),
                   // Tab key
@@ -564,23 +581,6 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
                       highlight: true,
                       compact: isCompact,
                     ),
-                  // Divider
-                  _buildDivider(),
-                  // Arrow keys
-                  _buildToolbarButton('↑', () => _sendSpecialKey('\x1b[A'), compact: isCompact),
-                  _buildToolbarButton('↓', () => _sendSpecialKey('\x1b[B'), compact: isCompact),
-                  _buildToolbarButton('←', () => _sendSpecialKey('\x1b[D'), compact: isCompact),
-                  _buildToolbarButton('→', () => _sendSpecialKey('\x1b[C'), compact: isCompact),
-                  // Divider
-                  _buildDivider(),
-                  // Common ctrl shortcuts
-                  _buildToolbarButton('C', () => _sendCtrlKey('c'), isCtrl: true, compact: isCompact),
-                  _buildToolbarButton('D', () => _sendCtrlKey('d'), isCtrl: true, compact: isCompact),
-                  _buildToolbarButton('Q', () => _sendCtrlKey('q'), isCtrl: true, highlight: true, compact: isCompact),
-                  // Divider
-                  _buildDivider(),
-                  // Keyboard toggle for voice typing input
-                  _buildKeyboardButton(compact: isCompact),
                 ],
               ),
             ),
