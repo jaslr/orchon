@@ -226,7 +226,10 @@ function _page($$renderer, $$props) {
         netlify: true,
         sentry: true,
         resend: true,
-        aws: true
+        aws: true,
+        flyio: true,
+        twilio: true,
+        mailgun: true
       },
       techstack: {
         svelte: true,
@@ -260,7 +263,15 @@ function _page($$renderer, $$props) {
       }
       return null;
     }
-    $$renderer2.push(`<div class="p-6 space-y-8"><div><h2 class="text-xl font-semibold text-white">Media Library</h2> <p class="text-gray-400 text-sm mt-1">Upload and manage logos for services and tech stack</p> <p class="text-gray-500 text-xs mt-1">Loaded: ${escape_html(data.logos?.length ?? 0)} logos from storage</p></div> `);
+    $$renderer2.push(`<div class="p-6 space-y-8"><div><h2 class="text-xl font-semibold text-white">Media Library</h2> <p class="text-gray-400 text-sm mt-1">Logos for services and tech stack</p> `);
+    if (data.logos?.length === 0) {
+      $$renderer2.push("<!--[-->");
+      $$renderer2.push(`<p class="text-amber-500 text-xs mt-1">R2 bucket not configured - using static logos only</p>`);
+    } else {
+      $$renderer2.push("<!--[!-->");
+      $$renderer2.push(`<p class="text-gray-500 text-xs mt-1">Loaded: ${escape_html(data.logos?.length ?? 0)} logos from R2</p>`);
+    }
+    $$renderer2.push(`<!--]--></div> `);
     if (form?.success) {
       $$renderer2.push("<!--[-->");
       $$renderer2.push(`<div class="p-4 bg-green-900/50 border border-green-700 rounded-lg flex items-center gap-3">`);

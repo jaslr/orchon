@@ -218,7 +218,8 @@
 	const STATIC_LOGOS: Record<string, Record<string, boolean>> = {
 		infra: {
 			cloudflare: true, supabase: true, vercel: true, github: true, firebase: true,
-			digitalocean: true, netlify: true, sentry: true, resend: true, aws: true
+			digitalocean: true, netlify: true, sentry: true, resend: true, aws: true,
+			flyio: true, twilio: true, mailgun: true
 		},
 		techstack: {
 			svelte: true, sveltekit: true, tailwind: true, vite: true, typescript: true,
@@ -244,8 +245,12 @@
 <div class="p-6 space-y-8">
 	<div>
 		<h2 class="text-xl font-semibold text-white">Media Library</h2>
-		<p class="text-gray-400 text-sm mt-1">Upload and manage logos for services and tech stack</p>
-		<p class="text-gray-500 text-xs mt-1">Loaded: {data.logos?.length ?? 0} logos from storage</p>
+		<p class="text-gray-400 text-sm mt-1">Logos for services and tech stack</p>
+		{#if data.logos?.length === 0}
+			<p class="text-amber-500 text-xs mt-1">R2 bucket not configured - using static logos only</p>
+		{:else}
+			<p class="text-gray-500 text-xs mt-1">Loaded: {data.logos?.length ?? 0} logos from R2</p>
+		{/if}
 	</div>
 
 	<!-- Success/Error Messages -->

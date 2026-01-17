@@ -34,7 +34,8 @@
 	const STATIC_LOGOS: Record<string, Record<string, boolean>> = {
 		infra: {
 			cloudflare: true, supabase: true, vercel: true, github: true, firebase: true,
-			digitalocean: true, netlify: true, sentry: true, resend: true, aws: true
+			digitalocean: true, netlify: true, sentry: true, resend: true, aws: true,
+			flyio: true, twilio: true, mailgun: true
 		},
 		techstack: {
 			svelte: true, sveltekit: true, tailwind: true, vite: true, typescript: true,
