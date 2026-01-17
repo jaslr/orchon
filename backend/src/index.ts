@@ -12,6 +12,7 @@ import { eventsRoutes } from './routes/events.js';
 import { apiRoutes } from './routes/api.js';
 import { authRoutes } from './routes/auth.js';
 import { adminRoutes } from './routes/admin.js';
+import { telegramRoutes } from './routes/telegram.js';
 import { startScheduler } from './jobs/scheduler.js';
 import { initDb } from './db/client.js';
 import { syncProjectsToDb } from './db/sync.js';
@@ -79,9 +80,11 @@ app.route('/auth', authRoutes);
 app.use('/events/*', apiAuth);
 app.use('/api/*', apiAuth);
 app.use('/admin/*', apiAuth);
+app.use('/telegram/*', apiAuth);
 app.route('/events', eventsRoutes);
 app.route('/api', apiRoutes);
 app.route('/admin', adminRoutes);
+app.route('/telegram', telegramRoutes);
 
 // Root
 app.get('/', (c) => {

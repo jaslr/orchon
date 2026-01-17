@@ -195,6 +195,41 @@ final packageInfoProvider = FutureProvider<PackageInfo>((ref) async {
   return await PackageInfo.fromPlatform();
 });
 
+/// Provider for Telegram history
+final telegramHistoryProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  try {
+    final response = await http.get(
+      Uri.parse('${AppConfig.orchonUrl}/telegram/history'),
+      headers: {
+        'Authorization': 'Bearer ${AppConfig.orchonApiSecret}',
+      },
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final messages = (data['messages'] as List<dynamic>?) ?? [];
+      return messages.map((m) => m as Map<String, dynamic>).toList();
+    }
+    return [];
+  } catch (e) {
+    debugPrint('Failed to fetch telegram history: $e');
+    return [];
+  }
+});
+
+/// Show Telegram history bottom sheet
+void _showTelegramHistory(BuildContext context, WidgetRef ref) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: const Color(0xFF1A1A2E),
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (context) => _TelegramHistorySheet(ref: ref),
+  );
+}
+
 class SettingsDrawer extends ConsumerWidget {
   const SettingsDrawer({super.key});
 
@@ -351,6 +386,26 @@ class SettingsDrawer extends ConsumerWidget {
                     },
                   ),
                   _UpdateTile(ref: ref),
+                  const Divider(color: Colors.grey, height: 32),
+                  // Section: Telegram
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16, bottom: 8),
+                    child: Text(
+                      'TELEGRAM',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 2,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                  _SettingsTile(
+                    icon: Icons.chat_bubble_outline,
+                    title: 'Bot History',
+                    subtitle: 'Recent Telegram conversations',
+                    onTap: () => _showTelegramHistory(context, ref),
+                  ),
                   const Divider(color: Colors.grey, height: 32),
                   _SettingsTile(
                     icon: Icons.info_outline,
@@ -1162,6 +1217,220 @@ class _SessionOption extends StatelessWidget {
       ),
       trailing: trailing ?? Icon(Icons.chevron_right, color: color),
       onTap: onTap,
+    );
+  }
+}
+
+class _TelegramHistorySheet extends ConsumerWidget {
+  final WidgetRef ref;
+
+  const _TelegramHistorySheet({required this.ref});
+
+  @override
+  Widget build(BuildContext context, WidgetRef widgetRef) {
+    final historyAsync = widgetRef.watch(telegramHistoryProvider);
+
+    return SafeArea(
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'TELEGRAM HISTORY',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 3,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Last 50 messages from bot',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, color: Color(0xFF6366F1)),
+                  onPressed: () => widgetRef.invalidate(telegramHistoryProvider),
+                  tooltip: 'Refresh',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Messages list
+            Expanded(
+              child: historyAsync.when(
+                data: (messages) {
+                  if (messages.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey[700]),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No messages yet',
+                            style: TextStyle(color: Colors.grey[500]),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Send a message to the Telegram bot',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  // Show newest at bottom (reversed for natural chat order)
+                  final reversed = messages.reversed.toList();
+
+                  return ListView.builder(
+                    reverse: true,
+                    itemCount: reversed.length,
+                    itemBuilder: (context, index) {
+                      final msg = reversed[index];
+                      final isUser = msg['role'] == 'user';
+                      final content = msg['content']?.toString() ?? '';
+                      final timestamp = msg['timestamp']?.toString() ?? '';
+                      final hasImage = msg['hasImage'] == true;
+
+                      // Format timestamp
+                      String timeStr = '';
+                      if (timestamp.isNotEmpty) {
+                        try {
+                          final dt = DateTime.parse(timestamp).toLocal();
+                          final now = DateTime.now();
+                          if (dt.day == now.day && dt.month == now.month && dt.year == now.year) {
+                            timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                          } else {
+                            timeStr = '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                          }
+                        } catch (_) {}
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            if (!isUser) ...[
+                              CircleAvatar(
+                                radius: 14,
+                                backgroundColor: const Color(0xFF6366F1).withOpacity(0.2),
+                                child: const Icon(Icons.smart_toy, size: 16, color: Color(0xFF6366F1)),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isUser
+                                      ? const Color(0xFF6366F1).withOpacity(0.3)
+                                      : Colors.grey[800],
+                                  borderRadius: BorderRadius.circular(12).copyWith(
+                                    bottomRight: isUser ? const Radius.circular(4) : null,
+                                    bottomLeft: !isUser ? const Radius.circular(4) : null,
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                  children: [
+                                    if (hasImage) ...[
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.image, size: 14, color: Colors.grey[500]),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '[Image attached]',
+                                            style: TextStyle(
+                                              color: Colors.grey[500],
+                                              fontSize: 11,
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (content.isNotEmpty) const SizedBox(height: 4),
+                                    ],
+                                    if (content.isNotEmpty)
+                                      Text(
+                                        content,
+                                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                                      ),
+                                    if (timeStr.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        timeStr,
+                                        style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (isUser) ...[
+                              const SizedBox(width: 8),
+                              CircleAvatar(
+                                radius: 14,
+                                backgroundColor: Colors.green.withOpacity(0.2),
+                                child: const Icon(Icons.person, size: 16, color: Colors.green),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+                error: (e, _) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, size: 48, color: Colors.red[400]),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Failed to load history',
+                        style: TextStyle(color: Colors.red[400]),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        e.toString(),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

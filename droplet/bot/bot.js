@@ -56,7 +56,7 @@ function loadConversationHistory() {
 }
 
 /**
- * Save conversation history to file
+ * Save conversation history to file and sync to backend
  */
 function saveConversationHistory() {
   try {
@@ -64,6 +64,65 @@ function saveConversationHistory() {
   } catch (e) {
     console.error('Failed to save conversation history:', e.message);
   }
+
+  // Sync to backend (non-blocking)
+  syncHistoryToBackend().catch(e => {
+    console.error('Failed to sync history to backend:', e.message);
+  });
+}
+
+/**
+ * Sync conversation history to backend API
+ */
+async function syncHistoryToBackend() {
+  if (!API_SECRET) return;
+
+  // Flatten all chat histories into one array for the app
+  const allMessages = [];
+  for (const chatId of Object.keys(conversationHistory)) {
+    for (const msg of conversationHistory[chatId]) {
+      allMessages.push({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp,
+        hasImage: !!msg.image,
+      });
+    }
+  }
+
+  // Sort by timestamp and take last 50
+  allMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  const recentMessages = allMessages.slice(-50);
+
+  const data = JSON.stringify({ messages: recentMessages });
+
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'observatory-backend.fly.dev',
+      path: '/telegram/history',
+      method: 'PUT',
+      family: 4,
+      headers: {
+        'Authorization': `Bearer ${API_SECRET}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data),
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => resolve(body));
+    });
+
+    req.on('error', reject);
+    req.setTimeout(10000, () => {
+      req.destroy();
+      reject(new Error('Timeout'));
+    });
+    req.write(data);
+    req.end();
+  });
 }
 
 /**
@@ -114,10 +173,11 @@ function clearHistory(chatId) {
 // Load history on startup
 loadConversationHistory();
 
-// Import orchestrator
+// Import orchestrator (relative to this script)
 let orchestrator = null;
 try {
-  orchestrator = require('/root/orchon/droplet/orchestrator');
+  const orchestratorPath = path.join(__dirname, '..', 'orchestrator');
+  orchestrator = require(orchestratorPath);
   console.log('Orchestrator loaded, LLM provider:', orchestrator.LLM_PROVIDER);
 } catch (e) {
   console.log('Orchestrator not available yet:', e.message);
