@@ -214,10 +214,30 @@
 		}
 	];
 
+	// Static logos available in /logos folder
+	const STATIC_LOGOS: Record<string, Record<string, boolean>> = {
+		infra: {
+			cloudflare: true, supabase: true, vercel: true, github: true, firebase: true,
+			digitalocean: true, netlify: true, sentry: true, resend: true, aws: true
+		},
+		techstack: {
+			svelte: true, sveltekit: true, tailwind: true, vite: true, typescript: true,
+			npm: true, playwright: true, vitest: true, angular: true, react: true,
+			nextjs: true, pnpm: true, bun: true, lucide: true, nodejs: true
+		}
+	};
+
 	// Get logo data for a provider/item - returns both id (for deletion) and url
 	function getLogo(type: 'infra' | 'techstack', name: string) {
-		// Server returns name without extension, type matches directly
-		return data.logos?.find((l) => l.type === type && l.name === name) ?? null;
+		// First check R2 logos
+		const r2Logo = data.logos?.find((l) => l.type === type && l.name === name);
+		if (r2Logo) return r2Logo;
+
+		// Fallback to static logos
+		if (STATIC_LOGOS[type]?.[name]) {
+			return { id: `static:${type}/${name}`, name, url: `/logos/${type}/${name}.svg`, type, isStatic: true };
+		}
+		return null;
 	}
 </script>
 
@@ -346,25 +366,29 @@
 
 					<!-- Action buttons -->
 					{#if logo}
-						<!-- Remove button when logo exists -->
-						<form
-							method="POST"
-							action="?/deleteLogo"
-							use:enhance={() => {
-								return async ({ update }) => {
-									await update();
-								};
-							}}
-						>
-							<input type="hidden" name="logoId" value={logo.id} />
-							<button
-								type="submit"
-								class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-red-900/50 text-red-300 hover:bg-red-800/50 transition-colors"
+						{#if logo.isStatic}
+							<span class="px-3 py-1.5 text-xs text-gray-500 bg-gray-800 rounded-lg">Static</span>
+						{:else}
+							<!-- Remove button when logo exists -->
+							<form
+								method="POST"
+								action="?/deleteLogo"
+								use:enhance={() => {
+									return async ({ update }) => {
+										await update();
+									};
+								}}
 							>
-								<Trash2 class="w-4 h-4" />
-								Remove
-							</button>
-						</form>
+								<input type="hidden" name="logoId" value={logo.id} />
+								<button
+									type="submit"
+									class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-red-900/50 text-red-300 hover:bg-red-800/50 transition-colors"
+								>
+									<Trash2 class="w-4 h-4" />
+									Remove
+								</button>
+							</form>
+						{/if}
 					{:else}
 						<!-- Add button when no logo -->
 						<button
@@ -412,25 +436,29 @@
 
 								<!-- Action buttons -->
 								{#if logo}
-									<!-- Remove button when logo exists -->
-									<form
-										method="POST"
-										action="?/deleteLogo"
-										use:enhance={() => {
-											return async ({ update }) => {
-												await update();
-											};
-										}}
-									>
-										<input type="hidden" name="logoId" value={logo.id} />
-										<button
-											type="submit"
-											class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-red-900/50 text-red-300 hover:bg-red-800/50 transition-colors"
+									{#if logo.isStatic}
+										<span class="px-3 py-1.5 text-xs text-gray-500 bg-gray-800 rounded-lg">Static</span>
+									{:else}
+										<!-- Remove button when logo exists -->
+										<form
+											method="POST"
+											action="?/deleteLogo"
+											use:enhance={() => {
+												return async ({ update }) => {
+													await update();
+												};
+											}}
 										>
-											<Trash2 class="w-4 h-4" />
-											Remove
-										</button>
-									</form>
+											<input type="hidden" name="logoId" value={logo.id} />
+											<button
+												type="submit"
+												class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-red-900/50 text-red-300 hover:bg-red-800/50 transition-colors"
+											>
+												<Trash2 class="w-4 h-4" />
+												Remove
+											</button>
+										</form>
+									{/if}
 								{:else}
 									<!-- Add button when no logo -->
 									<button

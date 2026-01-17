@@ -215,8 +215,50 @@ function _page($$renderer, $$props) {
         ]
       }
     ];
+    const STATIC_LOGOS = {
+      infra: {
+        cloudflare: true,
+        supabase: true,
+        vercel: true,
+        github: true,
+        firebase: true,
+        digitalocean: true,
+        netlify: true,
+        sentry: true,
+        resend: true,
+        aws: true
+      },
+      techstack: {
+        svelte: true,
+        sveltekit: true,
+        tailwind: true,
+        vite: true,
+        typescript: true,
+        npm: true,
+        playwright: true,
+        vitest: true,
+        angular: true,
+        react: true,
+        nextjs: true,
+        pnpm: true,
+        bun: true,
+        lucide: true,
+        nodejs: true
+      }
+    };
     function getLogo(type, name) {
-      return data.logos?.find((l) => l.type === type && l.name === name) ?? null;
+      const r2Logo = data.logos?.find((l) => l.type === type && l.name === name);
+      if (r2Logo) return r2Logo;
+      if (STATIC_LOGOS[type]?.[name]) {
+        return {
+          id: `static:${type}/${name}`,
+          name,
+          url: `/logos/${type}/${name}.svg`,
+          type,
+          isStatic: true
+        };
+      }
+      return null;
     }
     $$renderer2.push(`<div class="p-6 space-y-8"><div><h2 class="text-xl font-semibold text-white">Media Library</h2> <p class="text-gray-400 text-sm mt-1">Upload and manage logos for services and tech stack</p> <p class="text-gray-500 text-xs mt-1">Loaded: ${escape_html(data.logos?.length ?? 0)} logos from storage</p></div> `);
     if (form?.success) {
@@ -258,9 +300,16 @@ function _page($$renderer, $$props) {
       $$renderer2.push(`<!--]--></div> <div class="flex-1 min-w-0"><div class="font-medium text-white">${escape_html(provider.displayName)}</div> <div class="text-xs text-gray-400 truncate">${escape_html(provider.services.join(" · "))}</div></div> `);
       if (logo) {
         $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<form method="POST" action="?/deleteLogo"><input type="hidden" name="logoId"${attr("value", logo.id)}/> <button type="submit" class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-red-900/50 text-red-300 hover:bg-red-800/50 transition-colors">`);
-        Trash_2($$renderer2, { class: "w-4 h-4" });
-        $$renderer2.push(`<!----> Remove</button></form>`);
+        if (logo.isStatic) {
+          $$renderer2.push("<!--[-->");
+          $$renderer2.push(`<span class="px-3 py-1.5 text-xs text-gray-500 bg-gray-800 rounded-lg">Static</span>`);
+        } else {
+          $$renderer2.push("<!--[!-->");
+          $$renderer2.push(`<form method="POST" action="?/deleteLogo"><input type="hidden" name="logoId"${attr("value", logo.id)}/> <button type="submit" class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-red-900/50 text-red-300 hover:bg-red-800/50 transition-colors">`);
+          Trash_2($$renderer2, { class: "w-4 h-4" });
+          $$renderer2.push(`<!----> Remove</button></form>`);
+        }
+        $$renderer2.push(`<!--]-->`);
       } else {
         $$renderer2.push("<!--[!-->");
         $$renderer2.push(`<button type="button" class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-gray-600 text-gray-300 hover:bg-gray-500 transition-colors">`);
@@ -291,9 +340,16 @@ function _page($$renderer, $$props) {
         $$renderer2.push(`<!--]--></div> <div class="flex-1 min-w-0"><div class="font-medium text-white">${escape_html(item.display)}</div></div> `);
         if (logo) {
           $$renderer2.push("<!--[-->");
-          $$renderer2.push(`<form method="POST" action="?/deleteLogo"><input type="hidden" name="logoId"${attr("value", logo.id)}/> <button type="submit" class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-red-900/50 text-red-300 hover:bg-red-800/50 transition-colors">`);
-          Trash_2($$renderer2, { class: "w-4 h-4" });
-          $$renderer2.push(`<!----> Remove</button></form>`);
+          if (logo.isStatic) {
+            $$renderer2.push("<!--[-->");
+            $$renderer2.push(`<span class="px-3 py-1.5 text-xs text-gray-500 bg-gray-800 rounded-lg">Static</span>`);
+          } else {
+            $$renderer2.push("<!--[!-->");
+            $$renderer2.push(`<form method="POST" action="?/deleteLogo"><input type="hidden" name="logoId"${attr("value", logo.id)}/> <button type="submit" class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-red-900/50 text-red-300 hover:bg-red-800/50 transition-colors">`);
+            Trash_2($$renderer2, { class: "w-4 h-4" });
+            $$renderer2.push(`<!----> Remove</button></form>`);
+          }
+          $$renderer2.push(`<!--]-->`);
         } else {
           $$renderer2.push("<!--[!-->");
           $$renderer2.push(`<button type="button" class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-gray-600 text-gray-300 hover:bg-gray-500 transition-colors">`);
