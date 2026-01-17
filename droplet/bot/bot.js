@@ -23,10 +23,11 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const API_SECRET = process.env.API_SECRET;
 const BACKEND_URL = 'https://observatory-backend.fly.dev';
-const ORCHON_DIR = '/root/orchon';
-const PROJECTS_DIR = '/root/projects';
-const LOGS_DIR = '/root/logs';
-const HISTORY_FILE = '/root/orchon/droplet/bot/conversation_history.json';
+// Use __dirname to get paths relative to script location (works on any machine)
+const ORCHON_DIR = path.resolve(__dirname, '..', '..');
+const PROJECTS_DIR = process.env.PROJECTS_DIR || '/root/projects';
+const LOGS_DIR = process.env.LOGS_DIR || '/root/logs';
+const HISTORY_FILE = path.join(__dirname, 'conversation_history.json');
 
 // =============================================================================
 // Conversation History Management
@@ -441,22 +442,21 @@ function handleUpdate() {
 function handleHelp() {
   sendMessage(`🤖 *ORCHON Commands*
 
-*User Management (no LLM required):*
+*User Management (no LLM):*
 \`/users\` - List allowed app users
-\`/resetpassword <email> <pass>\` - Reset user password
-\`/adduser <email> [name]\` - Add allowed user
+\`/adduser <email> [name]\` - Add new user
 
 *System:*
 \`/status\` - System status
 \`/projects\` - List projects
-\`/clone <account> <repo>\` - Clone repo
+\`/services\` - Check systemd services
 \`/logs <session>\` - View logs
 \`/kill <session>\` - Kill session
+\`/clone <account> <repo>\` - Clone repo
 \`/update\` - Pull latest ORCHON
-\`/clear\` - Clear conversation history
-\`/services\` - Check systemd services
+\`/clear\` - Clear history
 
-*Or just talk naturally* (requires LLM)
+*Or just talk naturally* (uses LLM)
 
 *LLM:* ${orchestrator ? orchestrator.LLM_PROVIDER : 'not loaded'}`);
 }
@@ -522,24 +522,6 @@ async function handleUsers() {
       sendMessage(msg);
     } else {
       sendMessage(`❌ Failed to fetch users: ${JSON.stringify(res.data)}`);
-    }
-  } catch (e) {
-    sendMessage(`❌ API error: ${e.message}`);
-  }
-}
-
-async function handleResetPassword(email, password) {
-  if (!email || !password) {
-    sendMessage('Usage: `/resetpassword <email> <password>`');
-    return;
-  }
-
-  try {
-    const res = await backendRequest('POST', '/auth/set-password', { email, password });
-    if (res.status === 200 && res.data.success) {
-      sendMessage(`✅ Password reset for \`${email}\`\n\nNew password: \`${password}\``);
-    } else {
-      sendMessage(`❌ Failed: ${res.data.error || JSON.stringify(res.data)}`);
     }
   } catch (e) {
     sendMessage(`❌ API error: ${e.message}`);
@@ -686,10 +668,6 @@ async function handleMessage(text, chatId, imageData = null) {
       handleUsers();
       return;
 
-    case '/resetpassword':
-      handleResetPassword(parts[1], parts[2]);
-      return;
-
     case '/adduser':
       handleAddUser(parts[1], parts.slice(2).join(' ') || null);
       return;
@@ -806,10 +784,11 @@ function pollUpdates() {
 // Start Bot
 // =============================================================================
 
-// Get version from package.json
+// Get version from package.json (relative to script location)
 let version = 'unknown';
 try {
-  const pkg = JSON.parse(fs.readFileSync('/root/orchon/droplet/package.json', 'utf8'));
+  const pkgPath = path.join(__dirname, '..', 'package.json');
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
   version = pkg.version || 'unknown';
 } catch (e) {
   console.error('Could not read version:', e.message);
