@@ -30,13 +30,34 @@
 	// View mode: cards (project cards), stack (tech stack focus), services (infra services)
 	let viewMode = $state<'cards' | 'stack' | 'services'>('cards');
 
+	// Static logos available in /logos folder
+	const STATIC_LOGOS: Record<string, Record<string, boolean>> = {
+		infra: {
+			cloudflare: true, supabase: true, vercel: true, github: true, firebase: true,
+			digitalocean: true, netlify: true, sentry: true, resend: true, aws: true
+		},
+		techstack: {
+			svelte: true, sveltekit: true, tailwind: true, vite: true, typescript: true,
+			npm: true, playwright: true, vitest: true, angular: true, react: true,
+			nextjs: true, pnpm: true, bun: true, lucide: true, nodejs: true
+		}
+	};
+
 	// Helper to get logo URL for a provider/techstack item
 	function getLogoUrl(type: 'infra' | 'techstack', name: string): string | null {
 		const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+		// First check R2 logos from data
 		const logo = data.logos?.find(l =>
 			l.type === type && l.name.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedName
 		);
-		return logo?.url || null;
+		if (logo?.url) return logo.url;
+
+		// Fallback to static logos
+		if (STATIC_LOGOS[type]?.[normalizedName]) {
+			return `/logos/${type}/${normalizedName}.svg`;
+		}
+		return null;
 	}
 
 	// Sorting
