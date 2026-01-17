@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
 import '../auth/auth_service.dart';
 import '../../models/deployment.dart';
@@ -42,8 +43,11 @@ class OrchonService {
   final http.Client _client;
 
   /// Access token for API authentication (from auth provider)
-  /// Falls back to build-time secret if not available
+  /// Falls back to SharedPreferences if not set by provider
   String? _accessToken;
+
+  /// SharedPreferences key for access token (must match auth_service.dart)
+  static const _accessTokenKey = 'auth_access_token';
 
   /// Retry configuration
   static const int _maxRetries = 3;
@@ -60,14 +64,42 @@ class OrchonService {
     debugPrint('[ORCHON] Token updated: ${token != null ? "yes" : "no"}');
   }
 
+  /// Get the access token - checks memory first, then SharedPreferences
+  /// This ensures we always have the token even if auth provider hasn't loaded yet
+  Future<String?> _getToken() async {
+    // If we have it in memory, use it
+    if (_accessToken != null && _accessToken!.isNotEmpty) {
+      return _accessToken;
+    }
+
+    // Otherwise, load directly from SharedPreferences (bypasses auth provider race condition)
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storedToken = prefs.getString(_accessTokenKey);
+      if (storedToken != null && storedToken.isNotEmpty) {
+        debugPrint('[ORCHON] Loaded token from SharedPreferences');
+        _accessToken = storedToken; // Cache it
+        return storedToken;
+      }
+    } catch (e) {
+      debugPrint('[ORCHON] Failed to load token from SharedPreferences: $e');
+    }
+
+    // Last resort: build-time secret (probably empty)
+    return AppConfig.orchonApiSecret.isNotEmpty ? AppConfig.orchonApiSecret : null;
+  }
+
   /// Execute HTTP GET with retry and exponential backoff
   Future<http.Response> _getWithRetry(Uri uri) async {
     Exception? lastException;
 
+    // Get auth headers (async to ensure token is loaded)
+    final headers = await _getAuthHeaders();
+
     for (int attempt = 0; attempt < _maxRetries; attempt++) {
       try {
         final response = await _client
-            .get(uri, headers: _authHeaders)
+            .get(uri, headers: headers)
             .timeout(_requestTimeout);
 
         // Success or client error (4xx) - don't retry
@@ -191,12 +223,13 @@ class OrchonService {
     }
   }
 
-  Map<String, String> get _authHeaders {
-    // Use stored access token from auth, fall back to build-time secret
-    final token = _accessToken ?? AppConfig.orchonApiSecret;
+  /// Get auth headers with token (async to ensure token is loaded from SharedPreferences if needed)
+  Future<Map<String, String>> _getAuthHeaders() async {
+    final token = await _getToken();
+    debugPrint('[ORCHON] Using token: ${token != null ? "yes (${token.length} chars)" : "NO TOKEN"}');
     return {
       'Content-Type': 'application/json',
-      if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
   }
 
