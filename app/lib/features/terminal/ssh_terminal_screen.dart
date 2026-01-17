@@ -45,6 +45,11 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
   bool _showInputBar = false;
   bool _ctrlPressed = false;
 
+  // Track terminal dimensions for PTY sizing
+  int _terminalCols = 80;
+  int _terminalRows = 24;
+  Size? _lastViewSize;
+
   @override
   void initState() {
     super.initState();
@@ -111,11 +116,11 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
 
       terminal.write('Starting shell...\r\n\r\n');
 
-      // Start shell session
+      // Start shell session with dynamic PTY size
       _session = await _client!.shell(
         pty: SSHPtyConfig(
-          width: 80,
-          height: 24,
+          width: _terminalCols,
+          height: _terminalRows,
         ),
       );
 
@@ -224,6 +229,55 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
       _client?.close();
     } catch (_) {}
     super.dispose();
+  }
+
+  // Calculate terminal dimensions based on view size and font size
+  void _updateTerminalSize(Size viewSize, double fontSize) {
+    // Skip if view size hasn't changed significantly
+    if (_lastViewSize != null &&
+        (_lastViewSize!.width - viewSize.width).abs() < 10 &&
+        (_lastViewSize!.height - viewSize.height).abs() < 10) {
+      return;
+    }
+    _lastViewSize = viewSize;
+
+    // Calculate character dimensions based on monospace font
+    // Monospace fonts typically have width ~0.6x height
+    final charHeight = fontSize * 1.2; // Line height
+    final charWidth = fontSize * 0.6;  // Character width
+
+    // Calculate cols and rows
+    final cols = (viewSize.width / charWidth).floor();
+    final rows = (viewSize.height / charHeight).floor();
+
+    // Clamp to reasonable values
+    final newCols = cols.clamp(20, 200);
+    final newRows = rows.clamp(5, 100);
+
+    // Only resize if dimensions actually changed
+    if (newCols != _terminalCols || newRows != _terminalRows) {
+      _terminalCols = newCols;
+      _terminalRows = newRows;
+
+      // Resize PTY if session is active
+      _resizePty();
+    }
+  }
+
+  // Resize the PTY to current dimensions
+  void _resizePty() {
+    // Resize the local terminal emulator
+    terminal.resize(_terminalCols, _terminalRows);
+
+    // Resize the remote PTY if session is active
+    if (_session != null) {
+      try {
+        _session!.resizeTerminal(_terminalCols, _terminalRows);
+      } catch (e) {
+        // Ignore resize errors - session may be closing
+        debugPrint('PTY resize failed: $e');
+      }
+    }
   }
 
   // Send ANSI escape sequences for special keys
@@ -398,37 +452,50 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
             // GestureDetector with opaque behavior to capture ALL vertical drags for scroll
             // Taps still work because we only handle drag, not tap
             Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onVerticalDragStart: (details) {
-                  _lastPointerY = details.globalPosition.dy;
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final fontSize = ref.watch(terminalConfigProvider).terminalFontSize;
+                  // Update PTY size based on actual view dimensions
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _updateTerminalSize(
+                      Size(constraints.maxWidth, constraints.maxHeight),
+                      fontSize,
+                    );
+                  });
+
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onVerticalDragStart: (details) {
+                      _lastPointerY = details.globalPosition.dy;
+                    },
+                    onVerticalDragUpdate: (details) {
+                      if (_lastPointerY != null) {
+                        final delta = details.globalPosition.dy - _lastPointerY!;
+                        _handleTerminalScroll(delta);
+                        _lastPointerY = details.globalPosition.dy;
+                      }
+                    },
+                    onVerticalDragEnd: (details) {
+                      _lastPointerY = null;
+                      _scrollAccumulator = 0;
+                    },
+                    onTapDown: (details) {
+                      // Exit copy mode if in it (so user can type again)
+                      _exitCopyMode();
+                      // Forward tap to terminal for focus
+                      _terminalFocusNode.requestFocus();
+                    },
+                    child: TerminalView(
+                      terminal,
+                      focusNode: _terminalFocusNode,
+                      scrollController: _terminalScrollController,
+                      textStyle: TerminalStyle(
+                        fontSize: fontSize,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  );
                 },
-                onVerticalDragUpdate: (details) {
-                  if (_lastPointerY != null) {
-                    final delta = details.globalPosition.dy - _lastPointerY!;
-                    _handleTerminalScroll(delta);
-                    _lastPointerY = details.globalPosition.dy;
-                  }
-                },
-                onVerticalDragEnd: (details) {
-                  _lastPointerY = null;
-                  _scrollAccumulator = 0;
-                },
-                onTapDown: (details) {
-                  // Exit copy mode if in it (so user can type again)
-                  _exitCopyMode();
-                  // Forward tap to terminal for focus
-                  _terminalFocusNode.requestFocus();
-                },
-                child: TerminalView(
-                  terminal,
-                  focusNode: _terminalFocusNode,
-                  scrollController: _terminalScrollController,
-                  textStyle: TerminalStyle(
-                    fontSize: ref.watch(terminalConfigProvider).terminalFontSize,
-                    fontFamily: 'monospace',
-                  ),
-                ),
               ),
             ),
             // Terminal toolbar with special keys
