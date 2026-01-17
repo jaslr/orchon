@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'core/auth/auth_service.dart';
+import 'core/auth/pin_service.dart';
 import 'features/auth/login_screen.dart';
+import 'features/auth/pin_screen.dart';
 import 'features/deployments/deployments_screen.dart';
 import 'features/notifications/notification_rule.dart';
 import 'features/notifications/notification_service.dart';
@@ -87,8 +89,6 @@ class OrchonApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-
     return MaterialApp(
       navigatorKey: navigatorKey,
       title: 'ORCHON',
@@ -105,29 +105,99 @@ class OrchonApp extends ConsumerWidget {
           elevation: 0,
         ),
       ),
-      home: _buildHome(authState),
+      home: const _AuthGate(),
     );
   }
+}
 
-  Widget _buildHome(AuthState authState) {
-    switch (authState.status) {
-      case AuthStatus.unknown:
-        // Show loading screen while checking stored auth
-        return const Scaffold(
-          backgroundColor: Color(0xFF0F0F23),
-          body: Center(
-            child: CircularProgressIndicator(
-              color: Color(0xFF6366F1),
-            ),
-          ),
-        );
-      case AuthStatus.authenticated:
-        return const DeploymentsScreen();
-      case AuthStatus.unauthenticated:
-      case AuthStatus.checking:
-      case AuthStatus.error:
-        return const LoginScreen();
+/// Handles the authentication flow: Login -> PIN Setup/Entry -> Main App
+class _AuthGate extends ConsumerStatefulWidget {
+  const _AuthGate();
+
+  @override
+  ConsumerState<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends ConsumerState<_AuthGate> {
+  bool _justLoggedIn = false;
+  bool _pinUnlocked = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final pinState = ref.watch(pinProvider);
+
+    // Not authenticated - show login
+    if (authState.status == AuthStatus.unknown) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0F0F23),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF6366F1)),
+        ),
+      );
     }
+
+    if (authState.status != AuthStatus.authenticated) {
+      return LoginScreen(
+        onLoginSuccess: () {
+          setState(() {
+            _justLoggedIn = true;
+          });
+        },
+      );
+    }
+
+    // Authenticated - check PIN status
+    if (pinState.status == PinStatus.unknown) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0F0F23),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF6366F1)),
+        ),
+      );
+    }
+
+    // Just logged in with email/password - offer PIN setup
+    if (_justLoggedIn && pinState.status == PinStatus.notSetup) {
+      return PinSetupScreen(
+        onComplete: () {
+          setState(() {
+            _justLoggedIn = false;
+            _pinUnlocked = true;
+          });
+        },
+        onSkip: () {
+          ref.read(pinProvider.notifier).skipSetup();
+          setState(() {
+            _justLoggedIn = false;
+            _pinUnlocked = true;
+          });
+        },
+      );
+    }
+
+    // PIN is set up but locked - require unlock
+    if (pinState.status == PinStatus.locked && !_pinUnlocked) {
+      return PinEntryScreen(
+        onUnlocked: () {
+          setState(() {
+            _pinUnlocked = true;
+          });
+        },
+        onLogout: () async {
+          // Clear PIN and sign out to use email/password
+          await ref.read(pinProvider.notifier).clearPin();
+          await ref.read(authProvider.notifier).signOut();
+          setState(() {
+            _justLoggedIn = false;
+            _pinUnlocked = false;
+          });
+        },
+      );
+    }
+
+    // Fully authenticated and unlocked
+    return const DeploymentsScreen();
   }
 }
 

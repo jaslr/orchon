@@ -5,7 +5,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/auth/auth_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  final VoidCallback? onLoginSuccess;
+
+  const LoginScreen({super.key, this.onLoginSuccess});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -58,7 +60,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
       _passwordController.text,
     );
 
-    if (!success && mounted) {
+    if (success && mounted) {
+      widget.onLoginSuccess?.call();
+    } else if (!success && mounted) {
       final authState = ref.read(authProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
