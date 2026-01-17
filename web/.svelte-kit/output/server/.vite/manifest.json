@@ -25,14 +25,6 @@
       "_Icon.js"
     ]
   },
-  "_arrow-left.js": {
-    "file": "chunks/arrow-left.js",
-    "name": "arrow-left",
-    "imports": [
-      "_index2.js",
-      "_Icon.js"
-    ]
-  },
   "_arrow-right.js": {
     "file": "chunks/arrow-right.js",
     "name": "arrow-right",
@@ -419,7 +411,7 @@
       "_settings.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.GinpRqoa.css"
+      "_app/immutable/assets/_layout.tLcFa-pa.css"
     ]
   },
   "src/routes/+page.server.ts": {
@@ -554,8 +546,6 @@
       "_exports.js",
       "_utils.js",
       "_state.svelte.js",
-      "_arrow-left.js",
-      "_external-link.js",
       "_check.js",
       "_x.js",
       "_Icon.js",
@@ -764,10 +754,9 @@
     "isEntry": true,
     "imports": [
       "_index2.js",
-      "_arrow-left.js",
+      "_Icon.js",
       "_server.js",
       "_building-2.js",
-      "_Icon.js",
       "_globe.js",
       "_external-link.js",
       "_context.js"

@@ -26,7 +26,8 @@ const PERSONAL_PROJECT_IDS = [
   'loadmanagement',  // BlatBlat
   'Ladderbox',
   'shippywhippy',
-  'wwc',  // Work With Chip / Violet
+  'wwc',  // Work With Chip
+  'violet',  // Design system / component library
 ];
 
 export const load = async () => {
@@ -59,22 +60,8 @@ export const load = async () => {
     })
     .filter((p): p is PersonalProject => p !== null);
 
-  // Add Violet (static description project)
-  const additionalProjects: PersonalProject[] = [
-    {
-      id: 'violet',
-      displayName: 'Violet',
-      productionUrl: undefined,
-      repoUrl: 'https://github.com/jaslr/violet',
-      hostingProvider: 'none',
-      identity: 'jaslr',
-      description: 'Design system / component library',
-      services: [],
-    },
-  ];
-
   return {
-    projects: [...projects, ...additionalProjects].sort((a, b) =>
+    projects: projects.sort((a, b) =>
       a.displayName.localeCompare(b.displayName)
     )
   };

@@ -172,7 +172,6 @@ function MainNav($$renderer, $$props) {
 function _layout($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { children, data } = $$props;
-    let isAdminRoute = page.url.pathname.startsWith("/admin");
     let isLoginRoute = page.url.pathname === "/login";
     head("12qhfyh", $$renderer2, ($$renderer3) => {
       $$renderer3.title(($$renderer4) => {
@@ -180,7 +179,7 @@ function _layout($$renderer, $$props) {
       });
       $$renderer3.push(`<link rel="preconnect" href="https://fonts.googleapis.com"/> <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/> <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet"/>`);
     });
-    if (isAdminRoute || isLoginRoute) {
+    if (isLoginRoute) {
       $$renderer2.push("<!--[-->");
       children($$renderer2);
       $$renderer2.push(`<!---->`);

@@ -8,8 +8,10 @@ const PERSONAL_PROJECT_IDS = [
   // BlatBlat
   "Ladderbox",
   "shippywhippy",
-  "wwc"
-  // Work With Chip / Violet
+  "wwc",
+  // Work With Chip
+  "violet"
+  // Design system / component library
 ];
 const load = async () => {
   const projects = PERSONAL_PROJECT_IDS.map((id) => {
@@ -33,20 +35,8 @@ const load = async () => {
     };
     return project;
   }).filter((p) => p !== null);
-  const additionalProjects = [
-    {
-      id: "violet",
-      displayName: "Violet",
-      productionUrl: void 0,
-      repoUrl: "https://github.com/jaslr/violet",
-      hostingProvider: "none",
-      identity: "jaslr",
-      description: "Design system / component library",
-      services: []
-    }
-  ];
   return {
-    projects: [...projects, ...additionalProjects].sort(
+    projects: projects.sort(
       (a, b) => a.displayName.localeCompare(b.displayName)
     )
   };

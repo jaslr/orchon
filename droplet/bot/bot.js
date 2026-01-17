@@ -21,6 +21,8 @@ dns.setDefaultResultOrder('ipv4first');
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const API_SECRET = process.env.API_SECRET;
+const BACKEND_URL = 'https://observatory-backend.fly.dev';
 const ORCHON_DIR = '/root/orchon';
 const PROJECTS_DIR = '/root/projects';
 const LOGS_DIR = '/root/logs';
@@ -439,14 +441,12 @@ function handleUpdate() {
 function handleHelp() {
   sendMessage(`🤖 *ORCHON Commands*
 
-*Just talk to me naturally:*
-"Fix the pagination bug in Livna"
-"What's the status?"
-"Clone flashlight-db from jaslr"
+*User Management (no LLM required):*
+\`/users\` - List allowed app users
+\`/resetpassword <email> <pass>\` - Reset user password
+\`/adduser <email> [name]\` - Add allowed user
 
-*Send images:* I can analyze images you send!
-
-*Or use slash commands:*
+*System:*
 \`/status\` - System status
 \`/projects\` - List projects
 \`/clone <account> <repo>\` - Clone repo
@@ -454,10 +454,134 @@ function handleHelp() {
 \`/kill <session>\` - Kill session
 \`/update\` - Pull latest ORCHON
 \`/clear\` - Clear conversation history
-\`/help\` - This message
+\`/services\` - Check systemd services
 
-*LLM:* ${orchestrator ? orchestrator.LLM_PROVIDER : 'not loaded'}
-*Memory:* Conversation context is preserved`);
+*Or just talk naturally* (requires LLM)
+
+*LLM:* ${orchestrator ? orchestrator.LLM_PROVIDER : 'not loaded'}`);
+}
+
+// =============================================================================
+// Backend API Helpers (Direct, no LLM)
+// =============================================================================
+
+function backendRequest(method, path, body = null) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(BACKEND_URL + path);
+    const data = body ? JSON.stringify(body) : null;
+
+    const options = {
+      hostname: url.hostname,
+      path: url.pathname,
+      method: method,
+      family: 4,
+      headers: {
+        'Authorization': `Bearer ${API_SECRET}`,
+        'Content-Type': 'application/json',
+      }
+    };
+
+    if (data) {
+      options.headers['Content-Length'] = Buffer.byteLength(data);
+    }
+
+    const req = https.request(options, (res) => {
+      let responseData = '';
+      res.on('data', chunk => responseData += chunk);
+      res.on('end', () => {
+        try {
+          resolve({ status: res.statusCode, data: JSON.parse(responseData) });
+        } catch (e) {
+          resolve({ status: res.statusCode, data: responseData });
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.setTimeout(15000, () => {
+      req.destroy();
+      reject(new Error('Request timeout'));
+    });
+
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+async function handleUsers() {
+  try {
+    const res = await backendRequest('GET', '/auth/users');
+    if (res.status === 200 && res.data.users) {
+      let msg = '👥 *Allowed Users:*\n\n';
+      res.data.users.forEach(u => {
+        const lastLogin = u.last_login_at
+          ? new Date(u.last_login_at).toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })
+          : 'never';
+        msg += `• \`${u.email}\`\n  ${u.name || 'No name'} | Last: ${lastLogin}\n\n`;
+      });
+      sendMessage(msg);
+    } else {
+      sendMessage(`❌ Failed to fetch users: ${JSON.stringify(res.data)}`);
+    }
+  } catch (e) {
+    sendMessage(`❌ API error: ${e.message}`);
+  }
+}
+
+async function handleResetPassword(email, password) {
+  if (!email || !password) {
+    sendMessage('Usage: `/resetpassword <email> <password>`');
+    return;
+  }
+
+  try {
+    const res = await backendRequest('POST', '/auth/set-password', { email, password });
+    if (res.status === 200 && res.data.success) {
+      sendMessage(`✅ Password reset for \`${email}\`\n\nNew password: \`${password}\``);
+    } else {
+      sendMessage(`❌ Failed: ${res.data.error || JSON.stringify(res.data)}`);
+    }
+  } catch (e) {
+    sendMessage(`❌ API error: ${e.message}`);
+  }
+}
+
+async function handleAddUser(email, name) {
+  if (!email) {
+    sendMessage('Usage: `/adduser <email> [name]`');
+    return;
+  }
+
+  try {
+    const res = await backendRequest('POST', '/auth/users', { email, name: name || null });
+    if (res.status === 201 && res.data.user) {
+      sendMessage(`✅ User added: \`${res.data.user.email}\`\n\nSet password with:\n\`/resetpassword ${email} <password>\``);
+    } else {
+      sendMessage(`❌ Failed: ${res.data.error || JSON.stringify(res.data)}`);
+    }
+  } catch (e) {
+    sendMessage(`❌ API error: ${e.message}`);
+  }
+}
+
+function handleServices() {
+  try {
+    const services = ['orchon-bot', 'orchon-ws', 'orchon-updates', 'orchon-proxy'];
+    let status = '🔧 *Service Status:*\n\n';
+
+    services.forEach(service => {
+      try {
+        const result = execSync(`systemctl is-active ${service} 2>/dev/null`, { encoding: 'utf8' }).trim();
+        status += `• \`${service}\`: ${result === 'active' ? '✅ active' : '❌ ' + result}\n`;
+      } catch (e) {
+        status += `• \`${service}\`: ❌ inactive\n`;
+      }
+    });
+
+    sendMessage(status);
+  } catch (e) {
+    sendMessage(`❌ Error checking services: ${e.message}`);
+  }
 }
 
 // =============================================================================
@@ -556,6 +680,22 @@ async function handleMessage(text, chatId, imageData = null) {
     case '/clear':
       clearHistory(chatId);
       sendMessage('🧹 Conversation history cleared. Starting fresh!');
+      return;
+
+    case '/users':
+      handleUsers();
+      return;
+
+    case '/resetpassword':
+      handleResetPassword(parts[1], parts[2]);
+      return;
+
+    case '/adduser':
+      handleAddUser(parts[1], parts.slice(2).join(' ') || null);
+      return;
+
+    case '/services':
+      handleServices();
       return;
 
     case '/help':

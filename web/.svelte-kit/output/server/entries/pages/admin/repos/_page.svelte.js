@@ -1,11 +1,9 @@
-import { w as spread_props, G as attr, y as stringify, F as ensure_array_like, x as attr_class } from "../../../../chunks/index2.js";
+import { w as spread_props, F as ensure_array_like, G as attr, x as attr_class, y as stringify } from "../../../../chunks/index2.js";
 import "@sveltejs/kit/internal";
 import "../../../../chunks/exports.js";
 import "../../../../chunks/utils.js";
 import "@sveltejs/kit/internal/server";
 import "../../../../chunks/state.svelte.js";
-import { A as Arrow_left } from "../../../../chunks/arrow-left.js";
-import { E as External_link } from "../../../../chunks/external-link.js";
 import { C as Check } from "../../../../chunks/check.js";
 import { X } from "../../../../chunks/x.js";
 import { I as Icon } from "../../../../chunks/Icon.js";
@@ -220,23 +218,12 @@ function _page($$renderer, $$props) {
     let selectedProjectData = data.selectedProject ? data.projects.find((p) => p.repo === data.selectedProject) : null;
     let displayStack = form?.success && form.repo === data.selectedProject ? form.detectedStack : selectedProjectData?.detectedStack;
     let displayPackageJson = form?.success && form.repo === data.selectedProject ? form.packageJson : selectedProjectData?.packageJson;
-    $$renderer2.push(`<div class="min-h-screen bg-gray-900 text-white"><header class="px-6 py-4 border-b border-gray-800"><div class="flex items-center justify-between"><div class="flex items-center gap-4"><a href="/" class="text-gray-400 hover:text-white transition-colors">`);
-    Arrow_left($$renderer2, { class: "w-5 h-5" });
-    $$renderer2.push(`<!----></a> <h1 class="text-xl font-semibold">Repository Configuration</h1></div> `);
-    if (data.selectedProject) {
-      $$renderer2.push("<!--[-->");
-      $$renderer2.push(`<a${attr("href", `/?project=${stringify(data.selectedProject)}`)} class="text-sm text-gray-400 hover:text-white flex items-center gap-1">Back to ${escape_html(data.selectedProject)} `);
-      External_link($$renderer2, { class: "w-3 h-3" });
-      $$renderer2.push(`<!----></a>`);
-    } else {
-      $$renderer2.push("<!--[!-->");
-    }
-    $$renderer2.push(`<!--]--></div></header> <div class="flex"><aside class="w-64 border-r border-gray-800 min-h-[calc(100vh-65px)]"><div class="p-4"><h2 class="text-xs uppercase tracking-wider text-gray-500 mb-3">Projects</h2> <nav class="space-y-1"><!--[-->`);
+    $$renderer2.push(`<div class="h-full flex bg-gray-950"><aside class="w-56 shrink-0 border-r border-gray-800 overflow-y-auto bg-gray-900/50"><div class="p-4"><h2 class="text-xs uppercase tracking-wider text-gray-500 mb-3">Projects</h2> <nav class="space-y-1"><!--[-->`);
     const each_array = ensure_array_like(data.projects);
     for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
       let project = each_array[$$index];
       const isActive = data.selectedProject === project.repo;
-      $$renderer2.push(`<a${attr("href", `/admin/repos?project=${stringify(project.repo)}`)}${attr_class(`block px-3 py-2 text-sm transition-colors ${stringify(isActive ? "bg-blue-600 text-white" : "text-gray-400 hover:bg-gray-800 hover:text-white")}`)}><div class="flex items-center justify-between"><span class="truncate">${escape_html(project.repo)}</span> `);
+      $$renderer2.push(`<a${attr("href", `/admin/repos?project=${stringify(project.repo)}`)}${attr_class(`block px-3 py-2 rounded-lg text-sm transition-colors ${stringify(isActive ? "bg-blue-600 text-white" : "text-gray-400 hover:bg-gray-800 hover:text-white")}`)}><div class="flex items-center justify-between"><span class="truncate">${escape_html(project.repo)}</span> `);
       if (project.infraConfig) {
         $$renderer2.push("<!--[-->");
         Check($$renderer2, {
@@ -250,10 +237,10 @@ function _page($$renderer, $$props) {
       }
       $$renderer2.push(`<!--]--></div> <div${attr_class(`text-xs ${stringify(isActive ? "text-blue-200" : "text-gray-500")}`)}>${escape_html(project.owner)}</div></a>`);
     }
-    $$renderer2.push(`<!--]--></nav></div></aside> <main class="flex-1 p-6">`);
+    $$renderer2.push(`<!--]--></nav></div></aside> <main class="flex-1 p-6 overflow-y-auto">`);
     if (data.selectedProject && selectedProjectData) {
       $$renderer2.push("<!--[-->");
-      $$renderer2.push(`<div class="max-w-3xl"><div class="flex items-center justify-between mb-6"><div><h2 class="text-2xl font-bold">${escape_html(data.selectedProject)}</h2> <p class="text-gray-400">${escape_html(selectedProjectData.owner)}/${escape_html(selectedProjectData.repo)}</p></div> <form method="POST" action="?/scanRepo"><input type="hidden" name="owner"${attr("value", selectedProjectData.owner)}/> <input type="hidden" name="repo"${attr("value", selectedProjectData.repo)}/> <button type="submit"${attr("disabled", scanning === selectedProjectData.repo, true)} class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-sm transition-colors">`);
+      $$renderer2.push(`<div class="max-w-3xl"><div class="flex items-center justify-between mb-6"><div><h2 class="text-2xl font-bold text-white">${escape_html(data.selectedProject)}</h2> <p class="text-gray-400">${escape_html(selectedProjectData.owner)}/${escape_html(selectedProjectData.repo)}</p></div> <form method="POST" action="?/scanRepo"><input type="hidden" name="owner"${attr("value", selectedProjectData.owner)}/> <input type="hidden" name="repo"${attr("value", selectedProjectData.repo)}/> <button type="submit"${attr("disabled", scanning === selectedProjectData.repo, true)} class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-lg text-sm text-white transition-colors">`);
       if (scanning === selectedProjectData.repo) {
         $$renderer2.push("<!--[-->");
         Loader_circle($$renderer2, { class: "w-4 h-4 animate-spin" });
@@ -266,14 +253,14 @@ function _page($$renderer, $$props) {
       $$renderer2.push(`<!--]--></button></form></div> `);
       if (form?.error) {
         $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<div class="mb-6 p-4 bg-red-900/30 border border-red-800 text-red-300">${escape_html(form.error)}</div>`);
+        $$renderer2.push(`<div class="mb-6 p-4 bg-red-900/30 border border-red-800 rounded-lg text-red-300">${escape_html(form.error)}</div>`);
       } else {
         $$renderer2.push("<!--[!-->");
       }
       $$renderer2.push(`<!--]--> `);
       if (selectedProjectData.repoInfo) {
         $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<div class="mb-6 bg-gray-800 p-4"><div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"><div class="flex items-center gap-2">`);
+        $$renderer2.push(`<div class="mb-6 bg-gray-800/50 border border-gray-700 rounded-lg p-4"><div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"><div class="flex items-center gap-2">`);
         Clock($$renderer2, { class: "w-4 h-4 text-gray-500" });
         $$renderer2.push(`<!----> <div><div class="text-xs text-gray-500 uppercase">Last Push</div> <div class="text-gray-200">${escape_html(formatRelativeTime(selectedProjectData.repoInfo.lastPush))}</div></div></div> <div class="flex items-center gap-2">`);
         Git_branch($$renderer2, { class: "w-4 h-4 text-gray-500" });
@@ -324,7 +311,7 @@ function _page($$renderer, $$props) {
           const each_array_1 = ensure_array_like(selectedProjectData.repoInfo.workflowFiles);
           for (let $$index_1 = 0, $$length = each_array_1.length; $$index_1 < $$length; $$index_1++) {
             let file = each_array_1[$$index_1];
-            $$renderer2.push(`<span class="px-2 py-0.5 bg-gray-700 text-gray-300 text-xs">${escape_html(file)}</span>`);
+            $$renderer2.push(`<span class="px-2 py-0.5 bg-gray-700 rounded text-gray-300 text-xs">${escape_html(file)}</span>`);
           }
           $$renderer2.push(`<!--]--></div></div>`);
         } else {
@@ -334,22 +321,22 @@ function _page($$renderer, $$props) {
       } else {
         $$renderer2.push("<!--[!-->");
       }
-      $$renderer2.push(`<!--]--> <div class="grid gap-6"><div class="bg-gray-800 p-6"><div class="flex items-center gap-2 mb-4">`);
+      $$renderer2.push(`<!--]--> <div class="grid gap-6"><div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6"><div class="flex items-center gap-2 mb-4">`);
       File_code($$renderer2, { class: "w-5 h-5 text-gray-400" });
-      $$renderer2.push(`<!----> <h3 class="text-lg font-semibold">Current Configuration</h3></div> `);
+      $$renderer2.push(`<!----> <h3 class="text-lg font-semibold text-white">Current Configuration</h3></div> `);
       if (selectedProjectData.infraConfig) {
         $$renderer2.push("<!--[-->");
         $$renderer2.push(`<div class="space-y-4"><div><label class="text-xs text-gray-500 uppercase">Display Name</label> <p class="text-white">${escape_html(selectedProjectData.infraConfig.displayName)}</p></div> <div><label class="text-xs text-gray-500 uppercase">Tech Stack</label> <div class="flex flex-wrap gap-2 mt-1">`);
         if (selectedProjectData.infraConfig.stack.framework) {
           $$renderer2.push("<!--[-->");
-          $$renderer2.push(`<span class="px-2 py-1 bg-purple-900/50 text-purple-300 text-xs">${escape_html(selectedProjectData.infraConfig.stack.framework)}</span>`);
+          $$renderer2.push(`<span class="px-2 py-1 bg-purple-900/50 rounded text-purple-300 text-xs">${escape_html(selectedProjectData.infraConfig.stack.framework)}</span>`);
         } else {
           $$renderer2.push("<!--[!-->");
         }
         $$renderer2.push(`<!--]--> `);
         if (selectedProjectData.infraConfig.stack.language) {
           $$renderer2.push("<!--[-->");
-          $$renderer2.push(`<span class="px-2 py-1 bg-blue-900/50 text-blue-300 text-xs">${escape_html(selectedProjectData.infraConfig.stack.language)}</span>`);
+          $$renderer2.push(`<span class="px-2 py-1 bg-blue-900/50 rounded text-blue-300 text-xs">${escape_html(selectedProjectData.infraConfig.stack.language)}</span>`);
         } else {
           $$renderer2.push("<!--[!-->");
         }
@@ -357,18 +344,18 @@ function _page($$renderer, $$props) {
         const each_array_2 = ensure_array_like(selectedProjectData.infraConfig.stack.css || []);
         for (let $$index_2 = 0, $$length = each_array_2.length; $$index_2 < $$length; $$index_2++) {
           let css = each_array_2[$$index_2];
-          $$renderer2.push(`<span class="px-2 py-1 bg-cyan-900/50 text-cyan-300 text-xs">${escape_html(css)}</span>`);
+          $$renderer2.push(`<span class="px-2 py-1 bg-cyan-900/50 rounded text-cyan-300 text-xs">${escape_html(css)}</span>`);
         }
         $$renderer2.push(`<!--]--> <!--[-->`);
         const each_array_3 = ensure_array_like(selectedProjectData.infraConfig.stack.testing || []);
         for (let $$index_3 = 0, $$length = each_array_3.length; $$index_3 < $$length; $$index_3++) {
           let test = each_array_3[$$index_3];
-          $$renderer2.push(`<span class="px-2 py-1 bg-green-900/50 text-green-300 text-xs">${escape_html(test)}</span>`);
+          $$renderer2.push(`<span class="px-2 py-1 bg-green-900/50 rounded text-green-300 text-xs">${escape_html(test)}</span>`);
         }
         $$renderer2.push(`<!--]--> `);
         if (selectedProjectData.infraConfig.stack.buildTool) {
           $$renderer2.push("<!--[-->");
-          $$renderer2.push(`<span class="px-2 py-1 bg-orange-900/50 text-orange-300 text-xs">${escape_html(selectedProjectData.infraConfig.stack.buildTool)}</span>`);
+          $$renderer2.push(`<span class="px-2 py-1 bg-orange-900/50 rounded text-orange-300 text-xs">${escape_html(selectedProjectData.infraConfig.stack.buildTool)}</span>`);
         } else {
           $$renderer2.push("<!--[!-->");
         }
@@ -381,50 +368,50 @@ function _page($$renderer, $$props) {
         $$renderer2.push(`<!--]--></div></div></div>`);
       } else {
         $$renderer2.push("<!--[!-->");
-        $$renderer2.push(`<p class="text-gray-500">No configuration found in infrastructure.ts</p> <p class="text-sm text-gray-600 mt-2">Add this project to <code class="bg-gray-700 px-1">${escape_html(data.configFilePath)}</code></p>`);
+        $$renderer2.push(`<p class="text-gray-500">No configuration found in infrastructure.ts</p> <p class="text-sm text-gray-600 mt-2">Add this project to <code class="bg-gray-700 px-1 rounded">${escape_html(data.configFilePath)}</code></p>`);
       }
       $$renderer2.push(`<!--]--></div> `);
       if (displayStack) {
         $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<div class="bg-gray-800 p-6"><div class="flex items-center gap-2 mb-4">`);
+        $$renderer2.push(`<div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6"><div class="flex items-center gap-2 mb-4">`);
         Package($$renderer2, { class: "w-5 h-5 text-gray-400" });
-        $$renderer2.push(`<!----> <h3 class="text-lg font-semibold">Detected from package.json</h3></div> <div class="space-y-4"><div><label class="text-xs text-gray-500 uppercase">Detected Stack</label> <div class="flex flex-wrap gap-2 mt-1">`);
+        $$renderer2.push(`<!----> <h3 class="text-lg font-semibold text-white">Detected from package.json</h3></div> <div class="space-y-4"><div><label class="text-xs text-gray-500 uppercase">Detected Stack</label> <div class="flex flex-wrap gap-2 mt-1">`);
         if (displayStack.framework) {
           $$renderer2.push("<!--[-->");
-          $$renderer2.push(`<span class="px-2 py-1 bg-purple-900/50 text-purple-300 text-xs">${escape_html(displayStack.framework)}</span>`);
+          $$renderer2.push(`<span class="px-2 py-1 bg-purple-900/50 rounded text-purple-300 text-xs">${escape_html(displayStack.framework)}</span>`);
         } else {
           $$renderer2.push("<!--[!-->");
         }
-        $$renderer2.push(`<!--]--> <span class="px-2 py-1 bg-blue-900/50 text-blue-300 text-xs">${escape_html(displayStack.language)}</span> <!--[-->`);
+        $$renderer2.push(`<!--]--> <span class="px-2 py-1 bg-blue-900/50 rounded text-blue-300 text-xs">${escape_html(displayStack.language)}</span> <!--[-->`);
         const each_array_5 = ensure_array_like(displayStack.css);
         for (let $$index_5 = 0, $$length = each_array_5.length; $$index_5 < $$length; $$index_5++) {
           let css = each_array_5[$$index_5];
-          $$renderer2.push(`<span class="px-2 py-1 bg-cyan-900/50 text-cyan-300 text-xs">${escape_html(css)}</span>`);
+          $$renderer2.push(`<span class="px-2 py-1 bg-cyan-900/50 rounded text-cyan-300 text-xs">${escape_html(css)}</span>`);
         }
         $$renderer2.push(`<!--]--> <!--[-->`);
         const each_array_6 = ensure_array_like(displayStack.testing);
         for (let $$index_6 = 0, $$length = each_array_6.length; $$index_6 < $$length; $$index_6++) {
           let test = each_array_6[$$index_6];
-          $$renderer2.push(`<span class="px-2 py-1 bg-green-900/50 text-green-300 text-xs">${escape_html(test)}</span>`);
+          $$renderer2.push(`<span class="px-2 py-1 bg-green-900/50 rounded text-green-300 text-xs">${escape_html(test)}</span>`);
         }
         $$renderer2.push(`<!--]--> `);
         if (displayStack.buildTool) {
           $$renderer2.push("<!--[-->");
-          $$renderer2.push(`<span class="px-2 py-1 bg-orange-900/50 text-orange-300 text-xs">${escape_html(displayStack.buildTool)}</span>`);
+          $$renderer2.push(`<span class="px-2 py-1 bg-orange-900/50 rounded text-orange-300 text-xs">${escape_html(displayStack.buildTool)}</span>`);
         } else {
           $$renderer2.push("<!--[!-->");
         }
         $$renderer2.push(`<!--]--> `);
         if (displayStack.icons) {
           $$renderer2.push("<!--[-->");
-          $$renderer2.push(`<span class="px-2 py-1 bg-pink-900/50 text-pink-300 text-xs">${escape_html(displayStack.icons)}</span>`);
+          $$renderer2.push(`<span class="px-2 py-1 bg-pink-900/50 rounded text-pink-300 text-xs">${escape_html(displayStack.icons)}</span>`);
         } else {
           $$renderer2.push("<!--[!-->");
         }
         $$renderer2.push(`<!--]--></div></div> `);
         if (displayPackageJson) {
           $$renderer2.push("<!--[-->");
-          $$renderer2.push(`<div><div class="flex items-center justify-between mb-1"><label class="text-xs text-gray-500 uppercase">Dependencies</label> <form method="POST" action="?/checkOutdated"><input type="hidden" name="packages"${attr("value", JSON.stringify(displayPackageJson.dependencies || {}))}/> <button type="submit"${attr("disabled", checkingOutdated, true)} class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 disabled:bg-gray-600 text-gray-300 transition-colors cursor-pointer">`);
+          $$renderer2.push(`<div><div class="flex items-center justify-between mb-1"><label class="text-xs text-gray-500 uppercase">Dependencies</label> <form method="POST" action="?/checkOutdated"><input type="hidden" name="packages"${attr("value", JSON.stringify(displayPackageJson.dependencies || {}))}/> <button type="submit"${attr("disabled", checkingOutdated, true)} class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 disabled:bg-gray-600 rounded text-gray-300 transition-colors cursor-pointer">`);
           {
             $$renderer2.push("<!--[!-->");
             Refresh_cw($$renderer2, { class: "w-3 h-3" });
@@ -434,7 +421,7 @@ function _page($$renderer, $$props) {
           {
             $$renderer2.push("<!--[!-->");
           }
-          $$renderer2.push(`<!--]--> <div class="text-xs text-gray-400 max-h-48 overflow-auto bg-gray-900 p-2"><!--[-->`);
+          $$renderer2.push(`<!--]--> <div class="text-xs text-gray-400 max-h-48 overflow-auto bg-gray-900 rounded p-2"><!--[-->`);
           const each_array_8 = ensure_array_like(Object.entries(displayPackageJson.dependencies || {}));
           for (let $$index_8 = 0, $$length = each_array_8.length; $$index_8 < $$length; $$index_8++) {
             let [name, version] = each_array_8[$$index_8];
@@ -453,20 +440,20 @@ function _page($$renderer, $$props) {
         $$renderer2.push("<!--[!-->");
         if (!selectedProjectData.infraConfig) {
           $$renderer2.push("<!--[-->");
-          $$renderer2.push(`<div class="bg-gray-800 p-6"><div class="flex items-center gap-2 mb-4">`);
+          $$renderer2.push(`<div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6"><div class="flex items-center gap-2 mb-4">`);
           Package($$renderer2, { class: "w-5 h-5 text-gray-400" });
-          $$renderer2.push(`<!----> <h3 class="text-lg font-semibold">Auto-detect Tech Stack</h3></div> <p class="text-gray-400 text-sm">Click "Scan package.json" to automatically detect the tech stack for this project.</p></div>`);
+          $$renderer2.push(`<!----> <h3 class="text-lg font-semibold text-white">Auto-detect Tech Stack</h3></div> <p class="text-gray-400 text-sm">Click "Scan package.json" to automatically detect the tech stack for this project.</p></div>`);
         } else {
           $$renderer2.push("<!--[!-->");
         }
         $$renderer2.push(`<!--]-->`);
       }
-      $$renderer2.push(`<!--]--> <div class="bg-gray-800/50 p-6 border border-gray-700"><h3 class="text-sm font-semibold text-gray-400 mb-3">Configuration Files</h3> <div class="space-y-2 text-sm"><div class="flex items-center justify-between"><span class="text-gray-500">Infrastructure Config:</span> <code class="text-gray-300 bg-gray-700 px-2 py-0.5">${escape_html(data.configFilePath)}</code></div> <div class="flex items-center justify-between"><span class="text-gray-500">Repos List:</span> <code class="text-gray-300 bg-gray-700 px-2 py-0.5">${escape_html(data.reposFilePath)}</code></div></div> <p class="mt-4 text-xs text-gray-500">Edit these files directly to update project configuration. Auto-save coming soon.</p></div></div></div>`);
+      $$renderer2.push(`<!--]--> <div class="bg-gray-800/30 border border-gray-700/50 rounded-lg p-6"><h3 class="text-sm font-semibold text-gray-400 mb-3">Configuration Files</h3> <div class="space-y-2 text-sm"><div class="flex items-center justify-between"><span class="text-gray-500">Infrastructure Config:</span> <code class="text-gray-300 bg-gray-700 px-2 py-0.5 rounded">${escape_html(data.configFilePath)}</code></div> <div class="flex items-center justify-between"><span class="text-gray-500">Repos List:</span> <code class="text-gray-300 bg-gray-700 px-2 py-0.5 rounded">${escape_html(data.reposFilePath)}</code></div></div> <p class="mt-4 text-xs text-gray-500">Edit these files directly to update project configuration. Auto-save coming soon.</p></div></div></div>`);
     } else {
       $$renderer2.push("<!--[!-->");
       $$renderer2.push(`<div class="flex items-center justify-center h-64 text-gray-500">Select a project from the sidebar to view its configuration</div>`);
     }
-    $$renderer2.push(`<!--]--></main></div></div>`);
+    $$renderer2.push(`<!--]--></main></div>`);
   });
 }
 export {
