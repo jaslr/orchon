@@ -119,15 +119,16 @@ export PATH="$PATH:/home/chip/flutter/bin"
 
 ```bash
 # 1. Bump version in app/pubspec.yaml
-# 2. Build APK
+# 2. Build APK (no ORCHON_API_SECRET needed - received from backend at login)
 export PATH="$PATH:/home/chip/flutter/bin"
 cd app && flutter build apk --release \
-  --dart-define=ORCHON_API_SECRET=$(grep "^API_SECRET=" .env | cut -d= -f2) \
   --dart-define=WS_URL=ws://209.38.85.244:8405
 
 # 3. Publish to OTA server
 cd .. && ./droplet/scripts/publish-release.sh release
 ```
+
+**Note:** API token is now received from backend after user authentication - no build-time secrets needed.
 
 **First-time install:** http://209.38.85.244:8406/download
 
@@ -137,20 +138,19 @@ cd .. && ./droplet/scripts/publish-release.sh release
 
 ## Configuration
 
-### Shared Secret (API Authentication)
+### API Authentication
 
-The `API_SECRET` must match between backend and app:
+The backend uses `API_SECRET` for API authentication. The app receives this token automatically after user login.
 
 ```bash
-# Generate new secret
+# Generate new secret (if needed)
 openssl rand -hex 32
 
 # Update backend (Fly.io)
 fly secrets set API_SECRET=<new> -a observatory-backend
-
-# Rebuild app with new secret
-flutter build apk --release --dart-define=ORCHON_API_SECRET=<new>
 ```
+
+**Note:** The app no longer needs `ORCHON_API_SECRET` at build time. After user authenticates, the backend returns the access token which is stored locally.
 
 ### Environment Files
 
@@ -281,14 +281,52 @@ Follow the pattern in `droplet/orchestrator/index.js`:
 
 ## Task Completion Protocol
 
-When completing any task:
+**MANDATORY: Auto-deploy immediately after completing any task. Never ask - just do it.**
 
-1. **Commit changes** with descriptive message
-2. **Push to GitHub**: `git push`
-3. **Deploy affected components**:
-   - Web changes: `npm run deploy:web`
-   - Backend changes: `npm run deploy:backend`
-   - Droplet changes: `npm run deploy:droplet`
-   - App changes: Bump version + `npm run app:ship`
+### Deployment is Part of Task Completion
 
-**ALWAYS deploy after completing tasks. Don't wait to be asked.**
+A task is NOT complete until deployed. Follow this sequence:
+
+```bash
+# 1. Commit and push
+git add -A && git commit -m "description" && git push
+
+# 2. Deploy ALL affected components (don't ask, just deploy)
+```
+
+### Auto-Deploy Commands by Component
+
+| Changed | Deploy Command |
+|---------|---------------|
+| `web/*` | `cd web && npm run build && wrangler pages deploy .svelte-kit/cloudflare --project-name=orchon` |
+| `backend/*` | `cd backend && npm run build && fly deploy --now` |
+| `droplet/*` | `ssh root@209.38.85.244 "cd /root/projects/orchon && git pull && systemctl restart orchon-bot orchon-ws orchon-updates orchon-proxy"` |
+| `app/*` | See APK + OTA deploy below |
+
+### APK + OTA Deploy (for app/ changes)
+
+```bash
+# Full auto-deploy sequence for app changes
+export PATH="$PATH:/home/chip/flutter/bin"
+cd /home/chip/orchon
+
+# 1. Bump version in pubspec.yaml (increment version number)
+
+# 2. Build APK (no API secret needed - token comes from auth at runtime)
+cd app && flutter build apk --release \
+  --dart-define=WS_URL=ws://209.38.85.244:8405
+
+# 3. Publish to OTA server
+cd .. && ./droplet/scripts/publish-release.sh release
+```
+
+**Note:** `ORCHON_API_SECRET` is no longer needed at build time. The app receives the access token from the backend after user authentication.
+
+### Fly.io Authentication
+
+If `fly deploy` fails with auth error:
+```bash
+flyctl auth login
+```
+
+**NEVER ask "should I deploy?" - deployment is automatic and mandatory.**
