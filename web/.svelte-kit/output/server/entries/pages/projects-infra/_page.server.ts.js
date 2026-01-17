@@ -13,7 +13,28 @@ const PERSONAL_PROJECT_IDS = [
   "violet"
   // Design system / component library
 ];
-const load = async () => {
+const load = async ({ platform }) => {
+  const bucket = platform?.env?.LOGOS_BUCKET;
+  let logos = [];
+  if (bucket) {
+    try {
+      const listed = await bucket.list();
+      for (const obj of listed.objects) {
+        const parts = obj.key.split("/");
+        const type = parts[0];
+        const filename = parts.slice(1).join("/");
+        const name = filename.replace(/\.(svg|png)$/i, "");
+        logos.push({
+          id: obj.key,
+          name,
+          url: `/api/logos/${obj.key}`,
+          type
+        });
+      }
+    } catch (err) {
+      console.error("Failed to load logos:", err);
+    }
+  }
   const projects = PERSONAL_PROJECT_IDS.map((id) => {
     const infra = INFRASTRUCTURE[id];
     if (!infra) return null;
@@ -38,7 +59,8 @@ const load = async () => {
   return {
     projects: projects.sort(
       (a, b) => a.displayName.localeCompare(b.displayName)
-    )
+    ),
+    logos
   };
 };
 export {

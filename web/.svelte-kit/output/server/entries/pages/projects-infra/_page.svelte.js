@@ -81,28 +81,26 @@ function _page($$renderer, $$props) {
         $$renderer4.push(`<title>My Projects | Orchon</title>`);
       });
     });
-    $$renderer2.push(`<div class="h-full flex flex-col bg-gray-950 overflow-hidden"><div class="shrink-0 flex items-center justify-between px-4 py-2 bg-gray-900/80 border-b border-gray-800 backdrop-blur-sm z-10"><div class="flex items-center gap-4"><h1 class="text-lg font-semibold text-white">My Projects</h1> <span class="text-xs text-gray-500">${escape_html(sortedProjects.length)} projects</span></div> <div class="flex items-center gap-2"><div class="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5"><button${attr_class(`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors ${stringify(
-      "bg-blue-600 text-white"
+    $$renderer2.push(`<div class="h-full flex bg-gray-950 overflow-hidden"><div class="w-48 shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col"><div class="p-3 border-b border-gray-800"><h2 class="text-sm font-semibold text-white">My Projects</h2> <span class="text-xs text-gray-500">${escape_html(sortedProjects.length)} projects</span></div> <nav class="flex-1 p-2 space-y-1"><button${attr_class(`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${stringify(
+      "bg-blue-600 text-white shadow-lg"
     )}`)}>`);
-    Layers($$renderer2, { class: "w-3.5 h-3.5" });
-    $$renderer2.push(`<!----> Projects</button> <button${attr_class(`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors ${stringify("text-gray-400 hover:text-white")}`)}>`);
-    Code($$renderer2, { class: "w-3.5 h-3.5" });
-    $$renderer2.push(`<!----> Stack</button> <button${attr_class(`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors ${stringify("text-gray-400 hover:text-white")}`)}>`);
-    Server($$renderer2, { class: "w-3.5 h-3.5" });
-    $$renderer2.push(`<!----> Services</button></div> <div class="w-px h-6 bg-gray-700 mx-1"></div> <button class="flex items-center gap-1.5 px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs text-gray-300 transition-colors">`);
+    Layers($$renderer2, { class: "w-4 h-4 shrink-0" });
+    $$renderer2.push(`<!----> <span class="text-sm font-medium">Projects</span></button> <button${attr_class(`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${stringify("text-gray-400 hover:bg-gray-800 hover:text-white")}`)}>`);
+    Code($$renderer2, { class: "w-4 h-4 shrink-0" });
+    $$renderer2.push(`<!----> <span class="text-sm font-medium">Stack</span></button> <button${attr_class(`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${stringify("text-gray-400 hover:bg-gray-800 hover:text-white")}`)}>`);
+    Server($$renderer2, { class: "w-4 h-4 shrink-0" });
+    $$renderer2.push(`<!----> <span class="text-sm font-medium">Services</span></button></nav> <div class="p-2 border-t border-gray-800 space-y-2"><button class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">`);
     {
       $$renderer2.push("<!--[-->");
       Arrow_up_a_z($$renderer2, { class: "w-3.5 h-3.5" });
     }
-    $$renderer2.push(`<!--]--> Sort</button> <div class="flex items-center gap-1 ml-2"><button class="p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-300">`);
-    Zoom_out($$renderer2, { class: "w-4 h-4" });
-    $$renderer2.push(`<!----></button> <span class="text-xs text-gray-400 w-14 text-center">${escape_html(Math.round(zoom * 100))}%</span> <button class="p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-300">`);
-    Zoom_in($$renderer2, { class: "w-4 h-4" });
-    $$renderer2.push(`<!----></button> <button class="flex items-center gap-1.5 px-2 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs text-white font-medium ml-2" title="Fit diagram to view">`);
+    $$renderer2.push(`<!--]--> Sort ${escape_html("A-Z")}</button> <div class="flex items-center gap-1"><button class="flex-1 p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors">`);
+    Zoom_out($$renderer2, { class: "w-3.5 h-3.5 mx-auto" });
+    $$renderer2.push(`<!----></button> <span class="flex-1 text-xs text-gray-500 text-center">${escape_html(Math.round(zoom * 100))}%</span> <button class="flex-1 p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors">`);
+    Zoom_in($$renderer2, { class: "w-3.5 h-3.5 mx-auto" });
+    $$renderer2.push(`<!----></button></div> <button class="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs text-white font-medium transition-colors">`);
     Focus($$renderer2, { class: "w-3.5 h-3.5" });
-    $$renderer2.push(`<!----> Fit</button></div></div></div> <div class="shrink-0 px-4 py-1 text-xs text-gray-500 bg-gray-900/50">Scroll to zoom | Drag to pan | ${escape_html(
-      "Project overview"
-    )}</div> <div${attr_class("flex-1 overflow-hidden relative cursor-grab select-none", void 0, { "cursor-grabbing": isDragging })} role="application" tabindex="0"><div class="absolute inset-0 pointer-events-none"${attr_style(` background-image: linear-gradient(rgba(55, 65, 81, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(55, 65, 81, 0.3) 1px, transparent 1px); background-size: ${stringify(40 * zoom)}px ${stringify(40 * zoom)}px; background-position: ${stringify(panX)}px ${stringify(panY)}px; `)}></div> <div class="absolute origin-top-left"${attr_style(`transform: translate(${stringify(panX)}px, ${stringify(panY)}px) scale(${stringify(zoom)});`)}><svg class="absolute top-0 left-0 pointer-events-none"${attr_style(`width: ${stringify(contentDimensions.width)}px; height: ${stringify(contentDimensions.height)}px;`)}><!--[-->`);
+    $$renderer2.push(`<!----> Fit to View</button></div></div> <div class="flex-1 flex flex-col overflow-hidden"><div${attr_class("flex-1 overflow-hidden relative cursor-grab select-none", void 0, { "cursor-grabbing": isDragging })} role="application" tabindex="0"><div class="absolute inset-0 pointer-events-none"${attr_style(` background-image: linear-gradient(rgba(55, 65, 81, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(55, 65, 81, 0.3) 1px, transparent 1px); background-size: ${stringify(40 * zoom)}px ${stringify(40 * zoom)}px; background-position: ${stringify(panX)}px ${stringify(panY)}px; `)}></div> <div class="absolute origin-top-left"${attr_style(`transform: translate(${stringify(panX)}px, ${stringify(panY)}px) scale(${stringify(zoom)});`)}><svg class="absolute top-0 left-0 pointer-events-none"${attr_style(`width: ${stringify(contentDimensions.width)}px; height: ${stringify(contentDimensions.height)}px;`)}><!--[-->`);
     const each_array = ensure_array_like(Array(Math.ceil(sortedProjects.length / columns)));
     for (let rowIdx = 0, $$length = each_array.length; rowIdx < $$length; rowIdx++) {
       each_array[rowIdx];
@@ -155,7 +153,7 @@ function _page($$renderer, $$props) {
       }
       $$renderer2.push(`<!--]-->`);
     }
-    $$renderer2.push(`<!--]--></div></div></div>`);
+    $$renderer2.push(`<!--]--></div></div></div></div>`);
   });
 }
 export {

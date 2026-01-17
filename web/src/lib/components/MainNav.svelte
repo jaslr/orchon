@@ -5,16 +5,13 @@
 	// Determine active route
 	let currentPath = $derived(page.url.pathname);
 
-	// Check if we're in infrastructure or config sections
-	let isInfraActive = $derived(
-		currentPath.startsWith('/infrastructure') ||
-		currentPath.startsWith('/admin/projects') ||
-		currentPath.startsWith('/admin/repos')
-	);
+	// Check if we're on a specific infrastructure sub-route (not just the parent)
+	let isOnInfraMap = $derived(currentPath === '/infrastructure/map');
+	let isOnAdminProjects = $derived(currentPath.startsWith('/admin/projects'));
+	let isOnAdminRepos = $derived(currentPath.startsWith('/admin/repos'));
 
-	let isConfigActive = $derived(
-		currentPath.startsWith('/admin/media')
-	);
+	// Infrastructure parent should NOT be highlighted - only sub-items
+	let isConfigActive = $derived(currentPath.startsWith('/admin/media'));
 </script>
 
 <nav class="flex flex-col gap-1 py-2">
@@ -56,53 +53,48 @@
 		</div>
 	</a>
 
-	<!-- Infrastructure Section -->
-	<a
-		href="/infrastructure/map"
-		class="flex items-center gap-3 px-4 py-2.5 text-left transition-colors {isInfraActive
-			? 'bg-gray-800 border-l-2 border-blue-500'
-			: 'hover:bg-gray-800/50 border-l-2 border-transparent'}"
-	>
-		<Server class="w-4 h-4 {isInfraActive ? 'text-blue-400' : 'text-gray-500'} shrink-0" />
+	<!-- Infrastructure Section - label only, not a link -->
+	<div class="flex items-center gap-3 px-4 py-2 mt-2">
+		<Server class="w-4 h-4 text-gray-500 shrink-0" />
 		<div class="flex-1 min-w-0">
-			<div class="font-medium text-sm {isInfraActive ? 'text-white' : 'text-gray-300'} truncate">Infrastructure</div>
+			<div class="font-medium text-xs text-gray-500 uppercase tracking-wide">Infrastructure</div>
 		</div>
-	</a>
+	</div>
 
 	<!-- Infrastructure sub-items -->
 	<a
 		href="/infrastructure/map"
-		class="flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors {currentPath === '/infrastructure/map'
+		class="flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors {isOnInfraMap
 			? 'bg-gray-800/50 border-l-2 border-blue-400'
 			: 'hover:bg-gray-800/30 border-l-2 border-transparent'}"
 	>
-		<Map class="w-3.5 h-3.5 {currentPath === '/infrastructure/map' ? 'text-blue-400' : 'text-gray-500'} shrink-0" />
+		<Map class="w-3.5 h-3.5 {isOnInfraMap ? 'text-blue-400' : 'text-gray-500'} shrink-0" />
 		<div class="flex-1 min-w-0">
-			<div class="text-sm {currentPath === '/infrastructure/map' ? 'text-white' : 'text-gray-400'} truncate">Map</div>
+			<div class="text-sm {isOnInfraMap ? 'text-white' : 'text-gray-400'} truncate">Map</div>
 		</div>
 	</a>
 
 	<a
 		href="/admin/projects"
-		class="flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors {currentPath.startsWith('/admin/projects')
+		class="flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors {isOnAdminProjects
 			? 'bg-gray-800/50 border-l-2 border-blue-400'
 			: 'hover:bg-gray-800/30 border-l-2 border-transparent'}"
 	>
-		<Layers class="w-3.5 h-3.5 {currentPath.startsWith('/admin/projects') ? 'text-blue-400' : 'text-gray-500'} shrink-0" />
+		<Layers class="w-3.5 h-3.5 {isOnAdminProjects ? 'text-blue-400' : 'text-gray-500'} shrink-0" />
 		<div class="flex-1 min-w-0">
-			<div class="text-sm {currentPath.startsWith('/admin/projects') ? 'text-white' : 'text-gray-400'} truncate">Projects</div>
+			<div class="text-sm {isOnAdminProjects ? 'text-white' : 'text-gray-400'} truncate">Projects</div>
 		</div>
 	</a>
 
 	<a
 		href="/admin/repos"
-		class="flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors {currentPath.startsWith('/admin/repos')
+		class="flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors {isOnAdminRepos
 			? 'bg-gray-800/50 border-l-2 border-blue-400'
 			: 'hover:bg-gray-800/30 border-l-2 border-transparent'}"
 	>
-		<Settings class="w-3.5 h-3.5 {currentPath.startsWith('/admin/repos') ? 'text-blue-400' : 'text-gray-500'} shrink-0" />
+		<Settings class="w-3.5 h-3.5 {isOnAdminRepos ? 'text-blue-400' : 'text-gray-500'} shrink-0" />
 		<div class="flex-1 min-w-0">
-			<div class="text-sm {currentPath.startsWith('/admin/repos') ? 'text-white' : 'text-gray-400'} truncate">Config</div>
+			<div class="text-sm {isOnAdminRepos ? 'text-white' : 'text-gray-400'} truncate">Config</div>
 		</div>
 	</a>
 

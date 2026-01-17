@@ -30,6 +30,15 @@
 	// View mode: cards (project cards), stack (tech stack focus), services (infra services)
 	let viewMode = $state<'cards' | 'stack' | 'services'>('cards');
 
+	// Helper to get logo URL for a provider/techstack item
+	function getLogoUrl(type: 'infra' | 'techstack', name: string): string | null {
+		const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+		const logo = data.logos?.find(l =>
+			l.type === type && l.name.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedName
+		);
+		return logo?.url || null;
+	}
+
 	// Sorting
 	let sortAsc = $state(true);
 
@@ -198,77 +207,79 @@
 	<title>My Projects | Orchon</title>
 </svelte:head>
 
-<div class="h-full flex flex-col bg-gray-950 overflow-hidden">
-	<!-- Controls -->
-	<div class="shrink-0 flex items-center justify-between px-4 py-2 bg-gray-900/80 border-b border-gray-800 backdrop-blur-sm z-10">
-		<div class="flex items-center gap-4">
-			<h1 class="text-lg font-semibold text-white">My Projects</h1>
-			<span class="text-xs text-gray-500">
-				{sortedProjects.length} projects
-			</span>
+<div class="h-full flex bg-gray-950 overflow-hidden">
+	<!-- Left Sidebar with View Tabs -->
+	<div class="w-48 shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col">
+		<div class="p-3 border-b border-gray-800">
+			<h2 class="text-sm font-semibold text-white">My Projects</h2>
+			<span class="text-xs text-gray-500">{sortedProjects.length} projects</span>
 		</div>
-		<div class="flex items-center gap-2">
-			<!-- View Mode Toggle -->
-			<div class="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5">
-				<button
-					onclick={() => viewMode = 'cards'}
-					class="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors {viewMode === 'cards' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}"
-				>
-					<Layers class="w-3.5 h-3.5" />
-					Projects
-				</button>
-				<button
-					onclick={() => viewMode = 'stack'}
-					class="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors {viewMode === 'stack' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}"
-				>
-					<Code class="w-3.5 h-3.5" />
-					Stack
-				</button>
-				<button
-					onclick={() => viewMode = 'services'}
-					class="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors {viewMode === 'services' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}"
-				>
-					<Server class="w-3.5 h-3.5" />
-					Services
-				</button>
-			</div>
 
-			<div class="w-px h-6 bg-gray-700 mx-1"></div>
+		<!-- View Mode Tabs -->
+		<nav class="flex-1 p-2 space-y-1">
+			<button
+				onclick={() => viewMode = 'cards'}
+				class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all {viewMode === 'cards'
+					? 'bg-blue-600 text-white shadow-lg'
+					: 'text-gray-400 hover:bg-gray-800 hover:text-white'}"
+			>
+				<Layers class="w-4 h-4 shrink-0" />
+				<span class="text-sm font-medium">Projects</span>
+			</button>
+			<button
+				onclick={() => viewMode = 'stack'}
+				class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all {viewMode === 'stack'
+					? 'bg-blue-600 text-white shadow-lg'
+					: 'text-gray-400 hover:bg-gray-800 hover:text-white'}"
+			>
+				<Code class="w-4 h-4 shrink-0" />
+				<span class="text-sm font-medium">Stack</span>
+			</button>
+			<button
+				onclick={() => viewMode = 'services'}
+				class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all {viewMode === 'services'
+					? 'bg-blue-600 text-white shadow-lg'
+					: 'text-gray-400 hover:bg-gray-800 hover:text-white'}"
+			>
+				<Server class="w-4 h-4 shrink-0" />
+				<span class="text-sm font-medium">Services</span>
+			</button>
+		</nav>
 
+		<!-- Controls at bottom -->
+		<div class="p-2 border-t border-gray-800 space-y-2">
 			<button
 				onclick={() => sortAsc = !sortAsc}
-				class="flex items-center gap-1.5 px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs text-gray-300 transition-colors"
+				class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
 			>
 				{#if sortAsc}
 					<ArrowUpAZ class="w-3.5 h-3.5" />
 				{:else}
 					<ArrowDownZA class="w-3.5 h-3.5" />
 				{/if}
-				Sort
+				Sort {sortAsc ? 'A-Z' : 'Z-A'}
 			</button>
-			<div class="flex items-center gap-1 ml-2">
-				<button onclick={zoomOut} class="p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-300">
-					<ZoomOut class="w-4 h-4" />
+			<div class="flex items-center gap-1">
+				<button onclick={zoomOut} class="flex-1 p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors">
+					<ZoomOut class="w-3.5 h-3.5 mx-auto" />
 				</button>
-				<span class="text-xs text-gray-400 w-14 text-center">{Math.round(zoom * 100)}%</span>
-				<button onclick={zoomIn} class="p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-300">
-					<ZoomIn class="w-4 h-4" />
-				</button>
-				<button
-					onclick={fitToView}
-					class="flex items-center gap-1.5 px-2 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs text-white font-medium ml-2"
-					title="Fit diagram to view"
-				>
-					<Focus class="w-3.5 h-3.5" />
-					Fit
+				<span class="flex-1 text-xs text-gray-500 text-center">{Math.round(zoom * 100)}%</span>
+				<button onclick={zoomIn} class="flex-1 p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors">
+					<ZoomIn class="w-3.5 h-3.5 mx-auto" />
 				</button>
 			</div>
+			<button
+				onclick={fitToView}
+				class="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs text-white font-medium transition-colors"
+			>
+				<Focus class="w-3.5 h-3.5" />
+				Fit to View
+			</button>
 		</div>
 	</div>
 
-	<div class="shrink-0 px-4 py-1 text-xs text-gray-500 bg-gray-900/50">
-		Scroll to zoom | Drag to pan | {viewMode === 'cards' ? 'Project overview' : viewMode === 'stack' ? 'Tech stack details' : 'Infrastructure services'}
-	</div>
+	<!-- Main Content Area -->
+	<div class="flex-1 flex flex-col overflow-hidden">
 
 	<!-- Infinite Canvas -->
 	<div
@@ -400,27 +411,57 @@
 						<div class="px-4 py-3 space-y-3">
 							{#if project.stack}
 								<div class="flex flex-wrap gap-1.5">
+									<!-- Framework -->
+									{#if project.stack.framework}
+										{@const frameworkLogo = getLogoUrl('techstack', project.stack.framework)}
+										<div class="flex items-center gap-1 px-2 py-0.5 bg-orange-900/40 rounded text-[10px] text-orange-300">
+											{#if frameworkLogo}
+												<img src={frameworkLogo} alt={project.stack.framework} class="w-3 h-3 object-contain" />
+											{/if}
+											{project.stack.framework}
+										</div>
+									{/if}
 									<!-- Language -->
-									<div class="flex items-center gap-1 px-2 py-0.5 bg-blue-900/40 rounded text-[10px] text-blue-300">
-										{project.stack.language}
-									</div>
+									{#if project.stack.language}
+										{@const langLogo = getLogoUrl('techstack', project.stack.language)}
+										<div class="flex items-center gap-1 px-2 py-0.5 bg-blue-900/40 rounded text-[10px] text-blue-300">
+											{#if langLogo}
+												<img src={langLogo} alt={project.stack.language} class="w-3 h-3 object-contain" />
+											{/if}
+											{project.stack.language}
+										</div>
+									{/if}
 									<!-- CSS -->
 									{#each project.stack.css || [] as css}
+										{@const cssLogo = getLogoUrl('techstack', css)}
 										<div class="flex items-center gap-1 px-2 py-0.5 bg-pink-900/40 rounded text-[10px] text-pink-300">
-											<Palette class="w-2.5 h-2.5" />
+											{#if cssLogo}
+												<img src={cssLogo} alt={css} class="w-3 h-3 object-contain" />
+											{:else}
+												<Palette class="w-2.5 h-2.5" />
+											{/if}
 											{css}
 										</div>
 									{/each}
 									<!-- Build Tool -->
 									{#if project.stack.buildTool}
+										{@const buildLogo = getLogoUrl('techstack', project.stack.buildTool)}
 										<div class="flex items-center gap-1 px-2 py-0.5 bg-yellow-900/40 rounded text-[10px] text-yellow-300">
-											<Package class="w-2.5 h-2.5" />
+											{#if buildLogo}
+												<img src={buildLogo} alt={project.stack.buildTool} class="w-3 h-3 object-contain" />
+											{:else}
+												<Package class="w-2.5 h-2.5" />
+											{/if}
 											{project.stack.buildTool}
 										</div>
 									{/if}
 									<!-- Package Manager -->
 									{#if project.stack.packageManager}
+										{@const pmLogo = getLogoUrl('techstack', project.stack.packageManager)}
 										<div class="flex items-center gap-1 px-2 py-0.5 bg-green-900/40 rounded text-[10px] text-green-300">
+											{#if pmLogo}
+												<img src={pmLogo} alt={project.stack.packageManager} class="w-3 h-3 object-contain" />
+											{/if}
 											{project.stack.packageManager}
 										</div>
 									{/if}
@@ -428,14 +469,23 @@
 								<div class="flex flex-wrap gap-1.5">
 									<!-- Testing -->
 									{#each project.stack.testing || [] as test}
+										{@const testLogo = getLogoUrl('techstack', test)}
 										<div class="flex items-center gap-1 px-2 py-0.5 bg-purple-900/40 rounded text-[10px] text-purple-300">
-											<TestTube class="w-2.5 h-2.5" />
+											{#if testLogo}
+												<img src={testLogo} alt={test} class="w-3 h-3 object-contain" />
+											{:else}
+												<TestTube class="w-2.5 h-2.5" />
+											{/if}
 											{test}
 										</div>
 									{/each}
 									<!-- Icons -->
 									{#if project.stack.icons}
+										{@const iconsLogo = getLogoUrl('techstack', project.stack.icons)}
 										<div class="flex items-center gap-1 px-2 py-0.5 bg-gray-700/60 rounded text-[10px] text-gray-300">
+											{#if iconsLogo}
+												<img src={iconsLogo} alt={project.stack.icons} class="w-3 h-3 object-contain" />
+											{/if}
 											{project.stack.icons}
 										</div>
 									{/if}
@@ -468,16 +518,21 @@
 							{#if project.services.length > 0}
 								{#each project.services as service}
 									{@const Icon = serviceIcons[service.category] || Cloud}
+									{@const providerLogo = getLogoUrl('infra', service.provider)}
 									<a
 										href={service.dashboardUrl || '#'}
 										target="_blank"
 										rel="noopener noreferrer"
 										class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-700/50 transition-colors group"
 									>
-										<Icon class="w-3.5 h-3.5 text-gray-500 group-hover:text-gray-300" />
+										{#if providerLogo}
+											<img src={providerLogo} alt={service.provider} class="w-4 h-4 object-contain" />
+										{:else}
+											<Icon class="w-3.5 h-3.5 text-gray-500 group-hover:text-gray-300" />
+										{/if}
 										<div class="flex-1 min-w-0">
 											<div class="text-xs text-gray-300 truncate">{service.serviceName}</div>
-											<div class="text-[10px] text-gray-500">{service.category}</div>
+											<div class="text-[10px] text-gray-500">{service.provider}</div>
 										</div>
 										{#if service.dashboardUrl}
 											<ExternalLink class="w-3 h-3 text-gray-600 group-hover:text-gray-400" />
@@ -492,5 +547,6 @@
 				{/if}
 			{/each}
 		</div>
+	</div>
 	</div>
 </div>

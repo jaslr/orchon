@@ -132,7 +132,9 @@ function Map($$renderer, $$props) {
 function MainNav($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let currentPath = page.url.pathname;
-    let isInfraActive = currentPath.startsWith("/infrastructure") || currentPath.startsWith("/admin/projects") || currentPath.startsWith("/admin/repos");
+    let isOnInfraMap = currentPath === "/infrastructure/map";
+    let isOnAdminProjects = currentPath.startsWith("/admin/projects");
+    let isOnAdminRepos = currentPath.startsWith("/admin/repos");
     let isConfigActive = currentPath.startsWith("/admin/media");
     $$renderer2.push(`<nav class="flex flex-col gap-1 py-2"><a href="/"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(currentPath === "/" ? "bg-gray-800 border-l-2 border-blue-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
     Activity($$renderer2, {
@@ -146,23 +148,21 @@ function MainNav($$renderer, $$props) {
     Folder_git_2($$renderer2, {
       class: `w-4 h-4 ${stringify(currentPath.startsWith("/projects-infra") ? "text-violet-400" : "text-gray-500")} shrink-0`
     });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(currentPath.startsWith("/projects-infra") ? "text-white" : "text-gray-300")} truncate`)}>My Projects</div></div></a> <a href="/infrastructure/map"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(isInfraActive ? "bg-gray-800 border-l-2 border-blue-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
-    Server($$renderer2, {
-      class: `w-4 h-4 ${stringify(isInfraActive ? "text-blue-400" : "text-gray-500")} shrink-0`
-    });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(isInfraActive ? "text-white" : "text-gray-300")} truncate`)}>Infrastructure</div></div></a> <a href="/infrastructure/map"${attr_class(`flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors ${stringify(currentPath === "/infrastructure/map" ? "bg-gray-800/50 border-l-2 border-blue-400" : "hover:bg-gray-800/30 border-l-2 border-transparent")}`)}>`);
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`font-medium text-sm ${stringify(currentPath.startsWith("/projects-infra") ? "text-white" : "text-gray-300")} truncate`)}>My Projects</div></div></a> <div class="flex items-center gap-3 px-4 py-2 mt-2">`);
+    Server($$renderer2, { class: "w-4 h-4 text-gray-500 shrink-0" });
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div class="font-medium text-xs text-gray-500 uppercase tracking-wide">Infrastructure</div></div></div> <a href="/infrastructure/map"${attr_class(`flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors ${stringify(isOnInfraMap ? "bg-gray-800/50 border-l-2 border-blue-400" : "hover:bg-gray-800/30 border-l-2 border-transparent")}`)}>`);
     Map($$renderer2, {
-      class: `w-3.5 h-3.5 ${stringify(currentPath === "/infrastructure/map" ? "text-blue-400" : "text-gray-500")} shrink-0`
+      class: `w-3.5 h-3.5 ${stringify(isOnInfraMap ? "text-blue-400" : "text-gray-500")} shrink-0`
     });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(currentPath === "/infrastructure/map" ? "text-white" : "text-gray-400")} truncate`)}>Map</div></div></a> <a href="/admin/projects"${attr_class(`flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors ${stringify(currentPath.startsWith("/admin/projects") ? "bg-gray-800/50 border-l-2 border-blue-400" : "hover:bg-gray-800/30 border-l-2 border-transparent")}`)}>`);
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(isOnInfraMap ? "text-white" : "text-gray-400")} truncate`)}>Map</div></div></a> <a href="/admin/projects"${attr_class(`flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors ${stringify(isOnAdminProjects ? "bg-gray-800/50 border-l-2 border-blue-400" : "hover:bg-gray-800/30 border-l-2 border-transparent")}`)}>`);
     Layers($$renderer2, {
-      class: `w-3.5 h-3.5 ${stringify(currentPath.startsWith("/admin/projects") ? "text-blue-400" : "text-gray-500")} shrink-0`
+      class: `w-3.5 h-3.5 ${stringify(isOnAdminProjects ? "text-blue-400" : "text-gray-500")} shrink-0`
     });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(currentPath.startsWith("/admin/projects") ? "text-white" : "text-gray-400")} truncate`)}>Projects</div></div></a> <a href="/admin/repos"${attr_class(`flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors ${stringify(currentPath.startsWith("/admin/repos") ? "bg-gray-800/50 border-l-2 border-blue-400" : "hover:bg-gray-800/30 border-l-2 border-transparent")}`)}>`);
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(isOnAdminProjects ? "text-white" : "text-gray-400")} truncate`)}>Projects</div></div></a> <a href="/admin/repos"${attr_class(`flex items-center gap-3 pl-8 pr-4 py-2 text-left transition-colors ${stringify(isOnAdminRepos ? "bg-gray-800/50 border-l-2 border-blue-400" : "hover:bg-gray-800/30 border-l-2 border-transparent")}`)}>`);
     Settings($$renderer2, {
-      class: `w-3.5 h-3.5 ${stringify(currentPath.startsWith("/admin/repos") ? "text-blue-400" : "text-gray-500")} shrink-0`
+      class: `w-3.5 h-3.5 ${stringify(isOnAdminRepos ? "text-blue-400" : "text-gray-500")} shrink-0`
     });
-    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(currentPath.startsWith("/admin/repos") ? "text-white" : "text-gray-400")} truncate`)}>Config</div></div></a> <a href="/admin/media"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(isConfigActive ? "bg-gray-800 border-l-2 border-amber-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
+    $$renderer2.push(`<!----> <div class="flex-1 min-w-0"><div${attr_class(`text-sm ${stringify(isOnAdminRepos ? "text-white" : "text-gray-400")} truncate`)}>Config</div></div></a> <a href="/admin/media"${attr_class(`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${stringify(isConfigActive ? "bg-gray-800 border-l-2 border-amber-500" : "hover:bg-gray-800/50 border-l-2 border-transparent")}`)}>`);
     Image($$renderer2, {
       class: `w-4 h-4 ${stringify(isConfigActive ? "text-amber-400" : "text-gray-500")} shrink-0`
     });

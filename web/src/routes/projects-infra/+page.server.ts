@@ -16,6 +16,13 @@ export interface PersonalProject {
   services: Omit<InfraService, 'id' | 'projectId' | 'lastChecked'>[];
 }
 
+interface Logo {
+  id: string;
+  name: string;
+  url: string;
+  type: 'infra' | 'techstack';
+}
+
 // Define personal projects (non-Junipa)
 const PERSONAL_PROJECT_IDS = [
   'littlelistoflights',
@@ -29,7 +36,31 @@ const PERSONAL_PROJECT_IDS = [
   'violet',  // Design system / component library
 ];
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ platform }) => {
+  // Load logos from R2
+  const bucket = platform?.env?.LOGOS_BUCKET;
+  let logos: Logo[] = [];
+
+  if (bucket) {
+    try {
+      const listed = await bucket.list();
+      for (const obj of listed.objects) {
+        const parts = obj.key.split('/');
+        const type = parts[0] as 'infra' | 'techstack';
+        const filename = parts.slice(1).join('/');
+        const name = filename.replace(/\.(svg|png)$/i, '');
+        logos.push({
+          id: obj.key,
+          name,
+          url: `/api/logos/${obj.key}`,
+          type
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load logos:', err);
+    }
+  }
+
   const projects: PersonalProject[] = PERSONAL_PROJECT_IDS
     .map(id => {
       const infra = INFRASTRUCTURE[id];
@@ -62,6 +93,7 @@ export const load: PageServerLoad = async () => {
   return {
     projects: projects.sort((a, b) =>
       a.displayName.localeCompare(b.displayName)
-    )
+    ),
+    logos
   };
 };
