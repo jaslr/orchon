@@ -296,6 +296,9 @@ final failedDeploymentsProvider = Provider<List<Deployment>>((ref) {
 /// Provider for selected owner filter
 final selectedOwnerFilterProvider = StateProvider<String?>((ref) => null);
 
+/// Provider for selected repo filter (by projectName)
+final selectedRepoFilterProvider = StateProvider<String?>((ref) => null);
+
 /// Provider for fetching unique owners from ORCHON projects API
 final ownersProvider = FutureProvider<List<String>>((ref) async {
   final service = ref.watch(orchonServiceProvider);
@@ -306,4 +309,18 @@ final ownersProvider = FutureProvider<List<String>>((ref) async {
     debugPrint('Error fetching owners: $e');
     return [];
   }
+});
+
+/// Provider for unique repo names (extracted from deployments)
+/// Sorted alphabetically by repo name
+final repoNamesProvider = Provider<List<String>>((ref) {
+  final state = ref.watch(deploymentsProvider);
+  final repos = <String>{};
+  for (final d in state.deployments) {
+    if (d.projectName.isNotEmpty) {
+      repos.add(d.projectName);
+    }
+  }
+  final sorted = repos.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+  return sorted;
 });

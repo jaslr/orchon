@@ -81,8 +81,8 @@ class _DeploymentGroupsSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef widgetRef) {
-    final ownersAsync = widgetRef.watch(ownersProvider);
-    final selectedOwner = widgetRef.watch(selectedOwnerFilterProvider);
+    final repoNames = widgetRef.watch(repoNamesProvider);
+    final selectedRepo = widgetRef.watch(selectedRepoFilterProvider);
 
     return SafeArea(
       child: Padding(
@@ -103,7 +103,7 @@ class _DeploymentGroupsSheet extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Filter deployments by owner. Synced with ORCHON.',
+              'Filter deployments by repository name.',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -111,78 +111,60 @@ class _DeploymentGroupsSheet extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            ownersAsync.when(
-              data: (owners) {
-                if (owners.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'No owners found',
-                      style: TextStyle(color: Colors.grey[500]),
-                    ),
-                  );
-                }
-
-                return Column(
-                  children: [
-                    // All option
-                    ListTile(
-                      leading: Icon(
-                        selectedOwner == null
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_off,
-                        color: selectedOwner == null
-                            ? const Color(0xFF6366F1)
-                            : Colors.grey,
-                      ),
-                      title: const Text('All', style: TextStyle(color: Colors.white)),
-                      subtitle: Text(
-                        'Show all deployments',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                      onTap: () {
-                        widgetRef.read(selectedOwnerFilterProvider.notifier).state = null;
-                        Navigator.pop(context);
-                      },
-                    ),
-                    const Divider(color: Colors.grey),
-                    // Owner options
-                    ...owners.map((owner) => ListTile(
-                      leading: Icon(
-                        selectedOwner == owner
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_off,
-                        color: selectedOwner == owner
-                            ? const Color(0xFF6366F1)
-                            : Colors.grey,
-                      ),
-                      title: Text(owner, style: const TextStyle(color: Colors.white)),
-                      subtitle: Text(
-                        'Filter by $owner',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                      onTap: () {
-                        widgetRef.read(selectedOwnerFilterProvider.notifier).state = owner;
-                        Navigator.pop(context);
-                      },
-                    )),
-                  ],
-                );
-              },
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-              error: (e, _) => Padding(
+            if (repoNames.isEmpty)
+              Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Failed to load owners: $e',
-                  style: TextStyle(color: Colors.red[400]),
+                  'No repos found. Pull to refresh deployments.',
+                  style: TextStyle(color: Colors.grey[500]),
                 ),
+              )
+            else
+              Column(
+                children: [
+                  // All option
+                  ListTile(
+                    leading: Icon(
+                      selectedRepo == null
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                      color: selectedRepo == null
+                          ? const Color(0xFF6366F1)
+                          : Colors.grey,
+                    ),
+                    title: const Text('All', style: TextStyle(color: Colors.white)),
+                    subtitle: Text(
+                      'Show all deployments',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    ),
+                    onTap: () {
+                      widgetRef.read(selectedRepoFilterProvider.notifier).state = null;
+                      Navigator.pop(context);
+                    },
+                  ),
+                  const Divider(color: Colors.grey),
+                  // Repo options (already sorted alphabetically by repoNamesProvider)
+                  ...repoNames.map((repo) => ListTile(
+                    leading: Icon(
+                      selectedRepo == repo
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                      color: selectedRepo == repo
+                          ? const Color(0xFF6366F1)
+                          : Colors.grey,
+                    ),
+                    title: Text(repo, style: const TextStyle(color: Colors.white)),
+                    subtitle: Text(
+                      'Filter by $repo',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    ),
+                    onTap: () {
+                      widgetRef.read(selectedRepoFilterProvider.notifier).state = repo;
+                      Navigator.pop(context);
+                    },
+                  )),
+                ],
               ),
-            ),
           ],
         ),
       ),

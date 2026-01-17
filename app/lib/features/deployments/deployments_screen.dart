@@ -59,8 +59,8 @@ class _DeploymentsScreenState extends ConsumerState<DeploymentsScreen> {
   Widget build(BuildContext context) {
     final deploymentsState = ref.watch(deploymentsProvider);
     final connectionState = ref.watch(connectionStateProvider);
-    final selectedOwner = ref.watch(selectedOwnerFilterProvider);
-    final ownersAsync = ref.watch(ownersProvider);
+    final selectedRepo = ref.watch(selectedRepoFilterProvider);
+    final repoNames = ref.watch(repoNamesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -83,81 +83,14 @@ class _DeploymentsScreenState extends ConsumerState<DeploymentsScreen> {
             ),
             const SizedBox(width: 8),
             _buildConnectionIndicator(connectionState),
+            // Subtle repo filter dropdown
+            if (repoNames.length > 1) ...[
+              const SizedBox(width: 8),
+              _buildRepoFilterDropdown(repoNames, selectedRepo),
+            ],
           ],
         ),
         actions: [
-          // Owner filter dropdown
-          ownersAsync.when(
-            data: (owners) => owners.length > 1
-                ? PopupMenuButton<String?>(
-                    icon: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.filter_list,
-                          color: selectedOwner != null ? const Color(0xFF6366F1) : Colors.grey[400],
-                          size: 20,
-                        ),
-                        if (selectedOwner != null) ...[
-                          const SizedBox(width: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF6366F1).withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              selectedOwner,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Color(0xFF6366F1),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    tooltip: 'Filter by owner',
-                    onSelected: (owner) {
-                      ref.read(selectedOwnerFilterProvider.notifier).state = owner;
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem<String?>(
-                        value: null,
-                        child: Row(
-                          children: [
-                            Icon(
-                              selectedOwner == null ? Icons.radio_button_checked : Icons.radio_button_off,
-                              size: 18,
-                              color: selectedOwner == null ? const Color(0xFF6366F1) : Colors.grey,
-                            ),
-                            const SizedBox(width: 8),
-                            const Text('All'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuDivider(),
-                      ...owners.map((owner) => PopupMenuItem<String?>(
-                        value: owner,
-                        child: Row(
-                          children: [
-                            Icon(
-                              selectedOwner == owner ? Icons.radio_button_checked : Icons.radio_button_off,
-                              size: 18,
-                              color: selectedOwner == owner ? const Color(0xFF6366F1) : Colors.grey,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(owner),
-                          ],
-                        ),
-                      )),
-                    ],
-                  )
-                : const SizedBox.shrink(),
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
-          ),
           Builder(
             builder: (context) {
               final updateState = ref.watch(updateProvider);
@@ -203,6 +136,85 @@ class _DeploymentsScreenState extends ConsumerState<DeploymentsScreen> {
                     ? _buildEmptyState()
                     : _buildDeploymentsList(deploymentsState),
       ),
+    );
+  }
+
+  Widget _buildRepoFilterDropdown(List<String> repoNames, String? selectedRepo) {
+    return PopupMenuButton<String?>(
+      tooltip: 'Filter by repo',
+      offset: const Offset(0, 40),
+      onSelected: (repo) {
+        ref.read(selectedRepoFilterProvider.notifier).state = repo;
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: selectedRepo != null
+              ? const Color(0xFF6366F1).withOpacity(0.15)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: selectedRepo != null
+                ? const Color(0xFF6366F1).withOpacity(0.4)
+                : Colors.grey[700]!,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              selectedRepo ?? 'All',
+              style: TextStyle(
+                fontSize: 11,
+                color: selectedRepo != null
+                    ? const Color(0xFF6366F1)
+                    : Colors.grey[500],
+                fontWeight: selectedRepo != null ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 16,
+              color: selectedRepo != null
+                  ? const Color(0xFF6366F1)
+                  : Colors.grey[500],
+            ),
+          ],
+        ),
+      ),
+      itemBuilder: (context) => [
+        PopupMenuItem<String?>(
+          value: null,
+          child: Row(
+            children: [
+              Icon(
+                selectedRepo == null ? Icons.check : Icons.circle_outlined,
+                size: 16,
+                color: selectedRepo == null ? const Color(0xFF6366F1) : Colors.grey[600],
+              ),
+              const SizedBox(width: 8),
+              const Text('All repos'),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        ...repoNames.map((repo) => PopupMenuItem<String?>(
+          value: repo,
+          child: Row(
+            children: [
+              Icon(
+                selectedRepo == repo ? Icons.check : Icons.circle_outlined,
+                size: 16,
+                color: selectedRepo == repo ? const Color(0xFF6366F1) : Colors.grey[600],
+              ),
+              const SizedBox(width: 8),
+              Text(repo),
+            ],
+          ),
+        )),
+      ],
     );
   }
 
@@ -331,16 +343,16 @@ class _DeploymentsScreenState extends ConsumerState<DeploymentsScreen> {
   }
 
   Widget _buildDeploymentsList(DeploymentsState state) {
-    final selectedOwner = ref.watch(selectedOwnerFilterProvider);
+    final selectedRepo = ref.watch(selectedRepoFilterProvider);
 
-    // Filter deployments by owner if selected
-    final filteredDeployments = selectedOwner != null
+    // Filter deployments by repo name if selected
+    final filteredDeployments = selectedRepo != null
         ? state.deployments.where((d) =>
-            d.owner?.toLowerCase() == selectedOwner.toLowerCase()
+            d.projectName.toLowerCase() == selectedRepo.toLowerCase()
           ).toList()
         : state.deployments;
 
-    if (filteredDeployments.isEmpty && selectedOwner != null) {
+    if (filteredDeployments.isEmpty && selectedRepo != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -348,12 +360,12 @@ class _DeploymentsScreenState extends ConsumerState<DeploymentsScreen> {
             Icon(Icons.filter_alt_off, size: 64, color: Colors.grey[600]),
             const SizedBox(height: 16),
             Text(
-              'No deployments for "$selectedOwner"',
+              'No deployments for "$selectedRepo"',
               style: TextStyle(fontSize: 18, color: Colors.grey[400]),
             ),
             const SizedBox(height: 8),
             TextButton(
-              onPressed: () => ref.read(selectedOwnerFilterProvider.notifier).state = null,
+              onPressed: () => ref.read(selectedRepoFilterProvider.notifier).state = null,
               child: const Text('Clear filter'),
             ),
           ],
