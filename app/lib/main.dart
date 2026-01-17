@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'core/auth/auth_service.dart';
 import 'core/auth/pin_service.dart';
 import 'features/auth/login_screen.dart';
-import 'features/auth/pin_screen.dart';
+import 'features/auth/lock_screen.dart';
 import 'features/deployments/deployments_screen.dart';
 import 'features/notifications/notification_rule.dart';
 import 'features/notifications/notification_service.dart';
@@ -110,7 +110,7 @@ class OrchonApp extends ConsumerWidget {
   }
 }
 
-/// Handles the authentication flow: Login -> PIN Setup/Entry -> Main App
+/// Handles the authentication flow: Login -> Device Lock -> Main App
 class _AuthGate extends ConsumerStatefulWidget {
   const _AuthGate();
 
@@ -119,13 +119,10 @@ class _AuthGate extends ConsumerStatefulWidget {
 }
 
 class _AuthGateState extends ConsumerState<_AuthGate> {
-  bool _justLoggedIn = false;
-  bool _pinUnlocked = false;
-
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final pinState = ref.watch(pinProvider);
+    final lockState = ref.watch(lockProvider);
 
     // Not authenticated - show login
     if (authState.status == AuthStatus.unknown) {
@@ -138,17 +135,11 @@ class _AuthGateState extends ConsumerState<_AuthGate> {
     }
 
     if (authState.status != AuthStatus.authenticated) {
-      return LoginScreen(
-        onLoginSuccess: () {
-          setState(() {
-            _justLoggedIn = true;
-          });
-        },
-      );
+      return const LoginScreen();
     }
 
-    // Authenticated - check PIN status
-    if (pinState.status == PinStatus.unknown) {
+    // Authenticated - check device lock status
+    if (lockState.status == LockStatus.unknown) {
       return const Scaffold(
         backgroundColor: Color(0xFF0F0F23),
         body: Center(
@@ -157,41 +148,14 @@ class _AuthGateState extends ConsumerState<_AuthGate> {
       );
     }
 
-    // Just logged in with email/password - offer PIN setup
-    if (_justLoggedIn && pinState.status == PinStatus.notSetup) {
-      return PinSetupScreen(
-        onComplete: () {
-          setState(() {
-            _justLoggedIn = false;
-            _pinUnlocked = true;
-          });
-        },
-        onSkip: () {
-          ref.read(pinProvider.notifier).skipSetup();
-          setState(() {
-            _justLoggedIn = false;
-            _pinUnlocked = true;
-          });
-        },
-      );
-    }
-
-    // PIN is set up but locked - require unlock
-    if (pinState.status == PinStatus.locked && !_pinUnlocked) {
-      return PinEntryScreen(
+    // Device lock is enabled and app is locked - show lock screen
+    if (lockState.status == LockStatus.locked) {
+      return LockScreen(
         onUnlocked: () {
-          setState(() {
-            _pinUnlocked = true;
-          });
+          // State is managed by LockNotifier
         },
         onLogout: () async {
-          // Clear PIN and sign out to use email/password
-          await ref.read(pinProvider.notifier).clearPin();
           await ref.read(authProvider.notifier).signOut();
-          setState(() {
-            _justLoggedIn = false;
-            _pinUnlocked = false;
-          });
         },
       );
     }

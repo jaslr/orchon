@@ -368,7 +368,7 @@ class SettingsDrawer extends ConsumerWidget {
                       );
                     },
                   ),
-                  _PinSettingsTile(ref: ref),
+                  _DeviceLockTile(ref: ref),
                   _UpdateTile(ref: ref),
                   const Divider(color: Colors.grey, height: 32),
                   // Section: Telegram
@@ -1419,116 +1419,59 @@ class _TelegramHistorySheet extends ConsumerWidget {
   }
 }
 
-class _PinSettingsTile extends StatelessWidget {
+class _DeviceLockTile extends StatelessWidget {
   final WidgetRef ref;
 
-  const _PinSettingsTile({required this.ref});
+  const _DeviceLockTile({required this.ref});
 
   @override
   Widget build(BuildContext context) {
-    final pinState = ref.watch(pinProvider);
-    final isPinSetup = pinState.status != PinStatus.notSetup && pinState.status != PinStatus.unknown;
+    final lockState = ref.watch(lockProvider);
+    final isEnabled = lockState.lockEnabled;
+    final isAvailable = lockState.lockAvailable;
 
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isPinSetup
+          color: isEnabled
               ? const Color(0xFF6366F1).withOpacity(0.2)
               : Colors.grey[850],
           borderRadius: BorderRadius.circular(8),
-          border: isPinSetup
+          border: isEnabled
               ? Border.all(color: const Color(0xFF6366F1).withOpacity(0.5))
               : null,
         ),
         child: Icon(
-          isPinSetup ? Icons.lock : Icons.lock_open,
-          color: isPinSetup ? const Color(0xFF6366F1) : Colors.grey[400],
+          isEnabled ? Icons.lock : Icons.lock_open,
+          color: isEnabled ? const Color(0xFF6366F1) : Colors.grey[400],
           size: 20,
         ),
       ),
       title: Text(
-        isPinSetup ? 'PIN Lock' : 'Set up PIN',
+        'Device Lock',
         style: TextStyle(
-          color: isPinSetup ? const Color(0xFF6366F1) : Colors.white,
+          color: isEnabled ? const Color(0xFF6366F1) : Colors.white,
           fontWeight: FontWeight.w500,
         ),
       ),
       subtitle: Text(
-        isPinSetup
-            ? pinState.biometricsEnabled
-                ? 'PIN + biometrics enabled'
-                : 'PIN enabled'
-            : 'Quick unlock with PIN or fingerprint',
+        isEnabled
+            ? 'Requires device PIN/fingerprint to open'
+            : isAvailable
+                ? 'Use device lock screen for quick unlock'
+                : 'No device lock configured',
         style: TextStyle(color: Colors.grey[600], fontSize: 12),
       ),
-      trailing: isPinSetup
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (pinState.biometricsAvailable)
-                  IconButton(
-                    icon: Icon(
-                      Icons.fingerprint,
-                      color: pinState.biometricsEnabled
-                          ? const Color(0xFF6366F1)
-                          : Colors.grey[600],
-                    ),
-                    onPressed: () async {
-                      await ref.read(pinProvider.notifier).setBiometricsEnabled(
-                        !pinState.biometricsEnabled,
-                      );
-                    },
-                    tooltip: pinState.biometricsEnabled
-                        ? 'Disable biometrics'
-                        : 'Enable biometrics',
-                  ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        backgroundColor: const Color(0xFF1A1A2E),
-                        title: const Text('Remove PIN?'),
-                        content: const Text(
-                          'You will need to use email/password to sign in next time.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Cancel'),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                            child: const Text('Remove'),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirm == true) {
-                      await ref.read(pinProvider.notifier).clearPin();
-                    }
-                  },
-                  tooltip: 'Remove PIN',
-                ),
-              ],
-            )
-          : Icon(Icons.chevron_right, color: Colors.grey[600]),
-      onTap: isPinSetup
-          ? null
-          : () {
-              Navigator.pop(context); // Close drawer
-              // Navigate to PIN setup - handled by main.dart AuthGate
-              // For now, sign out to trigger PIN setup flow
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Sign out and sign back in to set up PIN'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
+      trailing: Switch(
+        value: isEnabled,
+        onChanged: isAvailable
+            ? (value) async {
+                await ref.read(lockProvider.notifier).setLockEnabled(value);
+              }
+            : null,
+        activeColor: const Color(0xFF6366F1),
+      ),
     );
   }
 }
@@ -1573,7 +1516,7 @@ class _SignOutTile extends StatelessWidget {
           builder: (context) => AlertDialog(
             backgroundColor: const Color(0xFF1A1A2E),
             title: const Text('Sign Out?'),
-            content: Text('Sign out of $userEmail?\n\nYour PIN will also be cleared.'),
+            content: Text('Sign out of $userEmail?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -1589,8 +1532,8 @@ class _SignOutTile extends StatelessWidget {
         );
 
         if (confirm == true) {
-          // Clear PIN first, then sign out
-          await ref.read(pinProvider.notifier).clearPin();
+          // Disable device lock first, then sign out
+          await ref.read(lockProvider.notifier).setLockEnabled(false);
           await ref.read(authProvider.notifier).signOut();
           if (context.mounted) {
             Navigator.pop(context); // Close drawer
