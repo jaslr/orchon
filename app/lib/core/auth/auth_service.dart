@@ -83,9 +83,37 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _loadStoredAuth();
   }
 
+  /// Migrate credentials from old SharedPreferences to secure storage (one-time migration)
+  Future<void> _migrateFromSharedPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if old password exists in SharedPreferences (pre-secure-storage)
+      final oldPassword = prefs.getString(_passwordKey);
+      final oldToken = prefs.getString(_accessTokenKey);
+
+      if (oldPassword != null && oldPassword.isNotEmpty) {
+        debugPrint('[AuthService] Migrating password from SharedPreferences to secure storage');
+        await _secureStorage.write(key: _passwordKey, value: oldPassword);
+        await prefs.remove(_passwordKey); // Remove from old location
+      }
+
+      if (oldToken != null && oldToken.isNotEmpty) {
+        debugPrint('[AuthService] Migrating token from SharedPreferences to secure storage');
+        await _secureStorage.write(key: _accessTokenKey, value: oldToken);
+        await prefs.remove(_accessTokenKey); // Remove from old location
+      }
+    } catch (e) {
+      debugPrint('[AuthService] Migration error (non-fatal): $e');
+    }
+  }
+
   /// Load stored auth on startup
   Future<void> _loadStoredAuth() async {
     try {
+      // First, migrate any old credentials from SharedPreferences
+      await _migrateFromSharedPreferences();
+
       final prefs = await SharedPreferences.getInstance();
       final email = prefs.getString(_emailKey);
 
