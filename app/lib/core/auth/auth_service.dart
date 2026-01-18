@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
@@ -60,10 +61,18 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
+  // Non-sensitive data in SharedPreferences
   static const _emailKey = 'auth_email';
-  static const _passwordKey = 'auth_password';
   static const _userNameKey = 'auth_user_name';
+
+  // Sensitive data in encrypted secure storage
+  static const _passwordKey = 'auth_password';
   static const _accessTokenKey = 'auth_access_token';
+
+  /// Secure storage for sensitive credentials (encrypted)
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
 
   /// Stored access token for API calls (received from backend after login)
   /// This replaces the need for build-time ORCHON_API_SECRET
@@ -79,10 +88,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final email = prefs.getString(_emailKey);
-      final password = prefs.getString(_passwordKey);
 
-      // Load stored access token
-      _accessToken = prefs.getString(_accessTokenKey);
+      // Load sensitive data from encrypted secure storage
+      final password = await _secureStorage.read(key: _passwordKey);
+      _accessToken = await _secureStorage.read(key: _accessTokenKey);
+
       debugPrint('[AuthService] Loaded stored access token: ${_accessToken != null ? "yes" : "no"}');
 
       if (email != null && email.isNotEmpty && password != null && password.isNotEmpty) {
@@ -146,21 +156,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
         if (data['authorized'] == true) {
           final user = AuthUser.fromJson(data['user']);
 
-          // Store credentials
+          // Store non-sensitive data in SharedPreferences
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString(_emailKey, user.email);
-          await prefs.setString(_passwordKey, password);
           if (user.name != null) {
             await prefs.setString(_userNameKey, user.name!);
           }
+
+          // Store sensitive data in encrypted secure storage
+          await _secureStorage.write(key: _passwordKey, value: password);
 
           // Store access token from backend (used for API calls)
           // This eliminates the need for build-time ORCHON_API_SECRET
           final token = data['accessToken'] as String?;
           if (token != null && token.isNotEmpty) {
             _accessToken = token;
-            await prefs.setString(_accessTokenKey, token);
-            debugPrint('[AuthService] Stored access token from backend');
+            await _secureStorage.write(key: _accessTokenKey, value: token);
+            debugPrint('[AuthService] Stored access token in secure storage');
           }
 
           state = AuthState(
@@ -208,11 +220,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Sign out - clear stored credentials
   Future<void> signOut() async {
+    // Clear non-sensitive data from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_emailKey);
-    await prefs.remove(_passwordKey);
     await prefs.remove(_userNameKey);
-    await prefs.remove(_accessTokenKey);
+
+    // Clear sensitive data from secure storage
+    await _secureStorage.delete(key: _passwordKey);
+    await _secureStorage.delete(key: _accessTokenKey);
 
     _accessToken = null;
     state = const AuthState(status: AuthStatus.unauthenticated);

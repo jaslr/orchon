@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
 import '../auth/auth_service.dart';
 import '../../models/deployment.dart';
@@ -64,7 +64,12 @@ class OrchonService {
     debugPrint('[ORCHON] Token updated: ${token != null ? "yes" : "no"}');
   }
 
-  /// Get the access token - checks memory first, then SharedPreferences
+  /// Secure storage for reading token directly (bypasses auth provider race condition)
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+
+  /// Get the access token - checks memory first, then encrypted secure storage
   /// This ensures we always have the token even if auth provider hasn't loaded yet
   Future<String?> _getToken() async {
     // If we have it in memory, use it
@@ -72,17 +77,16 @@ class OrchonService {
       return _accessToken;
     }
 
-    // Otherwise, load directly from SharedPreferences (bypasses auth provider race condition)
+    // Otherwise, load directly from encrypted secure storage (bypasses auth provider race condition)
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final storedToken = prefs.getString(_accessTokenKey);
+      final storedToken = await _secureStorage.read(key: _accessTokenKey);
       if (storedToken != null && storedToken.isNotEmpty) {
-        debugPrint('[ORCHON] Loaded token from SharedPreferences');
+        debugPrint('[ORCHON] Loaded token from secure storage');
         _accessToken = storedToken; // Cache it
         return storedToken;
       }
     } catch (e) {
-      debugPrint('[ORCHON] Failed to load token from SharedPreferences: $e');
+      debugPrint('[ORCHON] Failed to load token from secure storage: $e');
     }
 
     // Last resort: build-time secret (probably empty)
