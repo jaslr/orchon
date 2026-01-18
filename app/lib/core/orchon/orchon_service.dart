@@ -42,9 +42,9 @@ class DeploymentsState {
 class OrchonService {
   final http.Client _client;
 
-  /// Access token for API authentication (from auth provider)
-  /// Falls back to SharedPreferences if not set by provider
-  String? _accessToken;
+  /// Callback to get current access token from auth provider
+  /// This ensures we always get the latest token without caching issues
+  final String? Function()? _tokenGetter;
 
   /// SharedPreferences key for access token (must match auth_service.dart)
   static const _accessTokenKey = 'auth_access_token';
@@ -54,35 +54,31 @@ class OrchonService {
   static const Duration _requestTimeout = Duration(seconds: 15);
   static const Duration _initialBackoff = Duration(milliseconds: 500);
 
-  OrchonService({http.Client? client, String? accessToken})
+  OrchonService({http.Client? client, String? Function()? tokenGetter})
       : _client = client ?? http.Client(),
-        _accessToken = accessToken;
+        _tokenGetter = tokenGetter;
 
-  /// Update the access token (called when auth state changes)
-  void updateToken(String? token) {
-    _accessToken = token;
-    debugPrint('[ORCHON] Token updated: ${token != null ? "yes" : "no"}');
-  }
-
-  /// Secure storage for reading token directly (bypasses auth provider race condition)
+  /// Secure storage for reading token directly (fallback)
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
 
-  /// Get the access token - checks memory first, then encrypted secure storage
-  /// This ensures we always have the token even if auth provider hasn't loaded yet
+  /// Get the access token - first from callback, then secure storage fallback
   Future<String?> _getToken() async {
-    // If we have it in memory, use it
-    if (_accessToken != null && _accessToken!.isNotEmpty) {
-      return _accessToken;
+    // First: try the token getter callback (reads directly from AuthNotifier)
+    if (_tokenGetter != null) {
+      final token = _tokenGetter!();
+      if (token != null && token.isNotEmpty) {
+        debugPrint('[ORCHON] Got token from auth provider');
+        return token;
+      }
     }
 
-    // Otherwise, load directly from encrypted secure storage (bypasses auth provider race condition)
+    // Fallback: load from encrypted secure storage
     try {
       final storedToken = await _secureStorage.read(key: _accessTokenKey);
       if (storedToken != null && storedToken.isNotEmpty) {
         debugPrint('[ORCHON] Loaded token from secure storage');
-        _accessToken = storedToken; // Cache it
         return storedToken;
       }
     } catch (e) {
@@ -299,19 +295,13 @@ class DeploymentsNotifier extends StateNotifier<DeploymentsState> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Provider for OrchonService instance
-/// Gets access token from auth provider for API authentication
+/// Uses a callback to get the current token from auth provider at call time
 final orchonServiceProvider = Provider<OrchonService>((ref) {
-  // Get access token from auth provider (received from backend after login)
-  final authNotifier = ref.read(authProvider.notifier);
-  final token = authNotifier.accessToken;
-
-  final service = OrchonService(accessToken: token);
-
-  // Listen for auth changes and update token
-  ref.listen(authProvider, (previous, next) {
-    final newToken = ref.read(authProvider.notifier).accessToken;
-    service.updateToken(newToken);
-  });
+  // Pass a callback that reads the token at call time
+  // This ensures we always get the current token, even if auth completes after service creation
+  final service = OrchonService(
+    tokenGetter: () => ref.read(authProvider.notifier).accessToken,
+  );
 
   ref.onDispose(service.dispose);
   return service;

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/config.dart';
 import '../../core/websocket/websocket_service.dart';
 import '../../core/orchon/orchon_service.dart';
+import '../../core/auth/auth_service.dart';
 import '../../core/updates/update_dialog.dart';
 import '../../core/updates/update_service.dart';
 import '../settings/settings_drawer.dart';
@@ -29,7 +30,8 @@ class _DeploymentsScreenState extends ConsumerState<DeploymentsScreen> {
   }
 
   Future<void> _initializeServices() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Wait for auth token to be available (auth flow may take time with cold starts)
+    await _waitForAuthToken();
     if (!mounted) return;
 
     // Connect WebSocket
@@ -53,6 +55,37 @@ class _DeploymentsScreenState extends ConsumerState<DeploymentsScreen> {
     } catch (e) {
       debugPrint('Update check error: $e');
     }
+  }
+
+  /// Wait for auth to complete (with timeout)
+  /// This handles the race condition where deployments fetch happens before auth completes
+  Future<void> _waitForAuthToken() async {
+    const maxWaitMs = 10000; // 10 seconds max (handles Fly.io cold starts)
+    const checkIntervalMs = 200;
+    var waited = 0;
+
+    while (waited < maxWaitMs) {
+      // Check auth STATE (not just token) - auth flow sets status after loading from secure storage
+      final authState = ref.read(authProvider);
+      if (authState.status == AuthStatus.authenticated) {
+        debugPrint('[Deployments] Auth ready after ${waited}ms');
+        return;
+      }
+
+      // Also check if we're unauthenticated (no stored creds) - don't wait forever
+      if (authState.status == AuthStatus.unauthenticated ||
+          authState.status == AuthStatus.error) {
+        debugPrint('[Deployments] Auth status: ${authState.status} - proceeding without auth');
+        return;
+      }
+
+      await Future.delayed(const Duration(milliseconds: checkIntervalMs));
+      waited += checkIntervalMs;
+
+      if (!mounted) return;
+    }
+
+    debugPrint('[Deployments] Warning: Auth not ready after ${maxWaitMs}ms');
   }
 
   @override
