@@ -371,6 +371,28 @@ class SettingsDrawer extends ConsumerWidget {
                   _DeviceLockTile(ref: ref),
                   _UpdateTile(ref: ref),
                   const Divider(color: Colors.grey, height: 32),
+                  // Section: Server Management
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16, bottom: 8),
+                    child: Text(
+                      'SERVER',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 2,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                  _ServerStatsTile(ref: ref),
+                  _SettingsTile(
+                    icon: Icons.memory,
+                    title: 'Processes',
+                    subtitle: 'View and manage server processes',
+                    onTap: () => _showProcessManager(context, ref),
+                  ),
+                  _KillChromeTile(ref: ref),
+                  const Divider(color: Colors.grey, height: 32),
                   // Section: Telegram
                   Padding(
                     padding: const EdgeInsets.only(left: 16, bottom: 8),
@@ -1540,6 +1562,500 @@ class _SignOutTile extends StatelessWidget {
           }
         }
       },
+    );
+  }
+}
+
+// =============================================================================
+// Server Management Widgets
+// =============================================================================
+
+/// Provider for server stats
+final serverStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  final config = ref.watch(terminalConfigProvider);
+  try {
+    final response = await http.get(
+      Uri.parse('http://${config.dropletIp}:8406/server/stats'),
+    ).timeout(const Duration(seconds: 5));
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    return {};
+  } catch (e) {
+    debugPrint('Failed to fetch server stats: $e');
+    return {};
+  }
+});
+
+/// Provider for server processes
+final serverProcessesProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  final config = ref.watch(terminalConfigProvider);
+  try {
+    final response = await http.get(
+      Uri.parse('http://${config.dropletIp}:8406/server/processes'),
+    ).timeout(const Duration(seconds: 5));
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    return {'processes': [], 'groups': {}};
+  } catch (e) {
+    debugPrint('Failed to fetch server processes: $e');
+    return {'processes': [], 'groups': {}};
+  }
+});
+
+class _ServerStatsTile extends ConsumerWidget {
+  final WidgetRef ref;
+
+  const _ServerStatsTile({required this.ref});
+
+  @override
+  Widget build(BuildContext context, WidgetRef widgetRef) {
+    final statsAsync = widgetRef.watch(serverStatsProvider);
+
+    return statsAsync.when(
+      data: (stats) {
+        if (stats.isEmpty) {
+          return _SettingsTile(
+            icon: Icons.dns,
+            title: 'Server Status',
+            subtitle: 'Unable to connect',
+            onTap: () => widgetRef.invalidate(serverStatsProvider),
+          );
+        }
+
+        final load = stats['load'] as Map<String, dynamic>? ?? {};
+        final memory = stats['memory'] as Map<String, dynamic>? ?? {};
+        final cpuCount = stats['cpuCount'] ?? 1;
+        final loadAvg = load['avg1'] ?? 0.0;
+        final memPercent = memory['percentUsed'] ?? 0;
+
+        // Determine health status
+        final loadRatio = loadAvg / cpuCount;
+        Color statusColor;
+        String statusText;
+        if (loadRatio > 2.0) {
+          statusColor = Colors.red;
+          statusText = 'High load';
+        } else if (loadRatio > 1.0) {
+          statusColor = Colors.orange;
+          statusText = 'Moderate load';
+        } else {
+          statusColor = Colors.green;
+          statusText = 'Healthy';
+        }
+
+        return ListTile(
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(Icons.dns, color: statusColor, size: 20),
+          ),
+          title: Text(
+            'Server Status',
+            style: TextStyle(color: statusColor, fontWeight: FontWeight.w500),
+          ),
+          subtitle: Text(
+            '$statusText • Load: ${loadAvg.toStringAsFixed(1)}/${cpuCount} • Mem: $memPercent%',
+            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.refresh, size: 20),
+            color: Colors.grey[400],
+            onPressed: () => widgetRef.invalidate(serverStatsProvider),
+          ),
+        );
+      },
+      loading: () => ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.grey[850],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+        title: const Text('Server Status', style: TextStyle(color: Colors.white)),
+        subtitle: Text('Loading...', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+      ),
+      error: (_, __) => _SettingsTile(
+        icon: Icons.error_outline,
+        title: 'Server Status',
+        subtitle: 'Failed to load',
+        onTap: () => widgetRef.invalidate(serverStatsProvider),
+      ),
+    );
+  }
+}
+
+class _KillChromeTile extends ConsumerStatefulWidget {
+  final WidgetRef ref;
+
+  const _KillChromeTile({required this.ref});
+
+  @override
+  ConsumerState<_KillChromeTile> createState() => _KillChromeTileState();
+}
+
+class _KillChromeTileState extends ConsumerState<_KillChromeTile> {
+  bool _isLoading = false;
+
+  Future<void> _killChrome() async {
+    final config = ref.read(terminalConfigProvider);
+
+    // Confirm first
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Kill Chrome?'),
+          ],
+        ),
+        content: const Text(
+          'This will terminate all Chrome/headless browser processes on the server.\n\nAgents can restart Chrome when needed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('Kill Chrome'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final headers = <String, String>{};
+      if (AppConfig.orchonApiSecret.isNotEmpty) {
+        headers['Authorization'] = 'Bearer ${AppConfig.orchonApiSecret}';
+      }
+
+      final response = await http.post(
+        Uri.parse('http://${config.dropletIp}:8406/server/kill-chrome'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+
+      final result = json.decode(response.body);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Done'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Refresh stats
+        ref.invalidate(serverStatsProvider);
+        ref.invalidate(serverProcessesProvider);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.orange),
+              )
+            : const Icon(Icons.browser_not_supported, color: Colors.orange, size: 20),
+      ),
+      title: const Text(
+        'Kill Chrome',
+        style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+      ),
+      subtitle: Text(
+        'Stop all headless browser processes',
+        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+      ),
+      trailing: const Icon(Icons.chevron_right, color: Colors.orange),
+      onTap: _isLoading ? null : _killChrome,
+    );
+  }
+}
+
+/// Show process manager bottom sheet
+void _showProcessManager(BuildContext context, WidgetRef ref) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: const Color(0xFF1A1A2E),
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (context) => _ProcessManagerSheet(ref: ref),
+  );
+}
+
+class _ProcessManagerSheet extends ConsumerStatefulWidget {
+  final WidgetRef ref;
+
+  const _ProcessManagerSheet({required this.ref});
+
+  @override
+  ConsumerState<_ProcessManagerSheet> createState() => _ProcessManagerSheetState();
+}
+
+class _ProcessManagerSheetState extends ConsumerState<_ProcessManagerSheet> {
+  Set<int> _killingPids = {};
+
+  Future<void> _killProcess(int pid, String command) async {
+    final config = ref.read(terminalConfigProvider);
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        title: const Text('Kill Process?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('PID: $pid', style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(
+              command,
+              style: TextStyle(color: Colors.grey[400], fontSize: 12, fontFamily: 'monospace'),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Kill'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _killingPids.add(pid));
+
+    try {
+      final headers = <String, String>{};
+      if (AppConfig.orchonApiSecret.isNotEmpty) {
+        headers['Authorization'] = 'Bearer ${AppConfig.orchonApiSecret}';
+      }
+
+      await http.post(
+        Uri.parse('http://${config.dropletIp}:8406/server/kill-process?pid=$pid'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Killed process $pid'), backgroundColor: Colors.green),
+        );
+        ref.invalidate(serverProcessesProvider);
+        ref.invalidate(serverStatsProvider);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _killingPids.remove(pid));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final processesAsync = ref.watch(serverProcessesProvider);
+
+    return SafeArea(
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'PROCESSES',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 3,
+                    color: Colors.grey[400],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, color: Color(0xFF6366F1)),
+                  onPressed: () => ref.invalidate(serverProcessesProvider),
+                  tooltip: 'Refresh',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Process groups summary
+            processesAsync.when(
+              data: (data) {
+                final groups = data['groups'] as Map<String, dynamic>? ?? {};
+                if (groups.isNotEmpty) {
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: groups.entries.map((e) {
+                      final g = e.value as Map<String, dynamic>;
+                      final color = e.key == 'chrome'
+                          ? Colors.orange
+                          : e.key == 'node'
+                              ? Colors.green
+                              : Colors.grey;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${e.key}: ${g['count']} (${g['rss']}MB)',
+                          style: TextStyle(color: color, fontSize: 12),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 16),
+
+            // Process list
+            Expanded(
+              child: processesAsync.when(
+                data: (data) {
+                  final processes = (data['processes'] as List<dynamic>?) ?? [];
+
+                  if (processes.isEmpty) {
+                    return Center(
+                      child: Text('No processes found', style: TextStyle(color: Colors.grey[500])),
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount: processes.length,
+                    itemBuilder: (context, index) {
+                      final p = processes[index] as Map<String, dynamic>;
+                      final pid = p['pid'] as int;
+                      final cpu = p['cpu'] as double;
+                      final mem = p['mem'] as double;
+                      final rss = p['rss'] as int;
+                      final command = p['command'] as String;
+                      final fullCommand = p['fullCommand'] as String;
+                      final isKilling = _killingPids.contains(pid);
+
+                      // Highlight heavy processes
+                      final isHeavy = cpu > 5 || mem > 5;
+                      final isChrome = fullCommand.contains('chrome');
+
+                      return ListTile(
+                        leading: isKilling
+                            ? const SizedBox(
+                                width: 40,
+                                height: 40,
+                                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                              )
+                            : Container(
+                                width: 40,
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '$pid',
+                                  style: TextStyle(
+                                    color: isChrome ? Colors.orange : Colors.grey[400],
+                                    fontSize: 11,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ),
+                        title: Text(
+                          command,
+                          style: TextStyle(
+                            color: isHeavy ? Colors.orange : Colors.white,
+                            fontSize: 13,
+                            fontFamily: 'monospace',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          'CPU: ${cpu.toStringAsFixed(1)}% • Mem: ${mem.toStringAsFixed(1)}% • ${rss}MB',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                        ),
+                        trailing: IconButton(
+                          icon: Icon(Icons.close, color: Colors.red[300], size: 20),
+                          onPressed: isKilling ? null : () => _killProcess(pid, fullCommand),
+                          tooltip: 'Kill process',
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(
+                  child: Text('Error: $e', style: TextStyle(color: Colors.red[400])),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

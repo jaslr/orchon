@@ -287,6 +287,153 @@ const server = http.createServer((req, res) => {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
     }
+  } else if (req.method === 'GET' && req.url === '/server/stats') {
+    // Server stats - load, memory, CPU count
+    // No auth required - stats are public
+    try {
+      const loadavg = fs.readFileSync('/proc/loadavg', 'utf8').trim().split(' ');
+      const meminfo = fs.readFileSync('/proc/meminfo', 'utf8');
+      const cpuCount = require('os').cpus().length;
+
+      // Parse memory info
+      const memTotal = parseInt(meminfo.match(/MemTotal:\s+(\d+)/)?.[1] || '0') / 1024;
+      const memAvailable = parseInt(meminfo.match(/MemAvailable:\s+(\d+)/)?.[1] || '0') / 1024;
+      const memUsed = memTotal - memAvailable;
+
+      // Get swap info
+      const swapTotal = parseInt(meminfo.match(/SwapTotal:\s+(\d+)/)?.[1] || '0') / 1024;
+      const swapFree = parseInt(meminfo.match(/SwapFree:\s+(\d+)/)?.[1] || '0') / 1024;
+      const swapUsed = swapTotal - swapFree;
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        load: {
+          avg1: parseFloat(loadavg[0]),
+          avg5: parseFloat(loadavg[1]),
+          avg15: parseFloat(loadavg[2]),
+        },
+        cpuCount,
+        memory: {
+          totalMB: Math.round(memTotal),
+          usedMB: Math.round(memUsed),
+          availableMB: Math.round(memAvailable),
+          percentUsed: Math.round((memUsed / memTotal) * 100),
+        },
+        swap: {
+          totalMB: Math.round(swapTotal),
+          usedMB: Math.round(swapUsed),
+          percentUsed: swapTotal > 0 ? Math.round((swapUsed / swapTotal) * 100) : 0,
+        },
+      }));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+  } else if (req.method === 'GET' && req.url === '/server/processes') {
+    // List top processes by CPU and memory
+    // No auth required - process list is public
+    try {
+      const output = execSync('ps aux --sort=-%cpu | head -20', {
+        encoding: 'utf8',
+        timeout: 5000,
+      });
+
+      const lines = output.trim().split('\n');
+      const headers = lines[0].split(/\s+/);
+      const processes = lines.slice(1).map(line => {
+        const parts = line.split(/\s+/);
+        const cmd = parts.slice(10).join(' ');
+        return {
+          pid: parseInt(parts[1]),
+          cpu: parseFloat(parts[2]),
+          mem: parseFloat(parts[3]),
+          rss: Math.round(parseInt(parts[5]) / 1024), // KB to MB
+          command: cmd.length > 60 ? cmd.substring(0, 60) + '...' : cmd,
+          fullCommand: cmd,
+        };
+      }).filter(p => p.cpu > 0 || p.mem > 0.5); // Filter out idle processes
+
+      // Group by process type for summary
+      const groups = {};
+      processes.forEach(p => {
+        let type = 'other';
+        if (p.fullCommand.includes('chrome')) type = 'chrome';
+        else if (p.fullCommand.includes('claude')) type = 'claude';
+        else if (p.fullCommand.includes('node')) type = 'node';
+        else if (p.fullCommand.includes('esbuild')) type = 'esbuild';
+
+        if (!groups[type]) {
+          groups[type] = { cpu: 0, mem: 0, rss: 0, count: 0, pids: [] };
+        }
+        groups[type].cpu += p.cpu;
+        groups[type].mem += p.mem;
+        groups[type].rss += p.rss;
+        groups[type].count++;
+        groups[type].pids.push(p.pid);
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ processes, groups }));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+  } else if (req.method === 'POST' && req.url === '/server/kill-chrome') {
+    // PROTECTED: Kill all Chrome processes
+    if (!isAuthorized(req)) return unauthorized(res);
+
+    try {
+      const countBefore = parseInt(execSync('pgrep -c chrome 2>/dev/null || echo 0', { encoding: 'utf8' }).trim());
+
+      if (countBefore === 0) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'No Chrome processes running', killed: 0 }));
+        return;
+      }
+
+      execSync('pkill -9 chrome', { timeout: 5000 });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, message: `Killed ${countBefore} Chrome processes`, killed: countBefore }));
+    } catch (e) {
+      // pkill returns non-zero if no processes matched, which is fine
+      if (e.message.includes('No matching')) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'No Chrome processes found', killed: 0 }));
+      } else {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    }
+  } else if (req.method === 'POST' && req.url?.startsWith('/server/kill-process')) {
+    // PROTECTED: Kill a specific process by PID
+    if (!isAuthorized(req)) return unauthorized(res);
+
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const pid = url.searchParams.get('pid');
+
+    if (!pid || !/^\d+$/.test(pid)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid or missing pid parameter' }));
+      return;
+    }
+
+    // Don't allow killing critical system processes
+    const criticalPids = ['1', '2'];
+    if (criticalPids.includes(pid)) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Cannot kill system process' }));
+      return;
+    }
+
+    try {
+      execSync(`kill -9 ${pid}`, { timeout: 5000 });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, message: `Killed process ${pid}` }));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
   } else {
     res.writeHead(404);
     res.end('Not found');
