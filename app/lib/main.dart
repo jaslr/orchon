@@ -7,7 +7,7 @@ import 'core/auth/auth_service.dart';
 import 'core/auth/pin_service.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/lock_screen.dart';
-import 'features/deployments/deployments_screen.dart';
+import 'features/home/home_screen.dart';
 import 'features/notifications/notification_rule.dart';
 import 'features/notifications/notification_service.dart';
 import 'features/notifications/notifications_provider.dart';
@@ -161,7 +161,7 @@ class _AuthGateState extends ConsumerState<_AuthGate> {
     }
 
     // Fully authenticated and unlocked
-    return const DeploymentsScreen();
+    return const HomeScreen();
   }
 }
 

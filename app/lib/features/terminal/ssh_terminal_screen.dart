@@ -36,6 +36,7 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
   final _inputFocusNode = FocusNode();
   final _terminalFocusNode = FocusNode();
   final _terminalScrollController = ScrollController();
+  final _logScrollController = ScrollController();
   SSHClient? _client;
   SSHSession? _session;
   StreamSubscription<Uint8List>? _stdoutSubscription;
@@ -44,6 +45,12 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
   String? _error;
   bool _showInputBar = false;
   bool _ctrlPressed = false;
+  bool _showLogDrawer = false;
+
+  // Log buffer for last 500 lines
+  final List<String> _logBuffer = [];
+  static const int _maxLogLines = 500;
+  String _currentLine = '';
 
   // Track terminal dimensions for PTY sizing
   int _terminalCols = 80;
@@ -127,11 +134,15 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
       // Handle terminal output - decode as UTF-8 for proper Unicode support
       // Store subscriptions so they can be cancelled on reconnect/dispose
       _stdoutSubscription = _session!.stdout.listen((data) {
-        terminal.write(utf8.decode(data, allowMalformed: true));
+        final text = utf8.decode(data, allowMalformed: true);
+        terminal.write(text);
+        _addToLogBuffer(text);
       });
 
       _stderrSubscription = _session!.stderr.listen((data) {
-        terminal.write(utf8.decode(data, allowMalformed: true));
+        final text = utf8.decode(data, allowMalformed: true);
+        terminal.write(text);
+        _addToLogBuffer(text);
       });
 
       // Handle terminal input - encode as UTF-8 for proper Unicode support
@@ -218,6 +229,7 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
     _inputFocusNode.dispose();
     _terminalFocusNode.dispose();
     _terminalScrollController.dispose();
+    _logScrollController.dispose();
     // Cancel stream subscriptions to prevent memory leaks
     _stdoutSubscription?.cancel();
     _stderrSubscription?.cancel();
@@ -229,6 +241,27 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
       _client?.close();
     } catch (_) {}
     super.dispose();
+  }
+
+  // Add text to log buffer (strips ANSI codes for readability)
+  void _addToLogBuffer(String text) {
+    // Strip ANSI escape codes for clean log view
+    final stripped = text.replaceAll(RegExp(r'\x1B\[[0-9;]*[a-zA-Z]'), '');
+
+    // Process character by character to handle newlines properly
+    for (final char in stripped.split('')) {
+      if (char == '\n' || char == '\r') {
+        if (_currentLine.isNotEmpty) {
+          _logBuffer.add(_currentLine);
+          if (_logBuffer.length > _maxLogLines) {
+            _logBuffer.removeAt(0);
+          }
+          _currentLine = '';
+        }
+      } else {
+        _currentLine += char;
+      }
+    }
   }
 
   // Calculate terminal dimensions based on view size and font size
@@ -436,6 +469,27 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
               onPressed: _connect,
               tooltip: 'Reconnect',
             ),
+          // Log viewer button
+          IconButton(
+            icon: Icon(
+              Icons.article_outlined,
+              color: _showLogDrawer ? const Color(0xFF6366F1) : null,
+            ),
+            onPressed: () {
+              setState(() {
+                _showLogDrawer = !_showLogDrawer;
+                if (_showLogDrawer) {
+                  // Scroll to bottom when opening
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_logScrollController.hasClients) {
+                      _logScrollController.jumpTo(_logScrollController.position.maxScrollExtent);
+                    }
+                  });
+                }
+              });
+            },
+            tooltip: 'View terminal log',
+          ),
           // Session list button (only for Claude mode)
           if (widget.launchMode == LaunchMode.claude)
             IconButton(
@@ -446,62 +500,69 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Terminal view with swipe-to-scroll for tmux
-            // GestureDetector with opaque behavior to capture ALL vertical drags for scroll
-            // Taps still work because we only handle drag, not tap
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final fontSize = ref.watch(terminalConfigProvider).terminalFontSize;
-                  // Update PTY size based on actual view dimensions
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _updateTerminalSize(
-                      Size(constraints.maxWidth, constraints.maxHeight),
-                      fontSize,
-                    );
-                  });
+            // Main terminal content
+            Column(
+              children: [
+                // Terminal view with swipe-to-scroll for tmux
+                // GestureDetector with opaque behavior to capture ALL vertical drags for scroll
+                // Taps still work because we only handle drag, not tap
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final fontSize = ref.watch(terminalConfigProvider).terminalFontSize;
+                      // Update PTY size based on actual view dimensions
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _updateTerminalSize(
+                          Size(constraints.maxWidth, constraints.maxHeight),
+                          fontSize,
+                        );
+                      });
 
-                  return GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onVerticalDragStart: (details) {
-                      _lastPointerY = details.globalPosition.dy;
+                      return GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onVerticalDragStart: (details) {
+                          _lastPointerY = details.globalPosition.dy;
+                        },
+                        onVerticalDragUpdate: (details) {
+                          if (_lastPointerY != null) {
+                            final delta = details.globalPosition.dy - _lastPointerY!;
+                            _handleTerminalScroll(delta);
+                            _lastPointerY = details.globalPosition.dy;
+                          }
+                        },
+                        onVerticalDragEnd: (details) {
+                          _lastPointerY = null;
+                          _scrollAccumulator = 0;
+                        },
+                        onTapDown: (details) {
+                          // Exit copy mode if in it (so user can type again)
+                          _exitCopyMode();
+                          // Forward tap to terminal for focus
+                          _terminalFocusNode.requestFocus();
+                        },
+                        child: TerminalView(
+                          terminal,
+                          focusNode: _terminalFocusNode,
+                          scrollController: _terminalScrollController,
+                          textStyle: TerminalStyle(
+                            fontSize: fontSize,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      );
                     },
-                    onVerticalDragUpdate: (details) {
-                      if (_lastPointerY != null) {
-                        final delta = details.globalPosition.dy - _lastPointerY!;
-                        _handleTerminalScroll(delta);
-                        _lastPointerY = details.globalPosition.dy;
-                      }
-                    },
-                    onVerticalDragEnd: (details) {
-                      _lastPointerY = null;
-                      _scrollAccumulator = 0;
-                    },
-                    onTapDown: (details) {
-                      // Exit copy mode if in it (so user can type again)
-                      _exitCopyMode();
-                      // Forward tap to terminal for focus
-                      _terminalFocusNode.requestFocus();
-                    },
-                    child: TerminalView(
-                      terminal,
-                      focusNode: _terminalFocusNode,
-                      scrollController: _terminalScrollController,
-                      textStyle: TerminalStyle(
-                        fontSize: fontSize,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  );
-                },
-              ),
+                  ),
+                ),
+                // Terminal toolbar with special keys
+                _buildTerminalToolbar(),
+                // Optional text input bar (for voice typing support)
+                if (_showInputBar) _buildInputBar(),
+              ],
             ),
-            // Terminal toolbar with special keys
-            _buildTerminalToolbar(),
-            // Optional text input bar (for voice typing support)
-            if (_showInputBar) _buildInputBar(),
+            // Log drawer overlay (slides down from top)
+            if (_showLogDrawer) _buildLogDrawer(),
           ],
         ),
       ),
@@ -537,7 +598,7 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
                   // Common ctrl shortcuts (most used)
                   _buildToolbarButton('C', () => _sendCtrlKey('c'), isCtrl: true, compact: isCompact),
                   _buildToolbarButton('D', () => _sendCtrlKey('d'), isCtrl: true, compact: isCompact),
-                  _buildToolbarButton('Q', () => _sendCtrlKey('q'), isCtrl: true, highlight: true, compact: isCompact),
+                  _buildToolbarButton('Q', () => _sendCtrlKey('q'), isCtrl: true, compact: isCompact),
                   // Divider
                   _buildDivider(),
                   // Arrow keys
@@ -713,6 +774,147 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
             onPressed: () => _sendInput(_inputController.text),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLogDrawer() {
+    // Get log content (last 500 lines)
+    final logLines = List<String>.from(_logBuffer);
+    if (_currentLine.isNotEmpty) {
+      logLines.add(_currentLine);
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F0F23),
+          border: Border(
+            bottom: BorderSide(color: const Color(0xFF6366F1).withOpacity(0.5), width: 2),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A2E),
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey[800]!),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.article_outlined, color: const Color(0xFF6366F1), size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Terminal Log',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${logLines.length} lines',
+                    style: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Scroll to bottom button
+                  IconButton(
+                    icon: const Icon(Icons.vertical_align_bottom, size: 20),
+                    color: Colors.grey[400],
+                    onPressed: () {
+                      if (_logScrollController.hasClients) {
+                        _logScrollController.animateTo(
+                          _logScrollController.position.maxScrollExtent,
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOut,
+                        );
+                      }
+                    },
+                    tooltip: 'Scroll to bottom',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(width: 8),
+                  // Close button
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_up, size: 24),
+                    color: Colors.grey[400],
+                    onPressed: () => setState(() => _showLogDrawer = false),
+                    tooltip: 'Close log',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ),
+            // Log content with scrollbar
+            Expanded(
+              child: Scrollbar(
+                controller: _logScrollController,
+                thumbVisibility: true,
+                child: ListView.builder(
+                  controller: _logScrollController,
+                  padding: const EdgeInsets.all(12),
+                  itemCount: logLines.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 1),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Line number
+                          SizedBox(
+                            width: 40,
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 11,
+                                fontFamily: 'monospace',
+                              ),
+                              textAlign: TextAlign.right,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Line content
+                          Expanded(
+                            child: SelectableText(
+                              logLines[index],
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                                height: 1.3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -11,6 +11,7 @@ import '../../core/config.dart';
 import '../terminal/ssh_terminal_screen.dart';
 import '../terminal/quick_commands.dart';
 import '../notifications/notifications_screen.dart';
+import '../deployments/deployments_screen.dart';
 import 'terminal_config_screen.dart';
 
 /// Shows the Claude session picker bottom sheet
@@ -266,6 +267,22 @@ class SettingsDrawer extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
+                  // Deployments (first item)
+                  _SettingsTile(
+                    icon: Icons.rocket_launch_outlined,
+                    title: 'Deployments',
+                    subtitle: 'View recent deployments',
+                    highlight: true,
+                    onTap: () {
+                      Navigator.pop(context); // Close drawer
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DeploymentsScreen(),
+                        ),
+                      );
+                    },
+                  ),
                   // Primary: Launch Claude
                   _LaunchClaudeTile(ref: ref),
                   // Secondary: Launch Bash
