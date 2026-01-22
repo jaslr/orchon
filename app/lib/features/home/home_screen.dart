@@ -10,6 +10,7 @@ import '../../core/updates/update_service.dart';
 import '../settings/settings_drawer.dart';
 import '../terminal/quick_commands.dart';
 import '../deployments/deployments_screen.dart';
+import '../server/server_stats_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -447,7 +448,12 @@ class _ServiceStatusCard extends ConsumerWidget {
       color: const Color(0xFF1A1A2E),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        onTap: onRefresh,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ServerStatsScreen()),
+          );
+        },
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),

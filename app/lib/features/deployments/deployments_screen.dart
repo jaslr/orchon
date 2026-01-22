@@ -443,8 +443,14 @@ class _DeploymentsScreenState extends ConsumerState<DeploymentsScreen> {
           TextButton.icon(
             onPressed: () async {
               final url = Uri.parse('https://orchon.pages.dev');
-              if (await canLaunchUrl(url)) {
+              try {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Could not open browser: $e')),
+                  );
+                }
               }
             },
             icon: const Icon(Icons.open_in_new, size: 18),
