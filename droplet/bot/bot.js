@@ -515,6 +515,7 @@ function handleHelp() {
 \`/clone <account> <repo>\` - Clone repo
 \`/update\` - Pull latest ORCHON
 \`/clear\` - Clear history
+\`/new\` - New Claude session (kills previous)
 
 *Or just talk naturally* (uses LLM)
 
@@ -626,6 +627,69 @@ function handleServices() {
   }
 }
 
+async function handleNew() {
+  // Kill any existing telegram_* sessions
+  let killedSessions = [];
+  try {
+    const sessions = execSync('tmux list-sessions -F "#{session_name}" 2>/dev/null', { encoding: 'utf8' });
+    const telegramSessions = sessions.trim().split('\n').filter(s => s.startsWith('telegram_'));
+
+    for (const session of telegramSessions) {
+      try {
+        execSync(`tmux kill-session -t "${session}" 2>/dev/null`);
+        killedSessions.push(session);
+      } catch (e) {
+        // Session might have already ended
+      }
+    }
+  } catch (e) {
+    // No sessions exist, that's fine
+  }
+
+  // Create new session name with timestamp
+  const timestamp = Date.now();
+  const sessionName = `telegram_${timestamp}`;
+  const logFile = `${LOGS_DIR}/${sessionName}.log`;
+
+  // Create execution script that starts Claude Code
+  const scriptContent = `#!/bin/bash
+set -a
+source /root/projects/orchon/.env 2>/dev/null || source /root/orchon/.env 2>/dev/null || true
+set +a
+
+cd /root/projects
+
+echo "========================================"
+echo "Session: ${sessionName}"
+echo "Time: $(date)"
+echo "========================================"
+
+# Start Claude Code in interactive mode
+claude --dangerously-skip-permissions 2>&1 | tee -a ${logFile}
+`;
+
+  const scriptPath = `/tmp/${sessionName}.sh`;
+  fs.writeFileSync(scriptPath, scriptContent);
+  fs.chmodSync(scriptPath, '755');
+
+  // Run in tmux
+  spawn('tmux', ['new-session', '-d', '-s', sessionName, scriptPath], {
+    detached: true,
+    stdio: 'ignore'
+  });
+
+  let response = `🆕 *New Claude session started*\n\n`;
+  response += `*Session:* \`${sessionName}\`\n`;
+
+  if (killedSessions.length > 0) {
+    response += `*Killed:* ${killedSessions.map(s => `\`${s}\``).join(', ')}\n`;
+  }
+
+  response += `\n*Logs:* \`/logs ${sessionName}\``;
+
+  await sendMessage(response);
+}
+
 // =============================================================================
 // Natural Language Handler
 // =============================================================================
@@ -734,6 +798,10 @@ async function handleMessage(text, chatId, imageData = null) {
 
     case '/services':
       handleServices();
+      return;
+
+    case '/new':
+      handleNew();
       return;
 
     case '/help':
