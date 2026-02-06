@@ -10,8 +10,14 @@
 const http = require('http');
 const url = require('url');
 const https = require('https');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execAsync = promisify(exec);
 
 const { execute, shouldUseAsync, SYNC_THRESHOLD, DEFAULT_TIMEOUT } = require('./executor');
+
+// Recovery endpoint token (obfuscated URL)
+const RECOVERY_TOKEN = process.env.RECOVERY_TOKEN || 'aa39ea1f4d5116b7fa085f7e5a0c1274';
 const { listTasks } = require('./tasks');
 const {
   createJob,
@@ -276,6 +282,69 @@ async function handleListJobs(req, res) {
 }
 
 /**
+ * Handle GET /r/:token - Recovery endpoint (no auth, uses token in URL)
+ * Restarts ORCHON services and optionally triggers Fly.io redeploy
+ */
+async function handleRecovery(req, res, token, action) {
+  if (token !== RECOVERY_TOKEN) {
+    return sendError(res, 404, 'Not found');
+  }
+
+  const results = { timestamp: new Date().toISOString(), actions: [] };
+
+  try {
+    // Restart droplet services
+    console.log('[Recovery] Restarting ORCHON services...');
+    const services = ['orchon-bot', 'orchon-ws', 'orchon-updates', 'orchon-proxy'];
+
+    for (const service of services) {
+      if (service === 'orchon-proxy') {
+        // Schedule self-restart after response
+        results.actions.push({ service, status: 'scheduled_restart' });
+        setTimeout(async () => {
+          console.log('[Recovery] Self-restarting orchon-proxy...');
+          try {
+            await execAsync('systemctl restart orchon-proxy');
+          } catch (e) {
+            console.error('[Recovery] Self-restart failed:', e.message);
+          }
+        }, 2000);
+      } else {
+        try {
+          await execAsync(`systemctl restart ${service}`);
+          results.actions.push({ service, status: 'restarted' });
+        } catch (e) {
+          results.actions.push({ service, status: 'failed', error: e.message });
+        }
+      }
+    }
+
+    // If action=full, also trigger Fly.io backend deploy
+    if (action === 'full') {
+      console.log('[Recovery] Triggering Fly.io backend restart...');
+      try {
+        // Use flyctl to restart the machine
+        const { stdout } = await execAsync('fly machines restart -a observatory-backend --yes 2>&1 || true', {
+          timeout: 60000,
+          cwd: '/root/projects/orchon/backend'
+        });
+        results.actions.push({ service: 'fly.io-backend', status: 'restart_triggered', output: stdout.trim() });
+      } catch (e) {
+        results.actions.push({ service: 'fly.io-backend', status: 'failed', error: e.message });
+      }
+    }
+
+    results.status = 'recovery_initiated';
+    return sendJson(res, 200, results);
+  } catch (error) {
+    console.error('[Recovery] Error:', error);
+    results.status = 'error';
+    results.error = error.message;
+    return sendJson(res, 500, results);
+  }
+}
+
+/**
  * Main request handler
  */
 async function handleRequest(req, res) {
@@ -295,6 +364,15 @@ async function handleRequest(req, res) {
   // Health check (no auth)
   if (pathname === '/health' || pathname === '/proxy/health') {
     return sendJson(res, 200, { status: 'ok', service: 'orchon-proxy' });
+  }
+
+  // Recovery endpoint (no auth, token in URL)
+  // GET /r/:token - restart droplet services
+  // GET /r/:token/full - restart droplet + Fly.io backend
+  const recoveryMatch = pathname.match(/^\/r\/([a-f0-9]+)(\/full)?$/);
+  if (recoveryMatch && req.method === 'GET') {
+    const [, token, fullAction] = recoveryMatch;
+    return await handleRecovery(req, res, token, fullAction ? 'full' : 'services');
   }
 
   // Auth required for all other endpoints
