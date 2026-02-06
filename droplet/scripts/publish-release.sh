@@ -73,3 +73,9 @@ echo "Published ${APK_NAME}"
 echo "Version: ${VERSION}+${BUILD_NUMBER}"
 echo ""
 echo "Update server URL: http://${DROPLET_IP}:8406/version"
+
+# Restart bot so it picks up the new version for Telegram messages
+echo ""
+echo "Restarting Telegram bot to update version display..."
+ssh -i ${DROPLET_SSH_KEY} root@${DROPLET_IP} "systemctl restart orchon-bot"
+echo "Bot restarted - Telegram will now show v${VERSION}"
