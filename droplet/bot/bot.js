@@ -912,14 +912,37 @@ function pollUpdates() {
 // Start Bot
 // =============================================================================
 
-// Get version from package.json (relative to script location)
+// Get app version from OTA server
+const OTA_VERSION_URL = 'http://localhost:8406/version';
 let version = 'unknown';
+
+async function fetchAppVersion() {
+  return new Promise((resolve) => {
+    const http = require('http');
+    const req = http.get(OTA_VERSION_URL, { timeout: 5000 }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          resolve(json.version || 'unknown');
+        } catch (e) {
+          resolve('unknown');
+        }
+      });
+    });
+    req.on('error', () => resolve('unknown'));
+    req.on('timeout', () => { req.destroy(); resolve('unknown'); });
+  });
+}
+
+// Fetch version synchronously at startup (fallback to package.json)
 try {
   const pkgPath = path.join(__dirname, '..', 'package.json');
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
   version = pkg.version || 'unknown';
 } catch (e) {
-  console.error('Could not read version:', e.message);
+  console.error('Could not read fallback version:', e.message);
 }
 
 // Format date as "29 Dec 2025, 11:09 AM" in Sydney timezone
@@ -937,16 +960,25 @@ function formatStartupTime() {
   return now.toLocaleString('en-AU', options).replace(',', '');
 }
 
-console.log(`ORCHON v${version} starting...`);
-console.log(`Projects: ${PROJECTS_DIR}`);
-console.log(`Logs: ${LOGS_DIR}`);
-console.log(`Orchestrator: ${orchestrator ? 'loaded' : 'not available'}`);
+// Startup: fetch app version from OTA, then send message
+(async () => {
+  // Try to get actual app version from OTA server
+  const appVersion = await fetchAppVersion();
+  if (appVersion !== 'unknown') {
+    version = appVersion;
+  }
 
-const startupMsg = `🟢 *ORCHON v${version}*\n${formatStartupTime()}\n\nTalk naturally or /help`;
-sendMessage(startupMsg).then(() => {
-  console.log('Startup message sent');
+  console.log(`ORCHON v${version} starting...`);
+  console.log(`Projects: ${PROJECTS_DIR}`);
+  console.log(`Logs: ${LOGS_DIR}`);
+  console.log(`Orchestrator: ${orchestrator ? 'loaded' : 'not available'}`);
+
+  const startupMsg = `🟢 *ORCHON v${version}*\n${formatStartupTime()}\n\nTalk naturally or /help`;
+  try {
+    await sendMessage(startupMsg);
+    console.log('Startup message sent');
+  } catch (err) {
+    console.error('Startup failed:', err);
+  }
   pollUpdates();
-}).catch(err => {
-  console.error('Startup failed:', err);
-  pollUpdates();
-});
+})();
