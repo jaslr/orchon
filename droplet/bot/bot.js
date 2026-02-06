@@ -517,6 +517,10 @@ function handleHelp() {
 \`/clear\` - Clear history
 \`/new\` - New Claude session (kills previous)
 
+*Recovery:*
+\`/restart\` - Restart all droplet services
+\`/recovery\` - Full recovery (droplet + Fly.io)
+
 *Or just talk naturally* (uses LLM)
 
 *LLM:* ${orchestrator ? orchestrator.LLM_PROVIDER : 'not loaded'}`);
@@ -625,6 +629,71 @@ function handleServices() {
   } catch (e) {
     sendMessage(`❌ Error checking services: ${e.message}`);
   }
+}
+
+async function handleRestart() {
+  sendMessage('🔄 *Restarting droplet services...*');
+
+  const services = ['orchon-ws', 'orchon-updates', 'orchon-proxy'];
+  let results = [];
+
+  for (const service of services) {
+    try {
+      execSync(`systemctl restart ${service}`, { timeout: 30000 });
+      results.push(`✅ ${service}`);
+    } catch (e) {
+      results.push(`❌ ${service}: ${e.message}`);
+    }
+  }
+
+  // Schedule bot self-restart after sending response
+  sendMessage(`*Restart complete:*\n${results.join('\n')}\n\n🔄 Bot restarting in 2s...`);
+
+  setTimeout(() => {
+    try {
+      execSync('systemctl restart orchon-bot');
+    } catch (e) {
+      console.error('Self-restart failed:', e.message);
+    }
+  }, 2000);
+}
+
+async function handleRecovery() {
+  sendMessage('🚨 *Full recovery initiated...*\n\nRestarting droplet services + Fly.io backend');
+
+  const services = ['orchon-ws', 'orchon-updates', 'orchon-proxy'];
+  let results = [];
+
+  // Restart droplet services
+  for (const service of services) {
+    try {
+      execSync(`systemctl restart ${service}`, { timeout: 30000 });
+      results.push(`✅ ${service}`);
+    } catch (e) {
+      results.push(`❌ ${service}: ${e.message}`);
+    }
+  }
+
+  // Restart Fly.io backend
+  try {
+    execSync('fly machines restart -a observatory-backend --yes 2>&1', {
+      timeout: 60000,
+      cwd: '/root/projects/orchon/backend'
+    });
+    results.push('✅ fly.io backend');
+  } catch (e) {
+    results.push(`❌ fly.io: ${e.message}`);
+  }
+
+  sendMessage(`*Recovery complete:*\n${results.join('\n')}\n\n🔄 Bot restarting in 2s...`);
+
+  setTimeout(() => {
+    try {
+      execSync('systemctl restart orchon-bot');
+    } catch (e) {
+      console.error('Self-restart failed:', e.message);
+    }
+  }, 2000);
 }
 
 async function handleNew() {
@@ -798,6 +867,14 @@ async function handleMessage(text, chatId, imageData = null) {
 
     case '/services':
       handleServices();
+      return;
+
+    case '/restart':
+      handleRestart();
+      return;
+
+    case '/recovery':
+      handleRecovery();
       return;
 
     case '/new':
