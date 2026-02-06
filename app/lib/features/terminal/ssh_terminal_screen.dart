@@ -46,6 +46,7 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
   bool _showInputBar = false;
   bool _ctrlPressed = false;
   bool _showLogDrawer = false;
+  bool _toolbarCollapsed = false;
 
   // Log buffer for last 500 lines
   final List<String> _logBuffer = [];
@@ -570,83 +571,144 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
   }
 
   Widget _buildTerminalToolbar() {
+    // Collapsed mode - just show expand button
+    if (_toolbarCollapsed) {
+      return GestureDetector(
+        onTap: () => setState(() => _toolbarCollapsed = false),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A2E),
+            border: Border(top: BorderSide(color: Colors.grey[800]!)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.keyboard_arrow_up, color: Colors.grey[500], size: 20),
+              const SizedBox(width: 8),
+              Text('Show Keyboard', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A2E),
         border: Border(
           top: BorderSide(color: Colors.grey[800]!),
         ),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Calculate if we need to use compact mode
-          final isCompact = constraints.maxWidth < 400;
-
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: constraints.maxWidth),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                mainAxisSize: MainAxisSize.max,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Row 1: Arrow keys (large) + ESC (large)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Hide toolbar button
+              _buildCollapseButton(),
+              const SizedBox(width: 8),
+              // Large arrow keys
+              _buildLargeButton('←', () => _sendSpecialKey('\x1b[D')),
+              const SizedBox(width: 4),
+              Column(
                 children: [
-                  // Keyboard toggle (far left)
-                  _buildKeyboardButton(compact: isCompact),
-                  // Divider
-                  _buildDivider(),
-                  // Common ctrl shortcuts (most used)
-                  _buildToolbarButton('C', () => _sendCtrlKey('c'), isCtrl: true, compact: isCompact),
-                  _buildToolbarButton('D', () => _sendCtrlKey('d'), isCtrl: true, compact: isCompact),
-                  _buildToolbarButton('Q', () => _sendCtrlKey('q'), isCtrl: true, compact: isCompact),
-                  // Divider
-                  _buildDivider(),
-                  // Arrow keys
-                  _buildToolbarButton('↑', () => _sendSpecialKey('\x1b[A'), compact: isCompact),
-                  _buildToolbarButton('↓', () => _sendSpecialKey('\x1b[B'), compact: isCompact),
-                  _buildToolbarButton('←', () => _sendSpecialKey('\x1b[D'), compact: isCompact),
-                  _buildToolbarButton('→', () => _sendSpecialKey('\x1b[C'), compact: isCompact),
-                  // Divider
-                  _buildDivider(),
-                  // Escape key
-                  _buildToolbarButton('ESC', () => _sendSpecialKey('\x1b'), compact: isCompact),
-                  // Tab key
-                  _buildToolbarButton('TAB', () => _sendSpecialKey('\t'), compact: isCompact),
-                  // Ctrl modifier
-                  _buildToolbarButton(
-                    'CTRL',
-                    () => setState(() => _ctrlPressed = !_ctrlPressed),
-                    isActive: _ctrlPressed,
-                    compact: isCompact,
-                  ),
-                  // Divider
-                  _buildDivider(),
-                  // Scroll buttons - Page Up/Down for tmux history
-                  _buildToolbarButton(
-                    'PgUp',
-                    _scrollUp,
-                    isActive: _inCopyMode,
-                    compact: isCompact,
-                  ),
-                  _buildToolbarButton(
-                    'PgDn',
-                    _scrollDown,
-                    isActive: _inCopyMode,
-                    compact: isCompact,
-                  ),
-                  // Exit scroll mode button (only shown when in copy mode)
-                  if (_inCopyMode)
-                    _buildToolbarButton(
-                      'EXIT',
-                      _exitCopyMode,
-                      highlight: true,
-                      compact: isCompact,
-                    ),
+                  _buildLargeButton('↑', () => _sendSpecialKey('\x1b[A')),
+                  const SizedBox(height: 4),
+                  _buildLargeButton('↓', () => _sendSpecialKey('\x1b[B')),
                 ],
               ),
+              const SizedBox(width: 4),
+              _buildLargeButton('→', () => _sendSpecialKey('\x1b[C')),
+              const SizedBox(width: 16),
+              // Large ESC button
+              _buildLargeButton('ESC', () => _sendSpecialKey('\x1b'), wide: true),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Row 2: Ctrl shortcuts, Tab, other keys
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Keyboard/input toggle
+                _buildKeyboardButton(compact: false),
+                _buildDivider(),
+                // Ctrl shortcuts
+                _buildToolbarButton('^C', () => _sendCtrlKey('c'), compact: false),
+                _buildToolbarButton('^D', () => _sendCtrlKey('d'), compact: false),
+                _buildToolbarButton('^Q', () {
+                  // Send Ctrl+Q (ASCII 17 = DC1)
+                  if (_session != null) {
+                    _session!.write(Uint8List.fromList([17]));
+                  }
+                }, compact: false),
+                _buildDivider(),
+                // Tab key
+                _buildToolbarButton('TAB', () => _sendSpecialKey('\t'), compact: false),
+                // Ctrl modifier for custom combos
+                _buildToolbarButton(
+                  'CTRL',
+                  () => setState(() => _ctrlPressed = !_ctrlPressed),
+                  isActive: _ctrlPressed,
+                  compact: false,
+                ),
+                _buildDivider(),
+                // Scroll buttons
+                _buildToolbarButton('PgUp', _scrollUp, isActive: _inCopyMode, compact: false),
+                _buildToolbarButton('PgDn', _scrollDown, isActive: _inCopyMode, compact: false),
+                if (_inCopyMode)
+                  _buildToolbarButton('EXIT', _exitCopyMode, highlight: true, compact: false),
+              ],
             ),
-          );
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollapseButton() {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(6),
+      child: InkWell(
+        onTap: () => setState(() => _toolbarCollapsed = true),
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          child: Icon(Icons.keyboard_hide, size: 24, color: Colors.grey[500]),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLargeButton(String label, VoidCallback onPressed, {bool wide = false}) {
+    return Material(
+      color: const Color(0xFF2D2D44),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: () {
+          onPressed();
+          _terminalFocusNode.requestFocus();
         },
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: wide ? 70 : 48,
+          height: 44,
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -658,14 +720,12 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
     );
   }
 
-  Widget _buildToolbarButton(String label, VoidCallback onPressed, {bool isActive = false, bool isCtrl = false, bool highlight = false, bool compact = false}) {
-    final showAsCtrl = isCtrl && !_ctrlPressed;
-    final displayLabel = showAsCtrl ? '^$label' : label;
+  Widget _buildToolbarButton(String label, VoidCallback onPressed, {bool isActive = false, bool highlight = false, bool compact = false}) {
     final highlightColor = const Color(0xFF10B981); // Green for agent-deck shortcut
 
     // Adjust padding based on compact mode
-    final horizontalPadding = compact ? 6.0 : 10.0;
-    final verticalPadding = compact ? 6.0 : 8.0;
+    final horizontalPadding = compact ? 6.0 : 12.0;
+    final verticalPadding = compact ? 6.0 : 10.0;
     final fontSize = compact ? 11.0 : 13.0;
 
     return Material(
@@ -685,7 +745,7 @@ class _SshTerminalScreenState extends ConsumerState<SshTerminalScreen> {
             border: Border.all(color: highlightColor.withOpacity(0.5)),
           ) : null,
           child: Text(
-            displayLabel,
+            label,
             style: TextStyle(
               color: isActive ? Colors.white : (highlight ? highlightColor : Colors.grey[400]),
               fontSize: fontSize,
